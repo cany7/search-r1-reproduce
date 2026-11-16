@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 import string
+from collections import Counter
 from dataclasses import dataclass
 from functools import reduce
-from typing import Annotated
+from typing import Annotated, Literal
 
 import aiohttp
 import chz
@@ -140,15 +142,60 @@ class BM25Tool:
         return simple_tool_result(message_content)
 
 
+def compute_f1(prediction: str, gold: str) -> float:
+    """Token-level F1 between two answers after ``normalize_answer`` (SQuAD-style)."""
+    prediction_tokens = normalize_answer(prediction).split()
+    gold_tokens = normalize_answer(gold).split()
+    if not prediction_tokens or not gold_tokens:
+        return float(prediction_tokens == gold_tokens)
+    num_same = sum((Counter(prediction_tokens) & Counter(gold_tokens)).values())
+    if num_same == 0:
+        return 0.0
+    precision = num_same / len(prediction_tokens)
+    recall = num_same / len(gold_tokens)
+    return 2 * precision * recall / (precision + recall)
+
+
+def extract_search_queries(messages: list[Message]) -> tuple[int, list[str]]:
+    """Return (number of search calls the model made, all their queries in order)."""
+    num_calls = 0
+    queries: list[str] = []
+    for message in messages:
+        if message.get("role") != "assistant":
+            continue
+        for tool_call in message.get("tool_calls") or []:
+            if tool_call.function.name != "search":
+                continue
+            num_calls += 1
+            try:
+                query_list = json.loads(tool_call.function.arguments).get("query_list")
+            except (json.JSONDecodeError, AttributeError):
+                continue
+            if isinstance(query_list, list):
+                queries.extend(str(q) for q in query_list)
+    return num_calls, queries
+
+
 @dataclass
 class TextAnswerReward:
     """Reward function to check text answer against gold answers.
 
-    formula: format_coef * (correct_format - 1) + correct_answer
+    formula: answer_score + format_coef * (correct_format - 1) + no_search_coef * (searched - 1)
+
+    - ``answer_score="f1"`` with ``no_search_coef=0.1`` is the F1+ reward
+      (Search-R1++): token-level F1 against the best-matching gold answer, minus
+      0.1 when the trajectory never called the search tool, minus 0.1 when there is
+      no well-formed answer.
+    - ``answer_score="em"`` with ``no_search_coef=0.0`` is the recipe's original
+      reward (exact match plus the format term).
+
+    The metrics always report both exact match (``correct``) and ``f1``.
     """
 
     gold_answers: list[str]
     format_coef: float = 0.1
+    answer_score: Literal["f1", "em"] = "f1"
+    no_search_coef: float = 0.1
 
     async def __call__(self, history: list[Message]) -> tuple[float, dict[str, float]]:
         """Grade the completed episode by checking the final assistant message."""
@@ -160,16 +207,27 @@ class TextAnswerReward:
                 break
 
         if final_message is None:
-            return 0.0, {"format": 0.0, "correct": 0.0}
+            return 0.0, {"format": 0.0, "correct": 0.0, "f1": 0.0, "searched": 0.0}
 
         # Use get_text_content to properly handle thinking models (o1, o3)
         content = get_text_content(final_message)
 
         correct_format = float(self._extract_answer(content) is not None)
         correct_answer = float(self._check_answer(content))
+        f1 = self._f1(content)
+        num_search_calls, _ = extract_search_queries(history)
+        searched = float(num_search_calls > 0)
 
-        reward = self.format_coef * (correct_format - 1) + correct_answer
-        return reward, {"format": correct_format, "correct": correct_answer}
+        score = f1 if self.answer_score == "f1" else correct_answer
+        reward = (
+            score + self.format_coef * (correct_format - 1) + self.no_search_coef * (searched - 1)
+        )
+        return reward, {
+            "format": correct_format,
+            "correct": correct_answer,
+            "f1": f1,
+            "searched": searched,
+        }
 
     def _extract_answer(self, text: str) -> str | None:
         if "Answer:" not in text:
@@ -187,3 +245,9 @@ class TextAnswerReward:
             if normalize_answer(model_answer) == normalize_answer(gold):
                 return True
         return False
+
+    def _f1(self, text: str) -> float:
+        model_answer = self._extract_answer(text)
+        if model_answer is None or len(self.gold_answers) == 0:
+            return 0.0
+        return max(compute_f1(model_answer, gold) for gold in self.gold_answers)
