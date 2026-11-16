@@ -48,21 +48,23 @@ cp .env.example .env             # 然后填 OMLX_API_KEY
 
 ```bash
 ./retrieval/start.sh             # 默认 127.0.0.1:8001
+./retrieval/stop.sh
 ```
 
 首次启动会把语料转成 Arrow 缓存（在 `~/.cache/huggingface/datasets`），需要几分钟。
 
 ## 评测
 
-需要检索服务和推理服务都在运行。本地用 oMLX：
+本地用 oMLX，需要事先开着。`run_base_eval.sh` 自己启动和停止检索服务：
 
 ```bash
 ./scripts/run_base_eval.sh                       # 5 个基座配置，开发集
 LIMIT=50 ./scripts/run_base_eval.sh q35-fast     # 单个配置，每个来源前 50 题
 uv run python scripts/compare_runs.py runs/eval/base-*
+uv run python scripts/diagnose_run.py runs/eval/<run_name>
 ```
 
-单独调用：
+单独调用（要先自己起检索服务）：
 
 ```bash
 uv run python -m search_r1.offline_eval backend=omlx omlx_model=Qwen3.5-4B-bf16 \

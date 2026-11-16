@@ -5,7 +5,12 @@ import asyncio
 import pytest
 from tinker_cookbook.renderers.base import Message, ToolCall
 
-from search_r1.tools import TextAnswerReward, compute_f1, extract_search_queries
+from search_r1.tools import (
+    TextAnswerReward,
+    compute_f1,
+    count_tool_errors,
+    extract_search_queries,
+)
 
 GOLD = ["Wilhelm Conrad Röntgen", "W. C. Röntgen"]
 
@@ -66,3 +71,10 @@ def test_compute_f1() -> None:
 def test_extract_search_queries() -> None:
     messages = history("Answer: x", [["a", "b"], ["a"]])
     assert extract_search_queries(messages) == (2, ["a", "b", "a"])
+
+
+def test_count_tool_errors() -> None:
+    messages = history("Answer: x", [["a"], ["b"]])
+    assert count_tool_errors(messages) == 0
+    messages[2] = {"role": "tool", "content": '{"error": "Parameter validation failed"}'}
+    assert count_tool_errors(messages) == 1

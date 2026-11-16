@@ -48,6 +48,7 @@ from search_r1.tools import (
     BM25Tool,
     RetrievalConfig,
     TextAnswerReward,
+    count_tool_errors,
     extract_search_queries,
     normalize_answer,
 )
@@ -253,6 +254,8 @@ def build_record(
         "stop_reason": trajectory.stop_reason,
         "num_turns": len(transitions),
         "num_search_calls": num_search_calls,
+        # Calls answered with an error (bad arguments); no search ran for these.
+        "num_tool_errors": count_tool_errors(generated),
         "queries": queries,
         "repeated_query": len(set(normalized_queries)) < len(normalized_queries),
         "parse_error": any(t.metrics.get("parse_error", 0.0) > 0 for t in transitions),
@@ -388,6 +391,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         "reward": mean("reward"),
         "termination": dict(Counter(r["termination"] for r in records)),
         "search_calls": mean("num_search_calls"),
+        "tool_error_rate": sum(r["num_tool_errors"] > 0 for r in records) / n,
         "no_search_rate": sum(r["num_search_calls"] == 0 for r in records) / n,
         "repeated_query_rate": mean("repeated_query"),
         "parse_error_rate": mean("parse_error"),

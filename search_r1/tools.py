@@ -176,6 +176,19 @@ def extract_search_queries(messages: list[Message]) -> tuple[int, list[str]]:
     return num_calls, queries
 
 
+def count_tool_errors(messages: list[Message]) -> int:
+    """Number of tool results that are an error rather than search results.
+
+    A call whose arguments fail validation (e.g. ``query_list`` given as a string)
+    is answered with ``{"error": ...}`` and no search runs.
+    """
+    return sum(
+        1
+        for message in messages
+        if message.get("role") == "tool" and str(message.get("content", "")).startswith('{"error"')
+    )
+
+
 @dataclass
 class TextAnswerReward:
     """Reward function to check text answer against gold answers.
