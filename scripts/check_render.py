@@ -37,8 +37,10 @@ def main() -> None:
         model_input = renderer.build_generation_prompt(messages)
         tokens = model_input.to_ints()
         print("=" * 80)
-        print(f"{model_name} | renderer={renderer_name} | recommended="
-              f"{model_info.get_recommended_renderer_name(model_name)}")
+        print(
+            f"{model_name} | renderer={renderer_name} | recommended="
+            f"{model_info.get_recommended_renderer_name(model_name)}"
+        )
         print(f"prompt tokens: {len(tokens)} | stop: {renderer.get_stop_sequences()}")
         print(tokenizer.decode(tokens))
 
