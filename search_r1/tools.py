@@ -8,17 +8,8 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Annotated
 
-import chromadb
+import aiohttp
 import chz
-import google.genai as genai
-from chromadb.api import AsyncClientAPI
-from chromadb.api.types import QueryResult
-from chromadb.config import Settings
-
-from tinker_cookbook.recipes.search_tool.embedding import (
-    get_gemini_client,
-    get_gemini_embedding,
-)
 from tinker_cookbook.renderers import get_text_content
 from tinker_cookbook.renderers.base import Message
 from tinker_cookbook.tool_use import ToolResult, simple_tool_result, tool
@@ -51,151 +42,80 @@ _CONNECTION_SEMAPHORE = asyncio.Semaphore(128)
 
 
 @chz.chz
-class EmbeddingConfig:
-    model_name: str = "gemini-embedding-001"
-    embedding_dim: int = 768
-    task_type: str = "RETRIEVAL_QUERY"
-
-
-@chz.chz
 class RetrievalConfig:
     n_results: int = 3
-    embedding_config: EmbeddingConfig = EmbeddingConfig()
 
 
-class ChromaTool:
-    """Search tool using ChromaDB + Gemini embeddings.
+class BM25Tool:
+    """Search tool backed by Search-R1's BM25 retrieval server (``retrieval/retrieval_server.py``).
 
-    Pickle support: async clients are not pickleable (network connections).
-    ``__getstate__`` excludes them; ``_ensure_clients()`` lazily reconnects
-    before first use after deserialization. Requires ``build()`` so that
-    connection params (host, port) are available for reconnection.
+    Replaces the recipe's ``ChromaTool``. The text returned to the model keeps the
+    recipe's format (``Query: ...`` followed by ``Document i:`` blocks); only the
+    retrieval backend differs.
+
+    Pickle support: the aiohttp session is not pickleable, so ``__getstate__``
+    drops it and it is re-created lazily on first use.
     """
 
     def __init__(
         self,
-        chroma_client: AsyncClientAPI,
-        gemini_client: genai.Client,
-        collection_name: str,
-        retrieval_config: RetrievalConfig,
-        max_retries: int,
-        initial_retry_delay: int,
-        # Connection params stored for reconnection after pickle roundtrip.
-        # Set automatically by build(); None if constructed directly.
-        chroma_host: str | None = None,
-        chroma_port: int | None = None,
-    ):
-        self._chroma_client: AsyncClientAPI | None = chroma_client
-        self._gemini_client: genai.Client | None = gemini_client
-        self._collection_name = collection_name
-        self._retrieval_config = retrieval_config
-        self._max_retries = max_retries
-        self._initial_retry_delay = initial_retry_delay
-        self._chroma_host = chroma_host
-        self._chroma_port = chroma_port
-
-    def __getstate__(self) -> dict:
-        """Exclude non-pickleable async clients from pickle state."""
-        state = self.__dict__.copy()
-        state["_chroma_client"] = None
-        state["_gemini_client"] = None
-        return state
-
-    async def _ensure_clients(self) -> tuple[AsyncClientAPI, genai.Client]:
-        """Return live clients, reconnecting if needed after deserialization."""
-        if self._chroma_client is None:
-            if self._chroma_host is None or self._chroma_port is None:
-                raise RuntimeError(
-                    "Cannot reconnect ChromaTool: connection params not set. "
-                    "Use ChromaTool.build() to enable pickle support."
-                )
-            self._chroma_client = await chromadb.AsyncHttpClient(
-                host=self._chroma_host,
-                port=self._chroma_port,
-                settings=Settings(anonymized_telemetry=False),
-            )
-        if self._gemini_client is None:
-            self._gemini_client = get_gemini_client()
-        return self._chroma_client, self._gemini_client
-
-    @staticmethod
-    async def build(
-        chroma_host: str,
-        chroma_port: int,
-        chroma_collection_name: str,
+        retrieval_url: str,
         retrieval_config: RetrievalConfig = RetrievalConfig(),
         max_retries: int = 10,
         initial_retry_delay: int = 1,
-        # Optional shared resources - None means build your own
-        chroma_client: AsyncClientAPI | None = None,
-        gemini_client: genai.Client | None = None,
-    ) -> ChromaTool:
-        """Async factory for building ChromaTool.
+    ):
+        self._retrieval_url = retrieval_url.rstrip("/")
+        self._retrieval_config = retrieval_config
+        self._max_retries = max_retries
+        self._initial_retry_delay = initial_retry_delay
+        self._session: aiohttp.ClientSession | None = None
 
-        Args:
-            chroma_host: ChromaDB server host.
-            chroma_port: ChromaDB server port.
-            chroma_collection_name: Name of the ChromaDB collection to query.
-            retrieval_config: Configuration for retrieval (n_results, embedding settings).
-            max_retries: Max retries for ChromaDB queries.
-            initial_retry_delay: Initial delay between retries (exponential backoff).
-            chroma_client: Optional pre-built ChromaDB client (for sharing across tools).
-            gemini_client: Optional pre-built Gemini client (for sharing across tools).
+    def __getstate__(self) -> dict:
+        state = self.__dict__.copy()
+        state["_session"] = None
+        return state
+
+    def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def aclose(self) -> None:
+        if self._session is not None and not self._session.closed:
+            await self._session.close()
+
+    async def _retrieve_with_retry(self, query_list: list[str]) -> list[list[str]]:
+        """Return, for each query, the ``contents`` of its top passages.
+
+        ``return_scores`` is always sent as True: with False the upstream server
+        unpacks a single return value into two and fails (or, for exactly two
+        queries, silently returns the wrong shape).
         """
-        if chroma_client is None:
-            chroma_client = await chromadb.AsyncHttpClient(
-                host=chroma_host,
-                port=chroma_port,
-                settings=Settings(anonymized_telemetry=False),
-            )
-        if gemini_client is None:
-            gemini_client = get_gemini_client()
-        return ChromaTool(
-            chroma_client,
-            gemini_client,
-            chroma_collection_name,
-            retrieval_config,
-            max_retries,
-            initial_retry_delay,
-            chroma_host=chroma_host,
-            chroma_port=chroma_port,
-        )
-
-    async def _get_embeddings_with_retry(
-        self, gemini_client: genai.Client, query_list: list[str]
-    ) -> list[list[float]]:
-        embedding_config = self._retrieval_config.embedding_config
-        return await get_gemini_embedding(
-            gemini_client,
-            query_list,
-            embedding_config.model_name,
-            embedding_config.embedding_dim,
-            embedding_config.task_type,
-        )
-
-    async def _query_chroma_with_retry(
-        self, chroma_client: AsyncClientAPI, query_embeddings: list[list[float]]
-    ) -> QueryResult:
+        payload = {
+            "queries": query_list,
+            "topk": self._retrieval_config.n_results,
+            "return_scores": True,
+        }
         for attempt in range(self._max_retries):
-            collection = await chroma_client.get_collection(self._collection_name)
             try:
-                results = await collection.query(
-                    query_embeddings=query_embeddings,  # pyright: ignore[reportArgumentType]
-                    n_results=self._retrieval_config.n_results,
-                )
-                return results
+                async with self._get_session().post(
+                    f"{self._retrieval_url}/retrieve", json=payload
+                ) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+                return [[hit["document"]["contents"] for hit in hits] for hits in data["result"]]
             except Exception as e:
                 if attempt < self._max_retries - 1:
                     wait_time = self._initial_retry_delay * (1.5**attempt)
                     logger.error(
-                        f"ChromaDB query attempt {attempt + 1}/{self._max_retries} "
+                        f"Retrieval attempt {attempt + 1}/{self._max_retries} "
                         f"failed: {e}. Retrying in {wait_time}s..."
                     )
                     await asyncio.sleep(wait_time)
                     continue
                 raise e
 
-        raise RuntimeError("All ChromaDB query attempts failed")
+        raise RuntimeError("All retrieval attempts failed")
 
     @tool
     async def search(
@@ -206,14 +126,11 @@ class ChromaTool:
         ],
     ) -> ToolResult:
         """Search Wikipedia for relevant information based on the given query."""
-        chroma_client, gemini_client = await self._ensure_clients()
         async with _CONNECTION_SEMAPHORE:
-            embeddings = await self._get_embeddings_with_retry(gemini_client, query_list)
-            results = await self._query_chroma_with_retry(chroma_client, embeddings)
+            documents_list = await self._retrieve_with_retry(query_list)
 
-        # Format same as original ChromaToolClient.invoke()
+        # Same format as the recipe's ChromaTool.
         message_content = ""
-        documents_list = results["documents"] or []
         for query, documents in zip(query_list, documents_list):
             message_content += f"Query: {query}\n"
             for doc_i, doc in enumerate(documents):

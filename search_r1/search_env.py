@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 from collections.abc import Sequence
 from pathlib import Path
@@ -8,17 +9,19 @@ from typing import Literal, TypedDict, cast
 import chz
 import pandas as pd
 from huggingface_hub import hf_hub_download
-
 from tinker_cookbook import model_info, tokenizer_utils
-from tinker_cookbook.recipes.search_tool.tools import (
-    ChromaTool,
-    RetrievalConfig,
-    TextAnswerReward,
-)
 from tinker_cookbook.renderers import get_renderer
 from tinker_cookbook.renderers.base import Message, Renderer
 from tinker_cookbook.rl.types import Env, EnvGroupBuilder, RLDataset, RLDatasetBuilder
 from tinker_cookbook.tool_use import build_agent_tool_env
+
+from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward
+
+# Project data directory (datasets, index, corpus). Override with SEARCH_R1_DATA_DIR.
+DATA_DIR = Path(
+    os.environ.get("SEARCH_R1_DATA_DIR", Path(__file__).resolve().parent.parent / "data")
+)
+DEFAULT_RETRIEVAL_URL = "http://127.0.0.1:8001"
 
 SEARCH_TASK_INSTRUCTIONS = """You are an expert assistant who solves tasks using a Wikipedia search tool.
 
@@ -89,15 +92,16 @@ def process_single_row(row_series: pd.Series) -> SearchR1Datum:
 def download_search_r1_dataset(split: Literal["train", "test"]) -> list[SearchR1Datum]:
     hf_repo_id: str = "PeterJinGo/nq_hotpotqa_train"
     parquet_filename: str = f"{split}.parquet"
-    download_dir = Path("~/.cache/tinker-cookbook").expanduser() / hf_repo_id / split
-    download_dir.mkdir(parents=True, exist_ok=True)
-
-    local_parquet_filepath = hf_hub_download(
-        repo_id=hf_repo_id,
-        filename=parquet_filename,
-        repo_type="dataset",
-        local_dir=download_dir,
-    )
+    download_dir = DATA_DIR / "nq_hotpotqa_train"
+    local_parquet_filepath = download_dir / parquet_filename
+    if not local_parquet_filepath.exists():
+        download_dir.mkdir(parents=True, exist_ok=True)
+        hf_hub_download(
+            repo_id=hf_repo_id,
+            filename=parquet_filename,
+            repo_type="dataset",
+            local_dir=download_dir,
+        )
 
     df_raw = pd.read_parquet(local_parquet_filepath)
 
@@ -107,10 +111,10 @@ def download_search_r1_dataset(split: Literal["train", "test"]) -> list[SearchR1
 def _initial_messages(
     datum: SearchR1Datum,
     renderer: Renderer,
-    chroma_tool: ChromaTool,
+    search_tool: BM25Tool,
 ) -> list[Message]:
     """Build initial messages with tool schemas and task question."""
-    tool_schemas = [chroma_tool.search.to_spec()]
+    tool_schemas = [search_tool.search.to_spec()]
     prefix = renderer.create_conversation_prefix_with_tools(
         tools=tool_schemas,
         system_prompt=SEARCH_TASK_INSTRUCTIONS,
@@ -119,7 +123,7 @@ def _initial_messages(
 
 
 class SearchEnvGroupBuilder(EnvGroupBuilder):
-    """EnvGroupBuilder that creates search environments with a shared ChromaTool."""
+    """EnvGroupBuilder that creates search environments with a shared BM25Tool."""
 
     def __init__(
         self,
@@ -128,7 +132,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         renderer_name: str | None,
         max_turns: int,
         group_size: int,
-        chroma_tool: ChromaTool,
+        search_tool: BM25Tool,
         format_coef: float = 0.1,
         max_trajectory_tokens: int = 32 * 1024,
         max_generation_tokens: int | None = None,
@@ -139,7 +143,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         self.renderer_name = renderer_name
         self.max_turns = max_turns
         self.group_size = group_size
-        self.chroma_tool = chroma_tool
+        self.search_tool = search_tool
         self.format_coef = format_coef
         self.max_trajectory_tokens = max_trajectory_tokens
         self.max_generation_tokens = max_generation_tokens
@@ -153,7 +157,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         renderer = get_renderer(renderer_name, tokenizer)
 
         # Tool, initial_messages, reward_fn are all stateless - can share
-        initial_messages = _initial_messages(self.datum, renderer, self.chroma_tool)
+        initial_messages = _initial_messages(self.datum, renderer, self.search_tool)
         reward_fn = TextAnswerReward(
             gold_answers=self.datum["answer"], format_coef=self.format_coef
         )
@@ -161,7 +165,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         return [
             build_agent_tool_env(
                 renderer=renderer,
-                tools=[self.chroma_tool.search],
+                tools=[self.search_tool.search],
                 initial_messages=initial_messages,
                 reward_fn=reward_fn,
                 max_turns=self.max_turns,
@@ -198,13 +202,11 @@ class SearchRLDataset(RLDataset):
 
 @chz.chz
 class SearchR1DatasetBuilder(RLDatasetBuilder):
-    """Build an RL dataset over SearchR1 tasks with ChromaTool."""
+    """Build an RL dataset over SearchR1 tasks with BM25Tool."""
 
     model_name_for_tokenizer: str
-    # ChromaTool connection params
-    chroma_host: str
-    chroma_port: int
-    chroma_collection_name: str
+    # BM25 retrieval server
+    retrieval_url: str = DEFAULT_RETRIEVAL_URL
     retrieval_config: RetrievalConfig = RetrievalConfig()
     # Dataset params
     batch_size: int
@@ -218,11 +220,9 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
     seed: int = 0
 
     async def __call__(self) -> tuple[RLDataset, RLDataset | None]:
-        # Create shared ChromaTool
-        chroma_tool = await ChromaTool.build(
-            chroma_host=self.chroma_host,
-            chroma_port=self.chroma_port,
-            chroma_collection_name=self.chroma_collection_name,
+        # Create shared BM25Tool
+        search_tool = BM25Tool(
+            retrieval_url=self.retrieval_url,
             retrieval_config=self.retrieval_config,
         )
 
@@ -237,7 +237,7 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
                 renderer_name=self.renderer_name,
                 max_turns=self.max_turns,
                 group_size=self.group_size,
-                chroma_tool=chroma_tool,
+                search_tool=search_tool,
                 format_coef=self.format_coef,
                 max_trajectory_tokens=self.max_trajectory_tokens,
                 max_generation_tokens=self.max_generation_tokens,

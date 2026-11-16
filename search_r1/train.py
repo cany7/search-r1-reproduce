@@ -4,14 +4,11 @@ import asyncio
 from datetime import datetime
 
 import chz
-
 from tinker_cookbook import cli_utils, model_info
-from tinker_cookbook.recipes.search_tool.search_env import SearchR1DatasetBuilder
-from tinker_cookbook.recipes.search_tool.tools import (
-    EmbeddingConfig,
-    RetrievalConfig,
-)
 from tinker_cookbook.rl import train
+
+from search_r1.search_env import DEFAULT_RETRIEVAL_URL, SearchR1DatasetBuilder
+from search_r1.tools import RetrievalConfig
 
 
 @chz.chz
@@ -34,13 +31,9 @@ class CLIConfig:
     format_coef: float = 0.1
     max_trajectory_tokens: int = 32 * 1024
 
-    # Chroma configuration
-    chroma_host: str = "localhost"
-    chroma_port: int = 8000
-    chroma_collection_name: str = "wiki_embeddings"
+    # BM25 retrieval server
+    retrieval_url: str = DEFAULT_RETRIEVAL_URL
     n_results: int = 3
-    embedding_model_name: str = "gemini-embedding-001"
-    embedding_dim: int = 768
 
     # Streaming configuration
     stream_minibatch: bool = False
@@ -61,13 +54,7 @@ class CLIConfig:
 
 async def cli_main(cli_config: CLIConfig) -> None:
     # Build retrieval config
-    retrieval_config = RetrievalConfig(
-        n_results=cli_config.n_results,
-        embedding_config=EmbeddingConfig(
-            model_name=cli_config.embedding_model_name,
-            embedding_dim=cli_config.embedding_dim,
-        ),
-    )
+    retrieval_config = RetrievalConfig(n_results=cli_config.n_results)
 
     # Get renderer name
     renderer_name = cli_config.renderer_name or model_info.get_recommended_renderer_name(
@@ -79,9 +66,7 @@ async def cli_main(cli_config: CLIConfig) -> None:
         group_size=cli_config.group_size,
         renderer_name=renderer_name,
         model_name_for_tokenizer=cli_config.model_name,
-        chroma_host=cli_config.chroma_host,
-        chroma_port=cli_config.chroma_port,
-        chroma_collection_name=cli_config.chroma_collection_name,
+        retrieval_url=cli_config.retrieval_url,
         retrieval_config=retrieval_config,
         seed=cli_config.seed,
         max_turns=cli_config.max_turns,

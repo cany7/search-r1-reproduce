@@ -27,3 +27,17 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["search_r1"]
+
+# 与 tinker-cookbook 保持一致，复制来的文件不会因为风格不同多出 diff。
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "C4"]
+ignore = [
+    "E501", "B028", "SIM108", "UP007", "RUF001", "RUF002", "RUF003", "RUF005", "RUF006",
+    "RUF012", "RUF046", "B008", "B905", "B023", "B027", "RUF059", "SIM117", "RUF022",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["search_r1"]
