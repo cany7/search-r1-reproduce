@@ -1,0 +1,29 @@
+[project]
+name = "search-r1-reproduce"
+version = "0.1.0"
+description = "Small-scale Search-R1 reproduction on tinker-cookbook's search_tool recipe"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "tinker-cookbook",
+    "pandas",
+    "pyarrow",
+    "python-dotenv",
+]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.uv]
+# 解释器由 pyenv local 指定（见 .python-version），不让 uv 自己下载 Python。
+python-preference = "only-system"
+
+[tool.uv.sources]
+# 固定到核对计划时的 commit（2026-11-14）。升级前先看改动。
+tinker-cookbook = { git = "https://github.com/thinking-machines-lab/tinker-cookbook", rev = "1991897cba59ea9d9b0030d183d1867b28eba9d9" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["search_r1"]

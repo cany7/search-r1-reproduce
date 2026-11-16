@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# 密钥和本地配置
+.env
+
+# 数据、索引、语料、模型输出（体积大，可重新下载或重新生成）
+data/
+runs/
+outputs/
+wandb/
+*.log
+
+# 系统和编辑器
+.DS_Store
+.idea/
+.vscode/
