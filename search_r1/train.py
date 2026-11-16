@@ -2,12 +2,13 @@
 
 import asyncio
 from datetime import datetime
+from typing import Literal
 
 import chz
 from tinker_cookbook import cli_utils, model_info
 from tinker_cookbook.rl import train
 
-from search_r1.search_env import DEFAULT_RETRIEVAL_URL, SearchR1DatasetBuilder
+from search_r1.search_env import DEFAULT_RETRIEVAL_URL, PromptName, SearchR1DatasetBuilder
 from search_r1.tools import RetrievalConfig
 
 
@@ -30,6 +31,12 @@ class CLIConfig:
     max_turns: int = 5
     format_coef: float = 0.1
     max_trajectory_tokens: int = 32 * 1024
+
+    # Prompt and reward. Defaults: fast-thinking prompt and F1+ reward.
+    # The recipe's originals are prompt_name=original answer_score=em no_search_coef=0.0.
+    prompt_name: PromptName = "fast"
+    answer_score: Literal["f1", "em"] = "f1"
+    no_search_coef: float = 0.1
 
     # BM25 retrieval server
     retrieval_url: str = DEFAULT_RETRIEVAL_URL
@@ -72,6 +79,9 @@ async def cli_main(cli_config: CLIConfig) -> None:
         max_turns=cli_config.max_turns,
         format_coef=cli_config.format_coef,
         max_trajectory_tokens=cli_config.max_trajectory_tokens,
+        prompt_name=cli_config.prompt_name,
+        answer_score=cli_config.answer_score,
+        no_search_coef=cli_config.no_search_coef,
     )
 
     # Configure streaming minibatch

@@ -39,11 +39,18 @@ from tinker_cookbook.utils.git_rev import recipe_user_metadata
 from search_r1.local_completer import OpenAICompletionsTokenCompleter
 from search_r1.search_env import (
     DEFAULT_RETRIEVAL_URL,
-    SEARCH_TASK_INSTRUCTIONS,
+    PromptName,
     SearchR1Datum,
     download_search_r1_dataset,
+    get_task_instructions,
 )
-from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward, normalize_answer
+from search_r1.tools import (
+    BM25Tool,
+    RetrievalConfig,
+    TextAnswerReward,
+    extract_search_queries,
+    normalize_answer,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -79,9 +86,19 @@ class CLIConfig:
         default=None, doc="Model id as the local server lists it (backend=omlx)"
     )
 
+    # Prompt and reward. Defaults are the training configuration; the recipe's
+    # originals are prompt_name=original answer_score=em no_search_coef=0.0.
+    # EM and F1 are recorded either way; these only change the reported reward.
+    prompt_name: PromptName = chz.field(default="fast", doc="System prompt variant")
+    answer_score: Literal["f1", "em"] = chz.field(default="f1", doc="Answer term of the reward")
+    no_search_coef: float = chz.field(default=0.1, doc="Penalty when no search was made")
+
     # Evaluation data
     eval_file: str | None = chz.field(
         default=None, doc="JSONL of a fixed evaluation set; overrides the sampling options below"
+    )
+    limit_per_source: int | None = chz.field(
+        default=None, doc="With eval_file: evaluate only the first k items of each data source"
     )
     max_eval_samples: int = chz.field(
         default=100, doc="Maximum number of samples to evaluate per data source"
@@ -144,6 +161,9 @@ def load_eval_items(config: CLIConfig) -> list[SearchR1Datum]:
     if config.eval_file is not None:
         with open(config.eval_file) as f:
             items: list[SearchR1Datum] = [json.loads(line) for line in f if line.strip()]
+        if config.limit_per_source is not None:
+            by_source = split_data_by_source(items)
+            items = [i for group in by_source.values() for i in group[: config.limit_per_source]]
         print(f"Loaded {len(items)} items from {config.eval_file}")
         return items
 
@@ -173,26 +193,6 @@ def _to_jsonable(obj: Any) -> Any:
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         return _to_jsonable(dataclasses.asdict(obj))
     return str(obj)
-
-
-def extract_search_queries(messages: list[Message]) -> tuple[int, list[str]]:
-    """Return (number of executed search calls, all queries in order)."""
-    num_calls = 0
-    queries: list[str] = []
-    for message in messages:
-        if message.get("role") != "assistant":
-            continue
-        for tool_call in message.get("tool_calls") or []:
-            if tool_call.function.name != "search":
-                continue
-            num_calls += 1
-            try:
-                query_list = json.loads(tool_call.function.arguments).get("query_list")
-            except (json.JSONDecodeError, AttributeError):
-                continue
-            if isinstance(query_list, list):
-                queries.extend(str(q) for q in query_list)
-    return num_calls, queries
 
 
 def classify_termination(
@@ -245,6 +245,7 @@ def build_record(
         "answer": answer,
         "has_answer": has_answer,
         "em": final_metrics.get("correct", 0.0),
+        "f1": final_metrics.get("f1", 0.0),
         "reward": sum(t.reward for t in transitions),
         "termination": classify_termination(
             trajectory.stop_reason, last_turn_stop_reason, has_answer
@@ -290,9 +291,14 @@ async def evaluate_single_item(
     tool_schemas = [search_tool.search.to_spec()]
     initial_messages = renderer.create_conversation_prefix_with_tools(
         tools=tool_schemas,
-        system_prompt=SEARCH_TASK_INSTRUCTIONS,
+        system_prompt=get_task_instructions(config.prompt_name),
     ) + [{"role": "user", "content": item["question"]}]
-    reward_fn = TextAnswerReward(gold_answers=item["answer"], format_coef=0.1)
+    reward_fn = TextAnswerReward(
+        gold_answers=item["answer"],
+        format_coef=0.1,
+        answer_score=config.answer_score,
+        no_search_coef=config.no_search_coef,
+    )
 
     env = build_agent_tool_env(
         renderer=renderer,
@@ -375,8 +381,10 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "n": n,
         "em": mean("em"),
+        "f1": mean("f1"),
         "answer_rate": len(answered) / n,
         "em_when_answered": (sum(r["em"] for r in answered) / len(answered)) if answered else None,
+        "f1_when_answered": (sum(r["f1"] for r in answered) / len(answered)) if answered else None,
         "reward": mean("reward"),
         "termination": dict(Counter(r["termination"] for r in records)),
         "search_calls": mean("num_search_calls"),
@@ -390,7 +398,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
 
 def print_summary(summary_by_source: dict[str, dict[str, Any]]) -> None:
     header = (
-        f"{'Dataset':<17}{'N':>5}{'EM':>8}{'Answered':>10}{'EM|ans':>8}"
+        f"{'Dataset':<17}{'N':>5}{'EM':>8}{'F1':>8}{'Answered':>10}{'EM|ans':>8}"
         f"{'Searches':>10}{'NoSearch':>10}{'Tokens':>8}"
     )
     print("\n" + "=" * len(header))
@@ -401,7 +409,7 @@ def print_summary(summary_by_source: dict[str, dict[str, Any]]) -> None:
             print("-" * len(header))
         em_ans = f"{s['em_when_answered']:.3f}" if s.get("em_when_answered") is not None else "-"
         print(
-            f"{source:<17}{s['n']:>5}{s['em']:>8.3f}{s['answer_rate']:>10.3f}{em_ans:>8}"
+            f"{source:<17}{s['n']:>5}{s['em']:>8.3f}{s['f1']:>8.3f}{s['answer_rate']:>10.3f}{em_ans:>8}"
             f"{s['search_calls']:>10.2f}{s['no_search_rate']:>10.3f}{s['sampled_tokens']:>8.0f}"
         )
     print("=" * len(header))
@@ -435,7 +443,7 @@ async def cli_main(config: CLIConfig) -> None:
                 **chz.asdict(config),
                 "resolved_renderer_name": renderer_name,
                 "retrieval_url": retrieval_url,
-                "system_prompt": SEARCH_TASK_INSTRUCTIONS,
+                "system_prompt": get_task_instructions(config.prompt_name),
                 "tools": [search_tool.search.to_spec()],
                 "num_items": len(items),
             },

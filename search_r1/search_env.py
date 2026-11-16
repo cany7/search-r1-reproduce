@@ -43,6 +43,37 @@ Here is an example of solving a real question:
 """
 
 
+# "Fast thinking" variant (Search-R1++): the instructions no longer ask the model to
+# think step by step, and the example shows only tool calls and the answer. The tool
+# call and answer formats are unchanged.
+SEARCH_TASK_INSTRUCTIONS_FAST = """You are an expert assistant who solves tasks using a Wikipedia search tool.
+
+Here are instructions for how to solve a problem:
+1. Decide what queries to call the tool with.
+2. Call the tool with the queries you have decided on.
+3. If you have the information you need after you receive the result of the tool call, you can stop here.
+4. Otherwise, come up with new queries that combine information from the previous results.
+5. Include your final answer after the "Answer:" prefix. The answer should be one to five words.
+
+Here is an example of solving a real question:
+"What was the population of San Francisco in the year that New York City first recorded a census population above seven million?"
+
+1. Calling search tool: <tool_call>{"name": "search", "arguments": {"query_list": ["New York City historical population census"]}}</tool_call> (Output omitted for brevity)
+2. Calling search tool: <tool_call>{"name": "search", "arguments": {"query_list": ["San Francisco population 1940 census"]}}</tool_call> (Output omitted for brevity)
+3. Answer: 634,536
+"""
+
+PromptName = Literal["original", "fast"]
+
+
+def get_task_instructions(prompt_name: PromptName) -> str:
+    if prompt_name == "original":
+        return SEARCH_TASK_INSTRUCTIONS
+    if prompt_name == "fast":
+        return SEARCH_TASK_INSTRUCTIONS_FAST
+    raise ValueError(f"Unknown prompt_name: {prompt_name}")
+
+
 class SearchR1Datum(TypedDict):
     id: str
     question: str
@@ -114,12 +145,13 @@ def _initial_messages(
     datum: SearchR1Datum,
     renderer: Renderer,
     search_tool: BM25Tool,
+    prompt_name: PromptName = "fast",
 ) -> list[Message]:
     """Build initial messages with tool schemas and task question."""
     tool_schemas = [search_tool.search.to_spec()]
     prefix = renderer.create_conversation_prefix_with_tools(
         tools=tool_schemas,
-        system_prompt=SEARCH_TASK_INSTRUCTIONS,
+        system_prompt=get_task_instructions(prompt_name),
     )
     return prefix + [{"role": "user", "content": datum["question"]}]
 
@@ -139,6 +171,9 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         max_trajectory_tokens: int = 32 * 1024,
         max_generation_tokens: int | None = None,
         context_overflow_reward: float = -0.1,
+        prompt_name: PromptName = "fast",
+        answer_score: Literal["f1", "em"] = "f1",
+        no_search_coef: float = 0.1,
     ):
         self.datum = datum
         self.model_name = model_name
@@ -150,6 +185,9 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         self.max_trajectory_tokens = max_trajectory_tokens
         self.max_generation_tokens = max_generation_tokens
         self.context_overflow_reward = context_overflow_reward
+        self.prompt_name = prompt_name
+        self.answer_score = answer_score
+        self.no_search_coef = no_search_coef
 
     async def make_envs(self) -> Sequence[Env]:
         tokenizer = tokenizer_utils.get_tokenizer(self.model_name)
@@ -159,9 +197,14 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         renderer = get_renderer(renderer_name, tokenizer)
 
         # Tool, initial_messages, reward_fn are all stateless - can share
-        initial_messages = _initial_messages(self.datum, renderer, self.search_tool)
+        initial_messages = _initial_messages(
+            self.datum, renderer, self.search_tool, self.prompt_name
+        )
         reward_fn = TextAnswerReward(
-            gold_answers=self.datum["answer"], format_coef=self.format_coef
+            gold_answers=self.datum["answer"],
+            format_coef=self.format_coef,
+            answer_score=self.answer_score,
+            no_search_coef=self.no_search_coef,
         )
 
         return [
@@ -219,6 +262,11 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
     max_trajectory_tokens: int = 32 * 1024
     max_generation_tokens: int | None = None
     context_overflow_reward: float = -0.1
+    # Prompt and reward. Defaults are the training configuration (fast prompt, F1+);
+    # prompt_name="original", answer_score="em", no_search_coef=0.0 is the recipe's.
+    prompt_name: PromptName = "fast"
+    answer_score: Literal["f1", "em"] = "f1"
+    no_search_coef: float = 0.1
     seed: int = 0
 
     async def __call__(self) -> tuple[RLDataset, RLDataset | None]:
@@ -244,6 +292,9 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
                 max_trajectory_tokens=self.max_trajectory_tokens,
                 max_generation_tokens=self.max_generation_tokens,
                 context_overflow_reward=self.context_overflow_reward,
+                prompt_name=self.prompt_name,
+                answer_score=self.answer_score,
+                no_search_coef=self.no_search_coef,
             )
             for datum in data
         ]
