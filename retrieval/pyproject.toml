@@ -1,0 +1,21 @@
+[project]
+name = "retrieval-server"
+version = "0.1.0"
+description = "BM25 retrieval server (Search-R1's retrieval_server.py), kept in its own environment"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pyserini==2.4.0",
+    "faiss-cpu",
+    "torch",
+    "transformers",
+    "datasets",
+    "fastapi",
+    "uvicorn",
+    "numpy",
+    "tqdm",
+]
+
+[tool.uv]
+package = false
+# 解释器由 pyenv local 指定（见 .python-version），不让 uv 自己下载 Python。
+python-preference = "only-system"
