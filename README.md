@@ -8,7 +8,7 @@ Search-R1 小规模复现。计划见 knowledge-base 的《Search-R1 复现计�
 |---|---|
 | tinker-cookbook | `1991897`（2026-11-14），在 `pyproject.toml` 里固定 |
 | Search-R1（只取 `retrieval_server.py`） | `598e61b` |
-| SkyRL（云端才用） | `79d4c89`（2026-11-13） |
+| SkyRL（云端才用） | 原参照 `79d4c89`；允许按官方 CUDA 13 镜像选兼容版本，部署时记录并固定实际 commit |
 | Python | 3.12.14，`pyenv local` 指定，uv 只用它 |
 | pyserini | 2.4.0，需要 JDK 21 |
 
@@ -41,8 +41,30 @@ gunzip -k corpus/wiki-18.jsonl.gz
 ```bash
 uv sync                          # 主环境
 (cd retrieval && uv sync)        # 检索环境
-cp .env.example .env             # 然后填 OMLX_API_KEY
+cp .env.example .env             # 首次配置；本地评测填 OMLX_API_KEY，训练填 WANDB_API_KEY
 ```
+
+训练默认开启 W&B，项目名为 `search-r1-reproduce`，run 名自动包含模型、batch、学习率和时间。
+训练入口自动读取项目根目录的 `.env`，已有环境变量优先。
+可用 `wandb_project=<项目名>` 改名，或 `wandb_project=None` 关闭上传；本地日志仍会保存。
+
+迁移到云端时带上 `pyproject.toml` 和 `uv.lock`，执行 `uv sync --locked` 即会安装包括
+`wandb` 在内的锁定依赖。云端另行配置 `WANDB_API_KEY`，无需复制本地 `.venv`。
+
+## 云端训练（待验证）
+
+先启动 SkyRL Tinker 服务和 BM25 检索服务，再运行：
+
+```bash
+TINKER_API_KEY=tml-dummy TINKER_BASE_URL=http://127.0.0.1:8000 \
+    uv run python -m search_r1.train batch_size=64 group_size=8 max_steps=100 \
+    save_every=25 log_path=/workspace/runs/search-r1-train
+```
+
+`save_every` 默认 25；检查点冒烟测试可设为 1。它只控制保存，固定开发集的评测
+需另行用 `offline_eval.py` 加载检查点运行，不能仅靠 `eval_every=25` 开启。
+训练入口的 `batch_size` 默认仍是 cookbook 的 512 题，所以当前方案须显式传 64。
+正式运行前先完成计划第 4 步的 2–3 步训练及检查点测试。
 
 ## 启动检索服务
 

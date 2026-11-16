@@ -2,9 +2,11 @@
 
 import asyncio
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
 
 import chz
+from dotenv import load_dotenv
 from tinker_cookbook import cli_utils, model_info
 from tinker_cookbook.rl import train
 
@@ -25,6 +27,7 @@ class CLIConfig:
     seed: int = 2
     max_tokens: int = 1024
     eval_every: int = 0
+    save_every: int = 25
 
     # Dataset parameters
     group_size: int = 8
@@ -48,7 +51,7 @@ class CLIConfig:
 
     # Logging parameters
     log_path: str | None = None
-    wandb_project: str | None = None
+    wandb_project: str | None = "search-r1-reproduce"
     wandb_name: str | None = None
     # Display name for the Tinker session; defaults to wandb_name, or the
     # generated run name when wandb_name is unset.
@@ -60,6 +63,8 @@ class CLIConfig:
 
 
 async def cli_main(cli_config: CLIConfig) -> None:
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
     # Build retrieval config
     retrieval_config = RetrievalConfig(n_results=cli_config.n_results)
 
@@ -128,6 +133,7 @@ async def cli_main(cli_config: CLIConfig) -> None:
         learning_rate=cli_config.learning_rate,
         max_tokens=cli_config.max_tokens,
         eval_every=cli_config.eval_every,
+        save_every=cli_config.save_every,
         wandb_project=cli_config.wandb_project,
         wandb_name=wandb_name,
         session_name=cli_config.session_name or wandb_name,
