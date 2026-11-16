@@ -8,17 +8,17 @@ dist/
 .pytest_cache/
 .ruff_cache/
 
-# 密钥和本地配置
+# Secrets and local configuration
 .env
 
-# 数据、索引、语料、模型输出（体积大，可重新下载或重新生成）
+# Large datasets, indexes, corpora, and model outputs that can be downloaded or regenerated
 data/
 runs/
 outputs/
 wandb/
 *.log
 
-# 系统和编辑器
+# System and editor files
 .DS_Store
 .idea/
 .vscode/

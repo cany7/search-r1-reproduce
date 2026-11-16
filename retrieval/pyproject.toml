@@ -17,5 +17,5 @@ dependencies = [
 
 [tool.uv]
 package = false
-# 解释器由 pyenv local 指定（见 .python-version），不让 uv 自己下载 Python。
+# Use the interpreter selected by pyenv local (see .python-version) and disable uv downloads.
 python-preference = "only-system"

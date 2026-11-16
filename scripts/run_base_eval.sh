@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# 本地基座评测（计划第 2 步）：5 个配置，同一批题、同一检索、同一长度限制。
+# Local base-model evaluation (step 2 of the reproduction plan). All five
+# configurations use the same questions, retrieval setup, and length limit.
 #
-# 脚本自己管检索服务：没在运行就启动它并等它就绪，跑完（或中途退出）时把它停掉。
-# 如果检索服务本来就在运行，脚本直接用它，结束时不动它。
-# oMLX 需要事先开着。配置是一个接一个跑的，同一时间只用一个模型；切换模型前会让
-# oMLX 卸载另一个，免得两个模型（各约 9 GB）和检索服务（约 13.5 GB）一起占内存。
+# The script reuses a running retrieval server. If it starts the server itself,
+# it waits for readiness and stops the server on exit, including early exits.
+# Start oMLX before running this script. Configurations run one at a time.
+# Each configuration unloads the other model to avoid holding both models
+# (about 9 GB each) and the retrieval server (about 13.5 GB) in memory at once.
 #
-# 用法：
-#   ./scripts/run_base_eval.sh            # 跑全部 5 个配置
-#   ./scripts/run_base_eval.sh q35-fast   # 只跑一个配置
-#   LIMIT=50 ./scripts/run_base_eval.sh   # 每个来源只取前 50 题（默认 100，即整个开发集）
-#   TAG=run2 ./scripts/run_base_eval.sh   # 输出目录名后缀，重复跑时用来区分
+# Usage
+#   ./scripts/run_base_eval.sh            # Run all five configurations
+#   ./scripts/run_base_eval.sh q35-fast   # Run one configuration
+#   LIMIT=50 ./scripts/run_base_eval.sh   # Use the first 50 questions per source (default 100)
+#   TAG=run2 ./scripts/run_base_eval.sh   # Set an output directory suffix for a repeat run
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -25,7 +27,7 @@ Q3I=(omlx_model=$Q3I_ID base_model=Qwen/Qwen3-4B-Instruct-2507 renderer_name=qwe
 set -a; . ./.env; set +a
 RETRIEVAL_URL="${RETRIEVAL_URL:-http://127.0.0.1:8001}"
 
-# ---------- 检索服务 ----------
+# ---------- Retrieval server ----------
 retrieval_ready() {
   curl -s -o /dev/null -m 5 -f -X POST "$RETRIEVAL_URL/retrieve" \
     -H 'content-type: application/json' \
@@ -48,7 +50,8 @@ else
   mkdir -p runs
   ./retrieval/start.sh > runs/retrieval.log 2>&1 &
   STARTED_RETRIEVAL=1
-  # 语料缓存已生成时约 1 分钟；第一次要转换语料，会久一些。最多等 20 分钟。
+  # Startup takes about a minute with a cached corpus and longer on the first run.
+  # Wait at most 20 minutes.
   for _ in $(seq 240); do
     if retrieval_ready; then break; fi
     if ! pgrep -f "retrieval/retrieval_server.py" > /dev/null; then
@@ -62,13 +65,13 @@ else
 fi
 
 # ---------- oMLX ----------
-# 卸载指定模型。没加载时 oMLX 返回 400，忽略即可。
+# Unload the specified model. Ignore the 400 response if the model is already unloaded.
 unload() {
   curl -s -o /dev/null -m 120 -X POST -H "Authorization: Bearer $OMLX_API_KEY" \
     "$OMLX_BASE_URL/models/$1/unload" || true
 }
 
-# ---------- 评测 ----------
+# ---------- Evaluation ----------
 run() {
   local name="$1"; shift
   echo "===== $name ====="

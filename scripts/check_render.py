@@ -1,6 +1,6 @@
-"""环境自检：加载两个模型的 tokenizer 和 renderer，渲染一条带工具的初始 prompt。
+"""Check prompt rendering with a tool definition using both models' tokenizers and renderers.
 
-不需要推理引擎和检索服务。用法：uv run python scripts/check_render.py
+Run `uv run python scripts/check_render.py` without starting inference or retrieval services.
 """
 
 from typing import Annotated
