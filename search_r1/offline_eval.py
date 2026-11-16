@@ -1,61 +1,115 @@
+"""Offline evaluation for the search agent.
+
+Extends the recipe's ``offline_eval.py``:
+
+- two sampling backends: Tinker (cloud, the numbers that go into the report) and a
+  local OpenAI-compatible server (oMLX; debugging and base-model selection only);
+- a fixed evaluation set can be passed with ``eval_file``;
+- every trajectory is written to disk with its termination reason, search queries,
+  token counts and transcript, so a low score can be traced to its cause.
+
+Outputs go to ``runs/eval/<run_name>/``: ``config.json``, ``trajectories.jsonl``
+and ``summary.json``.
+"""
+
 import asyncio
+import dataclasses
+import json
+import os
 import random
-from collections import defaultdict
-from typing import Literal, TypedDict
+import time
+from collections import Counter, defaultdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Literal
 
 import chz
 import tinker
-
+from dotenv import load_dotenv
 from tinker_cookbook import checkpoint_utils, tokenizer_utils
-from tinker_cookbook.completers import TinkerTokenCompleter
-from tinker_cookbook.recipes.search_tool.search_env import (
+from tinker_cookbook.completers import TinkerTokenCompleter, TokenCompleter
+from tinker_cookbook.renderers import Renderer, get_renderer, get_text_content
+from tinker_cookbook.renderers.base import Message
+from tinker_cookbook.rl.rollouts import do_single_rollout
+from tinker_cookbook.rl.types import StopReason, Trajectory
+from tinker_cookbook.tokenizer_utils import Tokenizer
+from tinker_cookbook.tool_use import build_agent_tool_env
+from tinker_cookbook.utils.git_rev import recipe_user_metadata
+
+from search_r1.local_completer import OpenAICompletionsTokenCompleter
+from search_r1.search_env import (
+    DEFAULT_RETRIEVAL_URL,
     SEARCH_TASK_INSTRUCTIONS,
     SearchR1Datum,
     download_search_r1_dataset,
 )
-from tinker_cookbook.recipes.search_tool.tools import (
-    ChromaTool,
-    EmbeddingConfig,
-    RetrievalConfig,
-    TextAnswerReward,
-)
-from tinker_cookbook.renderers import Renderer, get_renderer
-from tinker_cookbook.rl.rollouts import do_single_rollout
-from tinker_cookbook.tool_use import build_agent_tool_env
-from tinker_cookbook.utils.git_rev import recipe_user_metadata
+from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward, normalize_answer
 
-ROLLOUT_CONCURRENCY = 1024
-rollout_semaphore = asyncio.Semaphore(ROLLOUT_CONCURRENCY)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+Termination = Literal[
+    "answered",  # finished on its own with a well-formed answer
+    "no_valid_answer",  # finished on its own, but no well-formed "Answer:"
+    "max_turns",  # still calling the tool when the turn cap was reached
+    "turn_truncated",  # a single turn hit the per-turn generation cap
+    "context_overflow",  # the conversation outgrew the trajectory token budget
+    "parse_error",  # the response or its tool calls could not be parsed
+    "unknown",
+]
 
 
 @chz.chz
 class CLIConfig:
-    # Evaluation parameters
+    # Sampling backend
+    backend: Literal["tinker", "omlx"] = chz.field(
+        default="tinker", doc="tinker: Tinker / SkyRL sampling client. omlx: local server."
+    )
+    base_model: str = chz.field(default="Qwen/Qwen3.5-4B", doc="HF name, for tokenizer")
+    renderer_name: str = chz.field(
+        default="qwen3_5_disable_thinking",
+        doc="Renderer to use (Tinker: only if the checkpoint does not record one)",
+    )
+    tinker_checkpoint_url: str | None = chz.field(
+        default=None, doc="Tinker checkpoint to evaluate; None evaluates the base model"
+    )
+    tinker_base_url: str | None = chz.field(
+        default=None, doc="Tinker API base URL, e.g. a self-hosted SkyRL service"
+    )
+    omlx_model: str | None = chz.field(
+        default=None, doc="Model id as the local server lists it (backend=omlx)"
+    )
+
+    # Evaluation data
+    eval_file: str | None = chz.field(
+        default=None, doc="JSONL of a fixed evaluation set; overrides the sampling options below"
+    )
     max_eval_samples: int = chz.field(
         default=100, doc="Maximum number of samples to evaluate per data source"
     )
     seed: int = chz.field(default=42, doc="Random seed for sampling")
     split: Literal["train", "test"] = chz.field(default="test", doc="Dataset split to use")
 
-    # Model parameters
-    base_model: str = chz.field(default="Qwen/Qwen3.5-4B", doc="Base model to use")
-    renderer_name: str = chz.field(
-        default="qwen3_5_disable_thinking",
-        doc="Renderer to use if the checkpoint does not record one",
-    )
-    tinker_checkpoint_url: str = chz.field(doc="Tinker checkpoint URL (required)")
-    max_tokens: int = chz.field(default=1024, doc="Maximum number of tokens to generate")
+    # Rollout limits, matching train.py
+    max_tokens: int = chz.field(default=1024, doc="Maximum number of tokens to generate per turn")
+    max_turns: int = chz.field(default=5, doc="Maximum number of assistant turns")
     max_trajectory_tokens: int = chz.field(
         default=32 * 1024,
         doc="Token budget for the full multi-turn trajectory, matching train.py; "
         "episodes that would exceed it end instead of overflowing the model's context window",
     )
+    temperature: float = chz.field(default=1.0, doc="Sampling temperature")
+
+    # Infrastructure
+    retrieval_url: str | None = chz.field(
+        default=None, doc="BM25 retrieval server; defaults to $RETRIEVAL_URL"
+    )
+    concurrency: int = chz.field(default=8, doc="Maximum rollouts in flight")
+    run_name: str | None = chz.field(default=None, doc="Output directory name under runs/eval")
 
 
-class EvaluationResult(TypedDict):
-    question: str
-    correct_score: float
-    trajectory: object
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
 
 
 def split_data_by_source(data: list[SearchR1Datum]) -> dict[str, list[SearchR1Datum]]:
@@ -86,145 +140,363 @@ def sample_k_from_each_source(
     return sampled_data
 
 
+def load_eval_items(config: CLIConfig) -> list[SearchR1Datum]:
+    if config.eval_file is not None:
+        with open(config.eval_file) as f:
+            items: list[SearchR1Datum] = [json.loads(line) for line in f if line.strip()]
+        print(f"Loaded {len(items)} items from {config.eval_file}")
+        return items
+
+    print(f"Loading {config.split} split...")
+    data = download_search_r1_dataset(config.split)
+    print(f"Sampling up to {config.max_eval_samples} samples from each source...")
+    sampled = sample_k_from_each_source(
+        split_data_by_source(data), config.max_eval_samples, config.seed
+    )
+    return [item for items in sampled.values() for item in items]
+
+
+# ---------------------------------------------------------------------------
+# Per-trajectory record
+# ---------------------------------------------------------------------------
+
+
+def _to_jsonable(obj: Any) -> Any:
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {str(k): _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_jsonable(v) for v in obj]
+    if hasattr(obj, "model_dump"):
+        return _to_jsonable(obj.model_dump())
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return _to_jsonable(dataclasses.asdict(obj))
+    return str(obj)
+
+
+def extract_search_queries(messages: list[Message]) -> tuple[int, list[str]]:
+    """Return (number of executed search calls, all queries in order)."""
+    num_calls = 0
+    queries: list[str] = []
+    for message in messages:
+        if message.get("role") != "assistant":
+            continue
+        for tool_call in message.get("tool_calls") or []:
+            if tool_call.function.name != "search":
+                continue
+            num_calls += 1
+            try:
+                query_list = json.loads(tool_call.function.arguments).get("query_list")
+            except (json.JSONDecodeError, AttributeError):
+                continue
+            if isinstance(query_list, list):
+                queries.extend(str(q) for q in query_list)
+    return num_calls, queries
+
+
+def classify_termination(
+    stop_reason: str | None, last_turn_stop_reason: str | None, has_answer: bool
+) -> Termination:
+    if stop_reason == StopReason.COMPLETED:
+        return "answered" if has_answer else "no_valid_answer"
+    if stop_reason == StopReason.MAX_TURNS:
+        return "max_turns"
+    if stop_reason == StopReason.MAX_TOKENS:
+        # MAX_TOKENS covers both a turn cut off mid-generation and a conversation
+        # that no longer fits the trajectory budget; the sampler's own stop
+        # reason tells them apart.
+        return "turn_truncated" if last_turn_stop_reason == "length" else "context_overflow"
+    if stop_reason == StopReason.CONTEXT_OVERFLOW:
+        return "context_overflow"
+    if stop_reason == StopReason.PARSE_ERROR:
+        return "parse_error"
+    return "unknown"
+
+
+def build_record(
+    item: SearchR1Datum,
+    num_initial_messages: int,
+    history: list[Message],
+    trajectory: Trajectory,
+    reward_fn: TextAnswerReward,
+    tokenizer: Tokenizer,
+) -> dict[str, Any]:
+    transitions = trajectory.transitions
+    generated = history[num_initial_messages:]
+    final_metrics = transitions[-1].metrics if transitions else {}
+    last_turn_stop_reason = transitions[-1].ac.stop_reason if transitions else None
+
+    num_search_calls, queries = extract_search_queries(generated)
+    normalized_queries = [normalize_answer(q) for q in queries]
+
+    # The final answer, if the episode ended with a plain assistant message.
+    answer = None
+    assistant_messages = [m for m in generated if m.get("role") == "assistant"]
+    if assistant_messages and not assistant_messages[-1].get("tool_calls"):
+        answer = reward_fn._extract_answer(get_text_content(assistant_messages[-1]))
+
+    has_answer = final_metrics.get("format", 0.0) == 1.0
+    return {
+        "id": item.get("id", ""),
+        "data_source": item["data_source"],
+        "question": item["question"],
+        "gold_answers": item["answer"],
+        "answer": answer,
+        "has_answer": has_answer,
+        "em": final_metrics.get("correct", 0.0),
+        "reward": sum(t.reward for t in transitions),
+        "termination": classify_termination(
+            trajectory.stop_reason, last_turn_stop_reason, has_answer
+        ),
+        "stop_reason": trajectory.stop_reason,
+        "num_turns": len(transitions),
+        "num_search_calls": num_search_calls,
+        "queries": queries,
+        "repeated_query": len(set(normalized_queries)) < len(normalized_queries),
+        "parse_error": any(t.metrics.get("parse_error", 0.0) > 0 for t in transitions),
+        "sampled_tokens": sum(len(t.ac.tokens) for t in transitions),
+        "turns": [
+            {
+                "prompt_tokens": t.ob.length,
+                "sampled_tokens": len(t.ac.tokens),
+                "stop_reason": t.ac.stop_reason,
+            }
+            for t in transitions
+        ],
+        # Messages produced during the rollout. The system prompt and tool
+        # declaration are the same for every item and live in config.json.
+        "messages": _to_jsonable(generated),
+        # Raw text of the last sampled turn. A truncated or unparseable turn is
+        # not in ``messages``, so this is the only place to see it.
+        "last_turn_text": tokenizer.decode(transitions[-1].ac.tokens) if transitions else "",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Rollouts
+# ---------------------------------------------------------------------------
+
+
 async def evaluate_single_item(
     item: SearchR1Datum,
-    chroma_tool: ChromaTool,
-    policy: TinkerTokenCompleter,
+    search_tool: BM25Tool,
+    policy: TokenCompleter,
     renderer: Renderer,
-    max_trajectory_tokens: int | None = None,
-) -> EvaluationResult:
-    tool_schemas = [chroma_tool.search.to_spec()]
+    tokenizer: Tokenizer,
+    config: CLIConfig,
+    semaphore: asyncio.Semaphore,
+) -> dict[str, Any]:
+    tool_schemas = [search_tool.search.to_spec()]
     initial_messages = renderer.create_conversation_prefix_with_tools(
         tools=tool_schemas,
         system_prompt=SEARCH_TASK_INSTRUCTIONS,
     ) + [{"role": "user", "content": item["question"]}]
+    reward_fn = TextAnswerReward(gold_answers=item["answer"], format_coef=0.1)
 
     env = build_agent_tool_env(
         renderer=renderer,
-        tools=[chroma_tool.search],
+        tools=[search_tool.search],
         initial_messages=initial_messages,
-        reward_fn=TextAnswerReward(gold_answers=item["answer"], format_coef=0.1),
-        max_turns=5,
-        max_trajectory_tokens=max_trajectory_tokens,
+        reward_fn=reward_fn,
+        max_turns=config.max_turns,
+        max_trajectory_tokens=config.max_trajectory_tokens,
     )
-    async with rollout_semaphore:
-        trajectory = await do_single_rollout(policy, env)
+    async with semaphore:
+        try:
+            trajectory = await do_single_rollout(policy, env)
+        except Exception as e:
+            return {
+                "id": item.get("id", ""),
+                "data_source": item["data_source"],
+                "question": item["question"],
+                "error": repr(e),
+            }
 
-    # Extract correct metric from the last transition
-    correct_score = 0.0
-    if trajectory.transitions:
-        correct_score = trajectory.transitions[-1].metrics.get("correct", 0.0)
-
-    return {"question": item["question"], "correct_score": correct_score, "trajectory": trajectory}
+    # AgentToolMessageEnv keeps the parsed conversation.
+    history: list[Message] = env.message_env.history  # type: ignore[attr-defined]
+    return build_record(item, len(initial_messages), history, trajectory, reward_fn, tokenizer)
 
 
-async def evaluate_one_dataset(data: list[SearchR1Datum], config: CLIConfig):
-    # Load model
+async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
+    """Return the sampling policy and the renderer name to use."""
+    if config.backend == "omlx":
+        if config.omlx_model is None:
+            raise ValueError("backend=omlx requires omlx_model")
+        tokenizer = tokenizer_utils.get_tokenizer(config.base_model)
+        policy: TokenCompleter = OpenAICompletionsTokenCompleter(
+            base_url=os.environ["OMLX_BASE_URL"],
+            api_key=os.environ["OMLX_API_KEY"],
+            model=config.omlx_model,
+            tokenizer=tokenizer,
+            max_tokens=config.max_tokens,
+            temperature=config.temperature,
+            max_concurrency=config.concurrency,
+        )
+        return policy, config.renderer_name
+
     service_client = tinker.ServiceClient(
         user_metadata=recipe_user_metadata("eval_search_tool_offline"),
+        base_url=config.tinker_base_url,
     )
-    sampling_client = service_client.create_sampling_client(
-        model_path=config.tinker_checkpoint_url
-    ).result()
-    policy = TinkerTokenCompleter(sampling_client, max_tokens=config.max_tokens)
-
-    tokenizer = tokenizer_utils.get_tokenizer(config.base_model)
-    renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
-        service_client, config.tinker_checkpoint_url
-    )
-    if renderer_name is None:
-        renderer_name = config.renderer_name
-    print(f"Using renderer: {renderer_name}")
-    renderer = get_renderer(renderer_name, tokenizer)
-
-    chroma_tool = await ChromaTool.build(
-        chroma_host="localhost",
-        chroma_port=8000,
-        chroma_collection_name="wiki_embeddings",
-        retrieval_config=RetrievalConfig(
-            n_results=3,
-            embedding_config=EmbeddingConfig(
-                model_name="gemini-embedding-001",
-                embedding_dim=768,
-            ),
-        ),
-    )
-
-    # Run evaluations in parallel using asyncio.gather
-    tasks = [
-        evaluate_single_item(item, chroma_tool, policy, renderer, config.max_trajectory_tokens)
-        for item in data
-    ]
-
-    print(f"Evaluating {len(tasks)} items")
-    results = await asyncio.gather(*tasks)
-
-    # Aggregate results
-    correct_scores = [result["correct_score"] for result in results]
-
-    if correct_scores:
-        total_correct = sum(correct_scores)
-        accuracy = total_correct / len(correct_scores)
-        return {
-            "total_samples": len(correct_scores),
-            "total_correct": total_correct,
-            "accuracy": accuracy,
-        }
-
-    return {"total_samples": 0, "total_correct": 0, "accuracy": 0.0}
-
-
-async def cli_main(config: CLIConfig):
-    # Download the data
-    print(f"Downloading {config.split} split...")
-    data = download_search_r1_dataset(config.split)
-    print(f"Total data points: {len(data)}")
-
-    # Split by data source
-    data_by_source = split_data_by_source(data)
-    print(f"\nData sources found: {list(data_by_source.keys())}")
-    print("Original distribution:")
-    for source, items in data_by_source.items():
-        print(f"  {source}: {len(items)}")
-
-    # Sample K from each source
-    print(f"\nSampling up to {config.max_eval_samples} samples from each source...")
-    sampled_data_by_source = sample_k_from_each_source(
-        data_by_source, config.max_eval_samples, config.seed
-    )
-
-    # Collect results from all datasets
-    dataset_results = {}
-    for source, data in sampled_data_by_source.items():
-        print(f"Evaluating {source}...")
-        result = await evaluate_one_dataset(data, config)
-        dataset_results[source] = result
-
-    # Print results table
-    print("\n" + "=" * 80)
-    print("EVALUATION RESULTS")
-    print("=" * 80)
-    print(f"{'Dataset':<15} {'Accuracy':<10} {'Correct':<10} {'Total':<10}")
-    print("-" * 80)
-
-    total_all_correct = 0
-    total_all_samples = 0
-
-    for dataset, result in dataset_results.items():
-        accuracy = result["accuracy"]
-        correct = result["total_correct"]
-        total = result["total_samples"]
-        total_all_correct += correct
-        total_all_samples += total
-        print(f"{dataset:<15} {accuracy:<10.3f} {correct:<10.0f} {total:<10}")
-
-    if total_all_samples > 0:
-        overall_accuracy = total_all_correct / total_all_samples
-        print("-" * 80)
-        print(
-            f"{'OVERALL':<15} {overall_accuracy:<10.3f} {total_all_correct:<10.0f} {total_all_samples:<10}"
+    renderer_name = None
+    if config.tinker_checkpoint_url is not None:
+        sampling_client = service_client.create_sampling_client(
+            model_path=config.tinker_checkpoint_url
+        ).result()
+        renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
+            service_client, config.tinker_checkpoint_url
         )
-    print("=" * 80)
+    else:
+        sampling_client = service_client.create_sampling_client(
+            base_model=config.base_model
+        ).result()
+    policy = TinkerTokenCompleter(
+        sampling_client, max_tokens=config.max_tokens, temperature=config.temperature
+    )
+    return policy, renderer_name or config.renderer_name
+
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+
+
+def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate records. Splits the score into answer rate and accuracy when answered."""
+    n = len(records)
+    if n == 0:
+        return {"n": 0}
+    answered = [r for r in records if r["has_answer"]]
+
+    def mean(key: str) -> float:
+        return sum(float(r[key]) for r in records) / n
+
+    return {
+        "n": n,
+        "em": mean("em"),
+        "answer_rate": len(answered) / n,
+        "em_when_answered": (sum(r["em"] for r in answered) / len(answered)) if answered else None,
+        "reward": mean("reward"),
+        "termination": dict(Counter(r["termination"] for r in records)),
+        "search_calls": mean("num_search_calls"),
+        "no_search_rate": sum(r["num_search_calls"] == 0 for r in records) / n,
+        "repeated_query_rate": mean("repeated_query"),
+        "parse_error_rate": mean("parse_error"),
+        "turns": mean("num_turns"),
+        "sampled_tokens": mean("sampled_tokens"),
+    }
+
+
+def print_summary(summary_by_source: dict[str, dict[str, Any]]) -> None:
+    header = (
+        f"{'Dataset':<17}{'N':>5}{'EM':>8}{'Answered':>10}{'EM|ans':>8}"
+        f"{'Searches':>10}{'NoSearch':>10}{'Tokens':>8}"
+    )
+    print("\n" + "=" * len(header))
+    print(header)
+    print("-" * len(header))
+    for source, s in summary_by_source.items():
+        if source == "OVERALL":
+            print("-" * len(header))
+        em_ans = f"{s['em_when_answered']:.3f}" if s.get("em_when_answered") is not None else "-"
+        print(
+            f"{source:<17}{s['n']:>5}{s['em']:>8.3f}{s['answer_rate']:>10.3f}{em_ans:>8}"
+            f"{s['search_calls']:>10.2f}{s['no_search_rate']:>10.3f}{s['sampled_tokens']:>8.0f}"
+        )
+    print("=" * len(header))
+    print("Termination:", summary_by_source["OVERALL"]["termination"])
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+
+async def cli_main(config: CLIConfig) -> None:
+    load_dotenv(PROJECT_ROOT / ".env")
+    items = load_eval_items(config)
+
+    policy, renderer_name = await build_policy(config)
+    tokenizer = tokenizer_utils.get_tokenizer(config.base_model)
+    renderer = get_renderer(renderer_name, tokenizer)
+    print(f"Using renderer: {renderer_name}")
+
+    retrieval_url = config.retrieval_url or os.environ.get("RETRIEVAL_URL", DEFAULT_RETRIEVAL_URL)
+    search_tool = BM25Tool(retrieval_url=retrieval_url, retrieval_config=RetrievalConfig())
+
+    model_tag = (config.omlx_model or config.base_model).replace("/", "-")
+    run_name = config.run_name or f"{model_tag}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    output_dir = PROJECT_ROOT / "runs" / "eval" / run_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with open(output_dir / "config.json", "w") as f:
+        json.dump(
+            {
+                **chz.asdict(config),
+                "resolved_renderer_name": renderer_name,
+                "retrieval_url": retrieval_url,
+                "system_prompt": SEARCH_TASK_INSTRUCTIONS,
+                "tools": [search_tool.search.to_spec()],
+                "num_items": len(items),
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    print(f"Evaluating {len(items)} items (concurrency {config.concurrency})")
+    semaphore = asyncio.Semaphore(config.concurrency)
+    start = time.monotonic()
+    records: list[dict[str, Any]] = []
+    tasks = [
+        asyncio.create_task(
+            evaluate_single_item(item, search_tool, policy, renderer, tokenizer, config, semaphore)
+        )
+        for item in items
+    ]
+    with open(output_dir / "trajectories.jsonl", "w") as f:
+        for done_count, task in enumerate(asyncio.as_completed(tasks), start=1):
+            record = await task
+            records.append(record)
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            f.flush()
+            if done_count % 10 == 0 or done_count == len(tasks):
+                print(f"  {done_count}/{len(tasks)} done ({time.monotonic() - start:.0f}s)")
+    elapsed = time.monotonic() - start
+
+    await search_tool.aclose()
+    if isinstance(policy, OpenAICompletionsTokenCompleter):
+        await policy.aclose()
+
+    errors = [r for r in records if "error" in r]
+    ok = [r for r in records if "error" not in r]
+    summary_by_source = {
+        source: summarize([r for r in ok if r["data_source"] == source])
+        for source in sorted({r["data_source"] for r in ok})
+    }
+    summary_by_source["OVERALL"] = summarize(ok)
+
+    total_sampled = sum(r["sampled_tokens"] for r in ok)
+    run_stats: dict[str, Any] = {
+        "elapsed_seconds": elapsed,
+        "num_errors": len(errors),
+        "total_sampled_tokens": total_sampled,
+        "sampled_tokens_per_second": total_sampled / elapsed if elapsed > 0 else None,
+    }
+    if isinstance(policy, OpenAICompletionsTokenCompleter):
+        run_stats["sampling_calls"] = policy.num_calls
+        run_stats["token_count_mismatches"] = policy.token_count_mismatches
+    with open(output_dir / "summary.json", "w") as f:
+        json.dump(
+            {"by_source": summary_by_source, "run": run_stats}, f, ensure_ascii=False, indent=2
+        )
+
+    if ok:
+        print_summary(summary_by_source)
+    print(f"Run: {run_stats}")
+    if errors:
+        print(f"WARNING: {len(errors)} rollouts raised an error; first: {errors[0]['error']}")
+    print(f"Output: {output_dir}")
 
 
 if __name__ == "__main__":

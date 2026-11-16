@@ -44,6 +44,7 @@ Here is an example of solving a real question:
 
 
 class SearchR1Datum(TypedDict):
+    id: str
     question: str
     answer: list[str]
     data_source: str
@@ -83,6 +84,7 @@ def process_single_row(row_series: pd.Series) -> SearchR1Datum:
         assert isinstance(item, str)
     ground_truth = cast(list[str], ground_truth)
     return {
+        "id": str(row.get("id", "")),
         "question": question,
         "answer": ground_truth,
         "data_source": row["data_source"],
