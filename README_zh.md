@@ -24,7 +24,7 @@ Qwen3.5 和通过自部署 SkyRL Tinker 服务进行的 LoRA 训练。
 |---|---|
 | tinker-cookbook | `1991897`（2026-11-14），在 `pyproject.toml` 里固定 |
 | Search-R1（只取 `retrieval_server.py`） | `598e61b` |
-| SkyRL（云端才用） | A100 验证及部署脚本使用 `79d4c89` 加本地 microbatch padding 补丁；客户端与服务端环境独立，见实验记录 |
+| SkyRL（云端才用） | 固定 `79d4c89` 加本地补丁；A100 归档使用 padding 裁剪，当前部署另加按序列长度切换梯度检查点（尚无 GPU 验证），见[脚本说明](scripts/README.md)。客户端与服务端环境独立 |
 | Python | 3.12.14，`pyenv local` 指定，uv 只用它 |
 | pyserini | 2.4.0，需要 JDK 21 |
 

@@ -47,6 +47,34 @@ checkpoints are written under `/workspace`.
 change. Both are retained; deleting either is not a substitute for consolidating
 their maintenance.
 
+The current patch also supports length-based gradient checkpointing. Deployment
+defaults to `GC_SHORT_SEQ_THRESHOLD=8000`: for plain text microbatches of size 1,
+checkpointing is disabled when the **post-trim input tensor width** is at most
+8,000 tokens and enabled above it. Larger microbatches and unsupported layouts
+retain checkpointing. This counts context and actions, not only generated tokens.
+The historical A100 archive predates this change; memory safety and speed on the
+PRO 6000 have not been measured.
+
+The shell value is serialized as
+`trainer.gradient_checkpointing_short_seq_threshold` in backend config, so it
+reaches Ray workers without relying on custom environment-variable forwarding.
+Keep `trainer.gradient_checkpointing=true` and
+`trainer.gradient_checkpointing_use_reentrant=false`. The patch preserves the
+initialized checkpoint functions and input-gradient hooks, changes only layer
+flags around a complete microbatch forward/backward, and restores them on exit.
+Worker logs prefixed `[search-r1 gc]` show the threshold, the first sequence length
+in each mode, completed microbatch counts and maximum lengths per mode. They are
+per backend request, not necessarily per optimizer step.
+
+To recover the previous always-on behavior, restart the server/driver with
+`GC_SHORT_SEQ_THRESHOLD=0` (for example,
+`GC_SHORT_SEQ_THRESHOLD=0 bash /workspace/bin/train_with_dev_eval.sh RUN_NAME`).
+Use the same run directory and training arguments to resume from the latest
+complete checkpoint. This does not retry a failed backward or preserve unsaved
+updates. Install the updated patch and cloud helpers before starting the server;
+the installer supports both a fresh pinned checkout and the previous padding-only
+patch. Existing checkpoints remain usable.
+
 ## Training and artifact management
 
 | Script | Purpose |

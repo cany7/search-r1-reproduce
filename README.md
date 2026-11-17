@@ -28,7 +28,7 @@ describes a locally prepared archive that has not been uploaded to GitHub Releas
 | --- | --- |
 | tinker-cookbook | Commit `1991897` (2026-11-14), pinned in `pyproject.toml` |
 | Search-R1 | Commit `598e61b` for `retrieval_server.py` |
-| SkyRL | A100 validation and deployment scripts use commit `79d4c89` plus the local microbatch-padding patch. Client and server environments are separate; see the experiment record. |
+| SkyRL | Pinned to `79d4c89` with local patches. The A100 archive used padding trimming; current deployment also switches gradient checkpointing by sequence length (not yet GPU-validated). See the [cloud script guide](scripts/README.md). Client and server environments are separate. |
 | Python | 3.12.14, selected with `pyenv local`. uv uses the installed interpreter. |
 | Pyserini | 2.4.0, requires JDK 21 |
 

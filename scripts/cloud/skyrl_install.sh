@@ -8,7 +8,7 @@ SKYRL=/workspace/search-r1/SkyRL
 [ -d $SKYRL ] || git clone -q https://github.com/NovaSky-AI/SkyRL.git $SKYRL
 cd $SKYRL
 git checkout -q 79d4c8946bba23c2e0617e96ac1095c596093d83
-# Trim shared left padding per policy microbatch (see skyrl-79d4c89-trim-microbatch-padding.patch).
+# Trim padding and add length-based checkpointing (see the matching .patch file).
 python3 /workspace/bin/apply_patch.py $SKYRL
 git diff --stat
 date
