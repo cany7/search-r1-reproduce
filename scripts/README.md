@@ -82,12 +82,42 @@ patch. Existing checkpoints remain usable.
 | [cloud/train_with_dev_eval.sh](cloud/train_with_dev_eval.sh) | Segmented training, full-state dev evaluation, cleanup and background W&B uploads |
 | [cloud/ckpt_prune.py](cloud/ckpt_prune.py) | Retain evaluation/latest full states and remove other or duplicate full states |
 | [cloud/upload_checkpoint.py](cloud/upload_checkpoint.py) | Upload selected states, samplers and evaluation records |
+| [cloud/log_monitor_metrics.py](cloud/log_monitor_metrics.py) | Log dev-eval and rollout-behavior curves to a side W&B run |
 | [cloud/stop_train.sh](cloud/stop_train.sh) | Explicitly stop the train session and matching training processes |
 
 Run the segmented driver in its own session, not the `skyrl` session it restarts.
 Its argument is a run name, followed by optional `train.py` arguments. The saved
 training configuration supplies the development evaluation settings. The full
 driver/upload/recovery workflow is not established by the archived short tests.
+
+`log_monitor_metrics.py` fills two gaps in the training run's W&B charts. It reads
+the files training and evaluation already write and logs them to a separate run
+`<run_name>-monitor` (fixed id derived from the run name, `group=<run_name>`,
+`job_type=monitor`, axis `training/step`); it clears inherited `WANDB_RUN_ID` and
+`WANDB_RESUME`, so it never resumes the training run.
+
+- `dev/*`: one point per dev eval from `runs/eval/<run_name>-stepXXXX/summary.json`
+  (overall EM, F1, answer rate, EM when answered, `max_turns_rate`, search calls,
+  no-search and tool-error rates, turns, sampled tokens; EM/F1/answer rate per
+  source). `--base-eval DIR` (driver: `BASE_EVAL_DIR`) adds the base model at step 0.
+- `rollout/*`: one point per training step from
+  `iteration_XXXXXX/train_rollout_summaries.jsonl`. The cookbook's
+  `env/*/max_turns` and `env/*/stop/*` are averages over the episodes that report
+  them and are always 1.0; these are fractions of all episodes. `max_turns_rate`
+  counts episodes stopped by the turn cap (as in the dev termination);
+  `turns_frac_5` counts all episodes that used five turns, including those that
+  answered on the fifth. Also answer rate, search calls per episode, final
+  sequence length (last turn's prompt + response; mean, p90, max), answer tokens,
+  and per-source `max_turns_rate`/`answered_rate`.
+
+The driver runs it after every dev eval; a failure only writes a warning to the
+driver log. `<log_path>/monitor_wandb_state.json` records the files already
+logged, so reruns log only new or rewritten files. `--dry-run` prints the points
+without touching W&B or the state file. Manual run on the pod:
+
+```bash
+/workspace/search-r1/project/.venv/bin/python /workspace/bin/log_monitor_metrics.py --run-name RUN_NAME --log-path /workspace/runs/train/RUN_NAME --eval-root /workspace/search-r1/project/runs/eval
+```
 
 ## Short validation and analysis tools
 

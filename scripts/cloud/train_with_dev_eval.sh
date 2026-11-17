@@ -22,7 +22,9 @@
 #                      the latest, and duplicate saves of one step; sampler weights are kept;
 #                      see ckpt_prune.py),
 #        UPLOAD (1: upload each eval step's full state, the segment's sampler weights and the
-#                eval summary to W&B; see upload_checkpoint.py)
+#                eval summary to W&B; see upload_checkpoint.py),
+#        BASE_EVAL_DIR (unset: base-model dev eval directory, logged at step 0 of the
+#                       <run_name>-monitor W&B run; see log_monitor_metrics.py)
 # Disk: about 240 GB at the peak of a 200-step run; use a 300 GB volume.
 #
 # Needs: the BM25 retrieval server running, SkyRL with the local patch, /workspace/bin scripts.
@@ -44,6 +46,7 @@ SAVE_EVERY=${SAVE_EVERY:-5}
 EVAL_CONCURRENCY=${EVAL_CONCURRENCY:-32}
 PRUNE_STATES=${PRUNE_STATES:-1}
 UPLOAD=${UPLOAD:-1}
+BASE_EVAL_DIR=${BASE_EVAL_DIR:-}
 
 source /workspace/bin/env_common.sh
 LOG_PATH=/workspace/runs/train/$NAME
@@ -148,6 +151,14 @@ for T in $TARGETS; do
     eval_summary_ok "$SUMMARY" || fail "eval at step $T incomplete or with errors; see /workspace/logs/${EVAL_RUN}.log"
     log "eval at step $T done: $(python3 -c "import json; s=json.load(open('$SUMMARY'))['by_source']['OVERALL']; print('EM %.3f F1 %.3f answered %.3f' % (s['em'], s['f1'], s['answer_rate']))")"
   fi
+
+  # 2b. Side W&B run <name>-monitor: dev metrics and this segment's rollout behavior.
+  # Never touches the training run; a failure only logs a warning.
+  MONITOR_ARGS=(--run-name "$NAME" --log-path "$LOG_PATH" --eval-root "$PROJ/runs/eval")
+  [ -n "$BASE_EVAL_DIR" ] && MONITOR_ARGS+=(--base-eval "$BASE_EVAL_DIR")
+  timeout 600 "$PROJ/.venv/bin/python" /workspace/bin/log_monitor_metrics.py "${MONITOR_ARGS[@]}" \
+    >>"/workspace/logs/${NAME}_monitor.log" 2>&1 \
+    || log "WARNING: monitor metrics not logged at step $T; see /workspace/logs/${NAME}_monitor.log"
 
   # 3. Free disk: drop full states no longer needed (eval steps and the latest are kept).
   if [ "$PRUNE_STATES" = "1" ]; then
