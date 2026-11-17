@@ -18,6 +18,9 @@ outputs/
 wandb/
 *.log
 
+# Full experiment attachments are kept locally; Git tracks their manifests.
+/experiments/attachments/*.tar.gz
+
 # System and editor files
 .DS_Store
 .idea/

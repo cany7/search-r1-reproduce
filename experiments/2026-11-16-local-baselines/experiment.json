@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "analysis_date": "2026-11-16",
+  "runtime_project_commit": null,
+  "runtime_project_commit_note": "Not reliably recorded in the original artifacts. Do not substitute the archive or current source commit.",
+  "dev_dataset": {
+    "path": "eval_sets/dev.jsonl",
+    "sha256_at_archiving": "6a1bfc712a37961c093421e688af4643fe60f7fa18c3ddfb71a21606292f8d35",
+    "note": "Current repository dataset hash recorded during archiving; this hash was not captured at original execution time."
+  },
+  "historical_renderer": true,
+  "later_unicode_renderer_change_commit": "1b26fd7",
+  "source_file_manifest": "files.json",
+  "new_model_runs_during_archiving": false,
+  "experiment_id": "2026-11-16-local-baselines",
+  "purpose": "Local model and prompt selection before formal training",
+  "backend": "omlx",
+  "hardware": null,
+  "hardware_note": "No hardware snapshot is included in these evaluation outputs.",
+  "evaluation_runs": [
+    {
+      "id": "base-q35-fast-n100",
+      "questions": 631
+    },
+    {
+      "id": "base-q35-original-n100",
+      "questions": 631
+    },
+    {
+      "id": "base-q35-think-fast-n100",
+      "questions": 631
+    },
+    {
+      "id": "base-q3i-fast-n100",
+      "questions": 631
+    },
+    {
+      "id": "base-q3i-original-n100",
+      "questions": 631
+    }
+  ],
+  "reports": [
+    "BASELINE_ANALYSIS.md",
+    "BASELINE_ANALYSIS_zh.md"
+  ]
+}

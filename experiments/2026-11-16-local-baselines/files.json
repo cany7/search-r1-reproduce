@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "description": "Byte-for-byte archived source files. Generated reports and tables are not included in this manifest.",
+  "files": [
+    {
+      "path": "evaluations/base-q35-fast-n100/config.json",
+      "original_path": "runs/eval/base-q35-fast-n100/config.json",
+      "bytes": 2410,
+      "sha256": "3d82d566d166a4e2fa04be0167b4eced04bac9d063b96bfd7d4c154f71e9afa0",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-fast-n100/summary.json",
+      "original_path": "runs/eval/base-q35-fast-n100/summary.json",
+      "bytes": 4900,
+      "sha256": "1045c7a810efff93e034981ffc516ab98733f6125556b11f1eaf447b081cb3d4",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-fast-n100/trajectories.jsonl",
+      "original_path": "runs/eval/base-q35-fast-n100/trajectories.jsonl",
+      "bytes": 9560955,
+      "sha256": "6f5220e2d89621c8cfcac00a4f2eff13e771632c2bcadb4c234cc2476145bca0",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-original-n100/config.json",
+      "original_path": "runs/eval/base-q35-original-n100/config.json",
+      "bytes": 2976,
+      "sha256": "b8568a6bee8bb1aff0fa41a8b8ec104cb90cf8857a7fe6609bb4f32804ec3615",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-original-n100/summary.json",
+      "original_path": "runs/eval/base-q35-original-n100/summary.json",
+      "bytes": 5075,
+      "sha256": "f5ed8e46fee33b46d84f3157b9006ff4eeea6ec26e5a41873300a8fe85a996ff",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-original-n100/trajectories.jsonl",
+      "original_path": "runs/eval/base-q35-original-n100/trajectories.jsonl",
+      "bytes": 10572050,
+      "sha256": "cc11bcde54c2a2d5c3899b57a80f52d496a113c3dbe3561ffc1749a3c114b982",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-think-fast-n100/config.json",
+      "original_path": "runs/eval/base-q35-think-fast-n100/config.json",
+      "bytes": 2382,
+      "sha256": "fbcf4bfe8bbd729890a9429fe4ad4623b366fb36d50efde9f2944af4fa0223e4",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-think-fast-n100/summary.json",
+      "original_path": "runs/eval/base-q35-think-fast-n100/summary.json",
+      "bytes": 4789,
+      "sha256": "311f06e5a594a28ed2b0c8ecd8cd1195c9ef872357d80e11f65e49ee5573186e",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q35-think-fast-n100/trajectories.jsonl",
+      "original_path": "runs/eval/base-q35-think-fast-n100/trajectories.jsonl",
+      "bytes": 11158350,
+      "sha256": "7da68f63a1bdfda649c9c9f653c9d6a2ddf2268b30807f720b6bdaf8962dba52",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q3i-fast-n100/config.json",
+      "original_path": "runs/eval/base-q3i-fast-n100/config.json",
+      "bytes": 2414,
+      "sha256": "f37dacd698d647c8d6f0a38dd7dbbf0688afc21932a5e7c6cfd4aaf03d8fe8e0",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q3i-fast-n100/summary.json",
+      "original_path": "runs/eval/base-q3i-fast-n100/summary.json",
+      "bytes": 4877,
+      "sha256": "998da9efd206a90f086c735bc3134aee0a30ec6cf05e324866b444c320d58481",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q3i-fast-n100/trajectories.jsonl",
+      "original_path": "runs/eval/base-q3i-fast-n100/trajectories.jsonl",
+      "bytes": 2233735,
+      "sha256": "c73082e07a8d18591f3389fe857bb10ea629db6d1c7dcc1b3add47a7f3c38c64",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q3i-original-n100/config.json",
+      "original_path": "runs/eval/base-q3i-original-n100/config.json",
+      "bytes": 2980,
+      "sha256": "ae3298632f1b411526a2ed62acffddedc0386c7ae82f653a0fcefc46fa0e777c",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q3i-original-n100/summary.json",
+      "original_path": "runs/eval/base-q3i-original-n100/summary.json",
+      "bytes": 4913,
+      "sha256": "847e7d3da36316e13f86e74d453bb41f82bf5499433bee4c2d313795b915bf4b",
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/base-q3i-original-n100/trajectories.jsonl",
+      "original_path": "runs/eval/base-q3i-original-n100/trajectories.jsonl",
+      "bytes": 2642165,
+      "sha256": "b4c157f0feaa8dd55c2d6dd835c84cdf9f6b6b8d2fac9bc6d64279ca6a2c96f2",
+      "transformation": "none"
+    }
+  ]
+}

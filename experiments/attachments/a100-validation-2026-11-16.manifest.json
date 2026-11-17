@@ -1,0 +1,445 @@
+{
+  "schema_version": 1,
+  "archive": "a100-validation-2026-11-16.tar.gz",
+  "bytes": 8184488,
+  "sha256": "e7fae86368ea502e76e8fd920795b2bdf2c0d404d04ee95b1948d6a3ab07fe59",
+  "publication_status": "prepared_locally_not_uploaded",
+  "download_url": null,
+  "source_root": "runs/cloud-test-2026-11-16",
+  "excluded": [
+    "**/wandb/**"
+  ],
+  "normalization": "File contents are unchanged. Archive owner names are empty, timestamps are zero, and file modes are 0644; extract then use bash/python explicitly for historical scripts.",
+  "removed_duplicate": {
+    "path": "runs/cloud-test-2026-11-16/runs/tests/t64_mb1p.metrics.before_resume.jsonl",
+    "same_as": "runs/cloud-test-2026-11-16/runs/tests/t64_mb1p/metrics.jsonl.pre_resume_000003",
+    "sha256": "7df9676a14fcb4a2785e008e19a0ab8264968cd398a4afdaaa58180535a0ef3d"
+  },
+  "files": [
+    {
+      "path": "cloud-test-2026-11-16/bin/apply_patch.py",
+      "bytes": 4365,
+      "sha256": "2ed8ec6cb07f670e3c94673f7ad9fd38cd5c1e56c4961f9415bd8eba6a328af8"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/conc_test.sh",
+      "bytes": 603,
+      "sha256": "76f1a6aa0b083a35068ead5eae3d0ce53848e690dd63391e428e301569491648"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/dl.sh",
+      "bytes": 591,
+      "sha256": "935f61d0804c1a2f0e74ed8fcf85a3d0527d08e5fb04a4f02e8d5368e4286efc"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/env_common.sh",
+      "bytes": 656,
+      "sha256": "d43c2773731c1e57b99dc171ab9839b0f2c3b418430f4a4e3cf635902380e290"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/proj_install.sh",
+      "bytes": 393,
+      "sha256": "28ae53365ab5c4544fcfce7dc0d82b7a00a1986aaebf36ec43ba27eae06b40b2"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/restart_skyrl.sh",
+      "bytes": 1066,
+      "sha256": "7cb4b4dea6564dae5ed21ff7bc6d4c425d60783902d6f60115a54fe845c0c97a"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/run_train_test.sh",
+      "bytes": 581,
+      "sha256": "a66b3f74c8606d5749ff596915c0230ad4b653e0d234d66c09de8727c0c23562"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/seqlen_stats.py",
+      "bytes": 664,
+      "sha256": "0adaf27b92d4b37a2df6ec6ff87d97ab1076f5034a270efcba41899302338c75"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/skyrl-79d4c89-trim-microbatch-padding.patch",
+      "bytes": 3974,
+      "sha256": "6ed20bf18984acd8821983acd44c329ef75759c4251191630876778b2982e1b2"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/skyrl_install.sh",
+      "bytes": 456,
+      "sha256": "945bbab5d0c7c0c60cba4246252f077b340a5580ec2551bfdd929ee8ff17248a"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/start_skyrl.sh",
+      "bytes": 1085,
+      "sha256": "0da5f73fea785597d0686c64812d1824549702ea1ba94c89eb7cbcf8e6c1ba64"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/stats_window.py",
+      "bytes": 1615,
+      "sha256": "103ec155d6ed59ea08f7a618fc7e63eab0abb9953df3dc9bc79534e46893c9c1"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/stop_train.sh",
+      "bytes": 326,
+      "sha256": "0ebc60b8f4d58339cf8d706a83123c8fa6400caf8d2a7d38f4fdf13510bc0525"
+    },
+    {
+      "path": "cloud-test-2026-11-16/bin/sysmon.sh",
+      "bytes": 694,
+      "sha256": "458d47d01813941eb2a625cd949afdfe49380f6a8d7fb5fe40c1dee6ffcb4d3b"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/ckpt_eval.log",
+      "bytes": 2693,
+      "sha256": "b8dbeca3d789c4f1e21a895bc8b93829a223035efb51e2da2dfdbf15ff96f71b"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/conc_c32.log",
+      "bytes": 3830,
+      "sha256": "d1bdfd2e13dfc47d79b2a881a75272d2d15ec31eafca1ade686cb012c60f4b29"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/conc_c64.log",
+      "bytes": 3830,
+      "sha256": "d5f0ce08bd15977105e562ea59214c36b891a102948ea4cadb6d6f10084d6ca7"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/conc_test.times",
+      "bytes": 104,
+      "sha256": "6f0c19c9488f0a7a702090522722e2ef7a2a943c87221051d58f5e5358631c60"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/retrieval.log",
+      "bytes": 660593,
+      "sha256": "6a4dd68238a97eadc86ec7ef7214db8af8c071e72be653be9916f9a05fc2b2f4"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/rl_loop.log",
+      "bytes": 12455,
+      "sha256": "73ba0cd79c702b594e91cda20c6ad80dcf75fdb7783ecf1da385b55e6d80a447"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/server_ckpt.log",
+      "bytes": 154953,
+      "sha256": "3ec5ccf5aac37341598a1b1ad6425db78313394406655cb8b4202a326c94a1d7"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/server_mb1.log",
+      "bytes": 1612500,
+      "sha256": "d94b515e5d1850761e91c71dd1ebfc44bf690eb5b2f586bea6cb80c08888b3e4"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/server_mb1p.log",
+      "bytes": 2554595,
+      "sha256": "d4cec2c92e44f02f5f898a5dd4af815431920fdf851e001bd9681f0e4de3e7b8"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/server_mb2.log",
+      "bytes": 972359,
+      "sha256": "2c482d48eb872ff11ef08a6bf25c3f0c541cadc8e9a8b4e842f78249f0fa98c6"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/server_resume.log",
+      "bytes": 786239,
+      "sha256": "561e84a67030c097048ddd64bcd81db3607b8063b1f9ab11a3feea39b45505d1"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/infra-261116_162632.log",
+      "bytes": 696254,
+      "sha256": "27ac49c880c3632e2c09c19be1570e7e9cb96210188cf8a5d37cdcd01d4d3b4e"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/infra-261116_170918.log",
+      "bytes": 299317,
+      "sha256": "3942a04e9e87a3cdebf563b1b59befb49ebbd62a23d64850e50deca832742248"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/infra-261116_173848.log",
+      "bytes": 446633,
+      "sha256": "58770cd9f927d6f1c0529471e73a0a57e7f77d8a5329d83ee8911441dd21a7c4"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/infra-261116_181856.log",
+      "bytes": 194964,
+      "sha256": "64964796aa9520b93a2f499e864140793544176e0cadf3e2a907b26a9b50873e"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/infra-261116_184012.log",
+      "bytes": 63811,
+      "sha256": "fc9ede9b387d718fbca3d032a3da06e00dd0d8bececdb9d1d382d4279e82a9ba"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/infra-261116_184500.log",
+      "bytes": 176582,
+      "sha256": "e3eab72c01376a11aebc4daf8284d4c55740fc500e2739f5a76e85fbd94290d6"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/router-261116_163235.log",
+      "bytes": 6632478,
+      "sha256": "db6fc6df3d9fe79f6813635cfd6c7a5591878dbd1449ab3807fa4ec1ae8949dd"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/router-261116_171225.log",
+      "bytes": 2542818,
+      "sha256": "332a9c2941c1113e543093caa2a7e074f875f25512e9bf0f60e482e2ced98b9d"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/router-261116_174145.log",
+      "bytes": 3984847,
+      "sha256": "0b85720b3cc2722cbaf67ec299194b1ef430e717b9e56956d70a868801f7ebf4"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/router-261116_182154.log",
+      "bytes": 1446699,
+      "sha256": "fc347fbf457b9706ce58db2dd3b8988d8bcdfc36331e8124c836f3b209a3a6cd"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/router-261116_184320.log",
+      "bytes": 101413,
+      "sha256": "3a8bed7d70a6dcf262c8ec762240afd2b66f3099206903fa5dea45644e2fd802"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl-infra/router-261116_184821.log",
+      "bytes": 1157897,
+      "sha256": "914aa0f665b23ebed66801fb505a4e031380ffd6600d9d51667d6cda557c8f06"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/skyrl_server.log",
+      "bytes": 1357440,
+      "sha256": "bbeec7fcc213bbdc1a54a4793c239397cea9fa75a380727a243029b7b8a75311"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/smoke.log",
+      "bytes": 3238,
+      "sha256": "449702cd55a76828fd0be993ac99ebb6b60db6b627804ee47dd9cf68aa81d415"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/sysmon.csv",
+      "bytes": 63850,
+      "sha256": "c8f778057c8a51aed5bd5574a4d54202ecaae6a1f0dc44f3a9b13dbeb2f4e118"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/train_t64_mb1.log",
+      "bytes": 140606,
+      "sha256": "e513728d9a3d12b90f78f9952cd0fee515125cac9556a9b491ba5c895728394c"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/train_t64_mb1p.log",
+      "bytes": 145940,
+      "sha256": "c18c2a7e3c5a534306c3c861d95ee54e7b4f6db6ad9d0ad9ebfd345145da586f"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/train_t64_mb2.log",
+      "bytes": 128653,
+      "sha256": "ee4a90ec78de2cc7a78e01f6d0707e0a3b08407589ce8f59753e0ff0e427ebbf"
+    },
+    {
+      "path": "cloud-test-2026-11-16/logs/train_tests.times",
+      "bytes": 160,
+      "sha256": "57bceb6c91e5618741a68f21fe3a45b47d7761141b62074c2ae109a77975f5ad"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/rl_loop_test/checkpoints.jsonl",
+      "bytes": 135,
+      "sha256": "c1889797a8f6503a893474f3f52ab6662a6543da0aff3b7f57b4a47408919ff9"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/rl_loop_test/code.diff",
+      "bytes": 147,
+      "sha256": "ba70fa4e3f6fed70c866d5f9afa73c97d070cf4428267da592da9b1677526982"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/rl_loop_test/config.json",
+      "bytes": 399,
+      "sha256": "fb73a0d2cb25b0e5d6d1d338b0f2caa4b39f612e918619dc6ff9a348dec2c812"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/rl_loop_test/logs.log",
+      "bytes": 6954,
+      "sha256": "d13b024866890f6e9c0f9d45beb843992bab4c815bfe382b31ab2ccbfac185f3"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/rl_loop_test/metrics.jsonl",
+      "bytes": 573,
+      "sha256": "006125033d9cef08df32fa4cf3751469190650d8921030d054459eef38a88560"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/code.diff",
+      "bytes": 147,
+      "sha256": "ba70fa4e3f6fed70c866d5f9afa73c97d070cf4428267da592da9b1677526982"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/config.json",
+      "bytes": 1688,
+      "sha256": "47aab3fc0ef01267c73d549d264613f772f3eaf1a4c48199615f8c8c404190dd"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/iteration_000000/train.html",
+      "bytes": 693121,
+      "sha256": "dbf278c0e26db0dccde9d3ae0f5164d74988d26604b44fd20a7486a7e94d0adb"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/iteration_000000/train_logtree.json",
+      "bytes": 2573879,
+      "sha256": "e02d658ec4f91e621e7694c2fbf72ab1c04ec142bc8cea99711f504c4633485e"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/iteration_000000/train_rollout_summaries.jsonl",
+      "bytes": 6278448,
+      "sha256": "0bed1151a186f080a0b328dc8a965ba6547fb20b6e832b22559e68ac4d761c02"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/logs.log",
+      "bytes": 134731,
+      "sha256": "43a4e6d1eb7a75d62d009f55e7e9f365eba7da2a24555874add3e8bb5fb89634"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/metrics.jsonl",
+      "bytes": 4466,
+      "sha256": "9716e109b06ed69119f9d2eae2022220d347d75cbe9220fb1350a9faa8895ee1"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1/timing_spans.jsonl",
+      "bytes": 510473,
+      "sha256": "17d97af882f32e6cc2bce4d22f986908c7530905a210278633f69dee8a0d78eb"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/checkpoints.jsonl",
+      "bytes": 1025,
+      "sha256": "b51d483d0045d85232b925d7018389dd6a49acb4e767418f33d29b6c49942351"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/code.diff",
+      "bytes": 147,
+      "sha256": "ba70fa4e3f6fed70c866d5f9afa73c97d070cf4428267da592da9b1677526982"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/config.json",
+      "bytes": 1588,
+      "sha256": "7def1774a58d8f952a5bb5eb50507bc842d7911f596138f971f7ac4539802d51"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000000/train.html",
+      "bytes": 748783,
+      "sha256": "351f82c9bfda0c87ea014e30f28ea01fcc576e313bdf71f6a9c615eeb0919799"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000000/train_logtree.json",
+      "bytes": 2611864,
+      "sha256": "a67e7d8c8e889f28ba36f5fa40edc0e847765b24644a5c7af28a6711a8a6a8c6"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000000/train_rollout_summaries.jsonl",
+      "bytes": 6349118,
+      "sha256": "a80da1638caf4d2d77eab6aecc8ba762d6eed4051a20d57e2eda1a0e32a3bb52"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000001/train.html",
+      "bytes": 578922,
+      "sha256": "6fa17335dc3a45a1b7f65c894d97ffe78dc56dbc55b3b76f62aafd3455846923"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000001/train_logtree.json",
+      "bytes": 2302839,
+      "sha256": "e123c19fc2ecd6d04c4cf523c0d9b5342c38871d41882d09cb00b39a1095d961"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000001/train_rollout_summaries.jsonl",
+      "bytes": 5868600,
+      "sha256": "08b0c305eceba58311f43af3bb4c67590e74f36ed94c661eb8562e9e7739a7d8"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000002/train.html",
+      "bytes": 496696,
+      "sha256": "06c8dcabda9f94bb65176c6b1ef76537ab7813dbe6079c9513c7d13b5607682b"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000002/train_logtree.json",
+      "bytes": 2109105,
+      "sha256": "70179e41128f186855c83a651f417a3e63022f194c24b8209854843899cd5ac5"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000002/train_rollout_summaries.jsonl",
+      "bytes": 4945437,
+      "sha256": "b4fee1f0d6087b598f6a4dde9940341c702976ec75c07f3fab8499de89e6661c"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000003/train.html",
+      "bytes": 524195,
+      "sha256": "f1f87d627995343ca89018274c048b9e5fe8fbc5b14997a203785cee39c779ef"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000003/train_logtree.json",
+      "bytes": 2112046,
+      "sha256": "0b37616257369b96e8bb053cb91dbc8e4812bddcb83b3354fd23bb869bb358d7"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/iteration_000003/train_rollout_summaries.jsonl",
+      "bytes": 4423174,
+      "sha256": "6e69e6b2d454c7a5ce28d2e6fe4fef46b270139bbd2bfa9debc8986dd27671f4"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/logs.log",
+      "bytes": 470695,
+      "sha256": "70467ba13e9327161e140a682ee85213afeb1023c2e33ea753acf14c4f750bd9"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/metrics.jsonl",
+      "bytes": 18563,
+      "sha256": "77ff78a6335ea443fd9167bd334a7fded8def2854764005ba38c5d5fb53edfa9"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/metrics.jsonl.pre_resume_000003",
+      "bytes": 14103,
+      "sha256": "7df9676a14fcb4a2785e008e19a0ab8264968cd398a4afdaaa58180535a0ef3d"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb1p/timing_spans.jsonl",
+      "bytes": 1892224,
+      "sha256": "65f434ae90b7bd0c80e3b45856d454eae4ca08562aa469a4fafa05b4a2134237"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/code.diff",
+      "bytes": 147,
+      "sha256": "ba70fa4e3f6fed70c866d5f9afa73c97d070cf4428267da592da9b1677526982"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/config.json",
+      "bytes": 1585,
+      "sha256": "cfbee413cf0231f6294cbefd8e191d7875a32e839f70b5671dfdf2a0cd71d418"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/iteration_000000/train.html",
+      "bytes": 700623,
+      "sha256": "fd17697739ed5913b1f56002d6df5811871c678ad07ee18d72ebcc663d3922df"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/iteration_000000/train_logtree.json",
+      "bytes": 2555969,
+      "sha256": "379a47b5637a31065f5e55012141108f7d903f8fa4c7b3da6c5acb59d7c2bbe5"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/iteration_000000/train_rollout_summaries.jsonl",
+      "bytes": 6525535,
+      "sha256": "7dd04b5f0af7d48c28ec4c999da37751f7a3c97d5ceaece9813237fa94491800"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/logs.log",
+      "bytes": 122755,
+      "sha256": "299074d9f40ee3de5dd71bd19e014718e9f62fed8fba4d23a72353a65a5cf088"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/metrics.jsonl",
+      "bytes": 4545,
+      "sha256": "4c3c5c4b76cc2962888fc4a69e3ed5a76b50bdd43ad5d4a730d905ea2bf860d1"
+    },
+    {
+      "path": "cloud-test-2026-11-16/runs/tests/t64_mb2/timing_spans.jsonl",
+      "bytes": 521035,
+      "sha256": "8e4a7a256ce9b2da6febaec6999b6be67af3026f48c83cd208362f415ba0f3b1"
+    },
+    {
+      "path": "cloud-test-2026-11-16/versions.txt",
+      "bytes": 379,
+      "sha256": "0566a47b63a816ccdde1f8a582b792c32002cf45379c912957b7b530282db512"
+    }
+  ]
+}

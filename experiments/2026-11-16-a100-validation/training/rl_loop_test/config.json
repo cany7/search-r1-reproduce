@@ -1,0 +1,17 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "log_path": "/workspace/runs/rl_loop_test",
+  "model_name": "Qwen/Qwen3.5-4B",
+  "batch_size": 128,
+  "group_size": 16,
+  "learning_rate": 4e-05,
+  "lora_rank": 32,
+  "save_every": 20,
+  "max_tokens": 256,
+  "loss_fn": "importance_sampling",
+  "ttl_seconds": 604800,
+  "max_steps": 3,
+  "wandb_project": null,
+  "wandb_name": null,
+  "session_name": null
+}

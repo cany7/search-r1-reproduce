@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "analysis_date": "2026-11-16",
+  "runtime_project_commit": null,
+  "runtime_project_commit_note": "Not reliably recorded in the original artifacts. Do not substitute the archive or current source commit.",
+  "dev_dataset": {
+    "path": "eval_sets/dev.jsonl",
+    "sha256_at_archiving": "6a1bfc712a37961c093421e688af4643fe60f7fa18c3ddfb71a21606292f8d35",
+    "note": "Current repository dataset hash recorded during archiving; this hash was not captured at original execution time."
+  },
+  "historical_renderer": true,
+  "later_unicode_renderer_change_commit": "1b26fd7",
+  "source_file_manifest": "files.json",
+  "new_model_runs_during_archiving": false,
+  "experiment_id": "2026-11-16-a100-validation",
+  "purpose": "Deployment, padding optimization, microbatch, concurrency and checkpoint smoke checks; not formal training",
+  "backend": "SkyRL Tinker API",
+  "gpu": "NVIDIA A100-SXM4-80GB",
+  "skyrl_commit": "79d4c8946bba23c2e0617e96ac1095c596093d83",
+  "cookbook_commit": "1991897cba59ea9d9b0030d183d1867b28eba9d9",
+  "environment_notes": [
+    "environment/versions.txt records client package versions plus the GPU and SkyRL commit; it is not a complete server environment lockfile.",
+    "The archived vLLM startup log identifies server vLLM 0.33.0.",
+    "Historical training configs are the files present at collection time. t64_mb1p/config.json reflects the resumed run; it is not a separate config snapshot for each step."
+  ],
+  "evaluation_runs": [
+    {
+      "id": "cloud-ckpt-load-a4b4c43c",
+      "questions": 35
+    },
+    {
+      "id": "cloud-conc-c32",
+      "questions": 271
+    },
+    {
+      "id": "cloud-conc-c64",
+      "questions": 271
+    },
+    {
+      "id": "cloud-smoke-n1",
+      "questions": 7
+    }
+  ],
+  "raw_attachment_manifest": "../attachments/a100-validation-2026-11-16.manifest.json",
+  "derived_files": {
+    "step_timings.csv": "Direct extraction of time/total, time/sampling, time/train_step, tokens/trained, KL and entropy from saved metrics rows. Missing fields remain blank.",
+    "server_stage_timings.csv": "Extract lines matching process_batch_requests(OP, n=N) took Ss from the five named server logs. Batch request counts are not datum counts.",
+    "training/examples.jsonl": "First saved t64_mb1p occurrence of each available outcome: completed_correct, completed_incorrect, max_turns, parse_error, max_tokens. Ordered source iteration paths and source line numbers define selection."
+  }
+}

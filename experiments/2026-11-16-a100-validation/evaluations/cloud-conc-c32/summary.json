@@ -1,0 +1,173 @@
+{
+  "by_source": {
+    "2wikimultihopqa": {
+      "n": 40,
+      "em": 0.25,
+      "f1": 0.3092857142857143,
+      "answer_rate": 0.425,
+      "em_when_answered": 0.5882352941176471,
+      "f1_when_answered": 0.7277310924369749,
+      "reward": 0.2517857142857143,
+      "termination": {
+        "answered": 17,
+        "no_valid_answer": 2,
+        "max_turns": 21
+      },
+      "search_calls": 3.575,
+      "tool_error_rate": 0.05,
+      "no_search_rate": 0.0,
+      "repeated_query_rate": 0.15,
+      "parse_error_rate": 0.0,
+      "turns": 4.05,
+      "sampled_tokens": 319.375
+    },
+    "bamboogle": {
+      "n": 31,
+      "em": 0.25806451612903225,
+      "f1": 0.3860215053763441,
+      "answer_rate": 0.6451612903225806,
+      "em_when_answered": 0.4,
+      "f1_when_answered": 0.5983333333333334,
+      "reward": 0.35053763440860214,
+      "termination": {
+        "answered": 20,
+        "max_turns": 11
+      },
+      "search_calls": 3.3225806451612905,
+      "tool_error_rate": 0.0,
+      "no_search_rate": 0.0,
+      "repeated_query_rate": 0.03225806451612903,
+      "parse_error_rate": 0.0,
+      "turns": 3.967741935483871,
+      "sampled_tokens": 267.4193548387097
+    },
+    "hotpotqa": {
+      "n": 40,
+      "em": 0.325,
+      "f1": 0.41412878787878793,
+      "answer_rate": 0.625,
+      "em_when_answered": 0.52,
+      "f1_when_answered": 0.6626060606060606,
+      "reward": 0.37662878787878784,
+      "termination": {
+        "answered": 25,
+        "max_turns": 15
+      },
+      "search_calls": 3.125,
+      "tool_error_rate": 0.025,
+      "no_search_rate": 0.0,
+      "repeated_query_rate": 0.05,
+      "parse_error_rate": 0.0,
+      "turns": 3.75,
+      "sampled_tokens": 242.8
+    },
+    "musique": {
+      "n": 40,
+      "em": 0.0,
+      "f1": 0.034999999999999996,
+      "answer_rate": 0.275,
+      "em_when_answered": 0.0,
+      "f1_when_answered": 0.12727272727272726,
+      "reward": -0.037500000000000006,
+      "termination": {
+        "max_turns": 29,
+        "answered": 11
+      },
+      "search_calls": 4.35,
+      "tool_error_rate": 0.0,
+      "no_search_rate": 0.0,
+      "repeated_query_rate": 0.05,
+      "parse_error_rate": 0.0,
+      "turns": 4.625,
+      "sampled_tokens": 398.675
+    },
+    "nq": {
+      "n": 40,
+      "em": 0.325,
+      "f1": 0.38666666666666666,
+      "answer_rate": 0.6,
+      "em_when_answered": 0.5416666666666666,
+      "f1_when_answered": 0.6444444444444445,
+      "reward": 0.3466666666666667,
+      "termination": {
+        "answered": 24,
+        "max_turns": 16
+      },
+      "search_calls": 3.1,
+      "tool_error_rate": 0.075,
+      "no_search_rate": 0.0,
+      "repeated_query_rate": 0.05,
+      "parse_error_rate": 0.0,
+      "turns": 3.7,
+      "sampled_tokens": 269.75
+    },
+    "popqa": {
+      "n": 40,
+      "em": 0.55,
+      "f1": 0.5666666666666667,
+      "answer_rate": 0.85,
+      "em_when_answered": 0.6470588235294118,
+      "f1_when_answered": 0.6666666666666667,
+      "reward": 0.5516666666666666,
+      "termination": {
+        "answered": 34,
+        "max_turns": 6
+      },
+      "search_calls": 2.2,
+      "tool_error_rate": 0.025,
+      "no_search_rate": 0.0,
+      "repeated_query_rate": 0.0,
+      "parse_error_rate": 0.0,
+      "turns": 3.05,
+      "sampled_tokens": 203.175
+    },
+    "triviaqa": {
+      "n": 40,
+      "em": 0.575,
+      "f1": 0.5916666666666667,
+      "answer_rate": 0.7,
+      "em_when_answered": 0.8214285714285714,
+      "f1_when_answered": 0.8452380952380952,
+      "reward": 0.5591666666666667,
+      "termination": {
+        "answered": 28,
+        "no_valid_answer": 1,
+        "max_turns": 11
+      },
+      "search_calls": 2.375,
+      "tool_error_rate": 0.025,
+      "no_search_rate": 0.025,
+      "repeated_query_rate": 0.0,
+      "parse_error_rate": 0.0,
+      "turns": 3.1,
+      "sampled_tokens": 185.525
+    },
+    "OVERALL": {
+      "n": 271,
+      "em": 0.3284132841328413,
+      "f1": 0.38414482196770017,
+      "answer_rate": 0.5867158671586716,
+      "em_when_answered": 0.559748427672956,
+      "f1_when_answered": 0.654737400963816,
+      "reward": 0.34244740499353044,
+      "termination": {
+        "answered": 159,
+        "no_valid_answer": 3,
+        "max_turns": 109
+      },
+      "search_calls": 3.143911439114391,
+      "tool_error_rate": 0.02952029520295203,
+      "no_search_rate": 0.0036900369003690036,
+      "repeated_query_rate": 0.04797047970479705,
+      "parse_error_rate": 0.0,
+      "turns": 3.7416974169741697,
+      "sampled_tokens": 269.6014760147601
+    }
+  },
+  "run": {
+    "elapsed_seconds": 84.23343128152192,
+    "num_errors": 0,
+    "total_sampled_tokens": 73062,
+    "sampled_tokens_per_second": 867.3753269745695
+  }
+}

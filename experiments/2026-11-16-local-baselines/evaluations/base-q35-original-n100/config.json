@@ -1,0 +1,49 @@
+{
+  "backend": "omlx",
+  "base_model": "Qwen/Qwen3.5-4B",
+  "renderer_name": "qwen3_5_disable_thinking",
+  "tinker_checkpoint_url": null,
+  "tinker_base_url": null,
+  "omlx_model": "Qwen3.5-4B-bf16",
+  "prompt_name": "original",
+  "answer_score": "f1",
+  "no_search_coef": 0.1,
+  "eval_file": "eval_sets/dev.jsonl",
+  "limit_per_source": 100,
+  "max_eval_samples": 100,
+  "seed": 42,
+  "split": "test",
+  "max_tokens": 1024,
+  "max_turns": 5,
+  "max_trajectory_tokens": 32768,
+  "temperature": 1.0,
+  "retrieval_url": "http://127.0.0.1:8001",
+  "concurrency": 8,
+  "run_name": "base-q35-original-n100",
+  "resolved_renderer_name": "qwen3_5_disable_thinking",
+  "system_prompt": "You are an expert assistant who solves tasks using a Wikipedia search tool.\n\nHere are instructions for how to solve a problem:\n1. Think step by step before calling the tool and after you receive the result of the tool call. Decide what queries to call the tool with.\n2. Call the tool with the queries you have decided on.\n3. Think step by step again after you receive the result of the tool call. If you have the information you need, you can stop here.\n4. Otherwise, come up with new queries that combine information from the previous results.\n5. Include your final answer after the \"Answer:\" prefix. The answer should be one to five words.\n\nHere is an example of solving a real question:\n\"What was the population of San Francisco in the year that New York City first recorded a census population above seven million?\"\n\n1. Think step by step: In order to answer this question, I first need to find the census year in which New York City's population first exceeded seven million. I will search for New York City's historical census populations.\n2. Calling search tool: <tool_call>{\"name\": \"search\", \"arguments\": {\"query_list\": [\"New York City historical population census\"]}}</tool_call> (Output omitted for brevity)\n3. Think step by step again: The 1930 census recorded 6,930,446 people and the 1940 census recorded 7,454,995, so 1940 was the first census above seven million. Now I need the population of San Francisco in 1940. I will search for it.\n<tool_call>{\"name\": \"search\", \"arguments\": {\"query_list\": [\"San Francisco population 1940 census\"]}}</tool_call> (Output omitted for brevity)\n4. Answer: 634,536\n",
+  "tools": [
+    {
+      "name": "search",
+      "description": "Search Wikipedia for relevant information based on the given query.",
+      "parameters": {
+        "properties": {
+          "query_list": {
+            "description": "A list of fully-formed semantic queries. The tool will return search results for each query.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Query List",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query_list"
+        ],
+        "title": "search_params",
+        "type": "object"
+      }
+    }
+  ],
+  "num_items": 631
+}
