@@ -44,6 +44,7 @@ from search_r1.search_env import (
     download_search_r1_dataset,
     get_task_instructions,
 )
+from search_r1.skyrl_compat import patch_create_from_state
 from search_r1.tools import (
     BM25Tool,
     RetrievalConfig,
@@ -78,8 +79,18 @@ class CLIConfig:
         doc="Renderer to use (Tinker: only if the checkpoint does not record one)",
     )
     tinker_checkpoint_url: str | None = chz.field(
-        default=None, doc="Tinker checkpoint to evaluate; None evaluates the base model"
+        default=None,
+        doc="Tinker sampler checkpoint to evaluate; None evaluates the base model. "
+        "Not reliable on self-hosted SkyRL (FSDP): it ignores the checkpoint and samples the "
+        "model's current weights, or fails after a restart. Use tinker_state_url there.",
     )
+    tinker_state_url: str | None = chz.field(
+        default=None,
+        doc="Full training state to evaluate (tinker://<model>/weights/<name>). Loads it into a "
+        "new LoRA training client and syncs the weights to the sampler. Use this on SkyRL; "
+        "the server must have no other model loaded.",
+    )
+    lora_rank: int = chz.field(default=32, doc="LoRA rank of the state loaded by tinker_state_url")
     tinker_base_url: str | None = chz.field(
         default=None, doc="Tinker API base URL, e.g. a self-hosted SkyRL service"
     )
@@ -349,7 +360,20 @@ async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
         base_url=config.tinker_base_url,
     )
     renderer_name = None
-    if config.tinker_checkpoint_url is not None:
+    if config.tinker_state_url is not None and config.tinker_checkpoint_url is not None:
+        raise ValueError("Pass only one of tinker_state_url and tinker_checkpoint_url")
+    if config.tinker_state_url is not None:
+        patch_create_from_state(config.base_model, config.lora_rank)
+        # SkyRL serves only the weights of a model loaded in the running server, so a
+        # checkpoint is evaluated by loading its full state and syncing it to the sampler.
+        training_client = await service_client.create_training_client_from_state(
+            config.tinker_state_url
+        )
+        sampling_client = await training_client.save_weights_and_get_sampling_client()
+        renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
+            service_client, config.tinker_state_url
+        )
+    elif config.tinker_checkpoint_url is not None:
         sampling_client = service_client.create_sampling_client(
             model_path=config.tinker_checkpoint_url
         ).result()

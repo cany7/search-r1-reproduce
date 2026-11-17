@@ -11,6 +11,7 @@ from tinker_cookbook import cli_utils, model_info
 from tinker_cookbook.rl import train
 
 from search_r1.search_env import DEFAULT_RETRIEVAL_URL, PromptName, SearchR1DatasetBuilder
+from search_r1.skyrl_compat import patch_create_from_state
 from search_r1.tools import RetrievalConfig
 
 
@@ -61,9 +62,15 @@ class CLIConfig:
 
     max_steps: int | None = None
 
+    # Resume via create-LoRA-client + load_state, which the self-hosted SkyRL server
+    # (tinker 0.27 protocol) accepts. See search_r1/skyrl_compat.py.
+    skyrl_compat: bool = True
+
 
 async def cli_main(cli_config: CLIConfig) -> None:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+    if cli_config.skyrl_compat:
+        patch_create_from_state(cli_config.model_name, cli_config.lora_rank)
 
     # Build retrieval config
     retrieval_config = RetrievalConfig(n_results=cli_config.n_results)
