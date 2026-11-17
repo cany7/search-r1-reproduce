@@ -13,12 +13,14 @@ training run) so it never touches the training run while that is being written.
 
 Files are added with policy="immutable" and skip_cache=True: no staging copy of the 10.5 GB state.
 A marker file is written on success; rerunning for a step that has one does nothing.
+Concurrent invocations for the same run/step wait on a file lock and recheck that marker.
 
 usage: upload_checkpoint.py --run-name NAME --log-path DIR --step T --prev-step P
            --eval-summary FILE --ckpt-base DIR --marker-dir DIR [--project P] [--dry-run]
 """
 
 import argparse
+import fcntl
 import json
 import os
 import subprocess
@@ -99,6 +101,9 @@ def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dic
 
 
 def upload(args, files, metadata, identity) -> dict:
+    # Uploads are separate processes and must never resume the training history.
+    for key in ("WANDB_RUN_ID", "WANDB_RESUME"):
+        os.environ.pop(key, None)
     import wandb
 
     os.environ.setdefault("WANDB_DIR", "/workspace/wandb_upload")
@@ -107,6 +112,8 @@ def upload(args, files, metadata, identity) -> dict:
     Path(os.environ["WANDB_DIR"]).mkdir(parents=True, exist_ok=True)
 
     run = wandb.init(
+        id=wandb.util.generate_id(),
+        resume="never",
         project=identity.get("project", args.project),
         entity=identity.get("entity"),
         group=args.run_name,
@@ -126,23 +133,8 @@ def upload(args, files, metadata, identity) -> dict:
     return info
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--run-name", required=True)
-    parser.add_argument("--log-path", type=Path, required=True)
-    parser.add_argument("--step", type=int, required=True)
-    parser.add_argument(
-        "--prev-step", type=int, required=True, help="previous eval step (0 for the first)"
-    )
-    parser.add_argument("--eval-summary", type=Path, required=True)
-    parser.add_argument("--ckpt-base", type=Path, required=True)
-    parser.add_argument("--marker-dir", type=Path, required=True)
-    parser.add_argument("--project", default="search-r1-reproduce")
-    parser.add_argument(
-        "--dry-run", action="store_true", help="list files and metadata, upload nothing"
-    )
-    args = parser.parse_args()
-
+def upload_step(args: argparse.Namespace) -> int:
+    """Check the marker and upload; the caller holds the step lock unless dry-running."""
     marker = args.marker_dir / f"step{args.step:04d}.json"
     if marker.exists():
         print(f"already uploaded: {marker.read_text().strip()}")
@@ -169,10 +161,40 @@ def main() -> int:
             continue
         info.update(seconds=round(time.monotonic() - start), bytes=total)
         args.marker_dir.mkdir(parents=True, exist_ok=True)
-        marker.write_text(json.dumps(info) + "\n")
+        pending_marker = marker.with_suffix(".tmp")
+        pending_marker.write_text(json.dumps(info) + "\n")
+        pending_marker.replace(marker)
         print(f"uploaded in {info['seconds']} s: {info}")
         return 0
     return 1
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--run-name", required=True)
+    parser.add_argument("--log-path", type=Path, required=True)
+    parser.add_argument("--step", type=int, required=True)
+    parser.add_argument(
+        "--prev-step", type=int, required=True, help="previous eval step (0 for the first)"
+    )
+    parser.add_argument("--eval-summary", type=Path, required=True)
+    parser.add_argument("--ckpt-base", type=Path, required=True)
+    parser.add_argument("--marker-dir", type=Path, required=True)
+    parser.add_argument("--project", default="search-r1-reproduce")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="list files and metadata, upload nothing"
+    )
+    args = parser.parse_args()
+    if args.dry_run:
+        return upload_step(args)
+
+    # marker_dir is scoped to the training run. Never unlink the lock file: other
+    # processes may be waiting on its inode. The OS releases the lock on process exit.
+    args.marker_dir.mkdir(parents=True, exist_ok=True)
+    with (args.marker_dir / f"step{args.step:04d}.lock").open("a") as lock:
+        print(f"waiting for upload lock: {lock.name}", flush=True)
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return upload_step(args)
 
 
 if __name__ == "__main__":

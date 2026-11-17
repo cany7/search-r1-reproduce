@@ -13,6 +13,7 @@ from tinker_cookbook.rl import train
 from search_r1.search_env import DEFAULT_RETRIEVAL_URL, PromptName, SearchR1DatasetBuilder
 from search_r1.skyrl_compat import patch_create_from_state
 from search_r1.tools import RetrievalConfig
+from search_r1.wandb_compat import persistent_wandb_run
 
 
 @chz.chz
@@ -150,7 +151,8 @@ async def cli_main(cli_config: CLIConfig) -> None:
     )
 
     # Run training
-    await train.main(config)
+    with persistent_wandb_run():
+        await train.main(config)
 
 
 if __name__ == "__main__":

@@ -115,7 +115,8 @@ for T in $TARGETS; do
   read -r BATCH STATE <<<"$(last_checkpoint)"
   if [ "$BATCH" -lt "$T" ]; then
     log "training: step $BATCH -> $T"
-    /workspace/bin/restart_skyrl.sh "${NAME}_server_train_$T" >>"$DRIVER_LOG" 2>&1
+    /workspace/bin/restart_skyrl.sh "${NAME}_server_train_$T" >>"$DRIVER_LOG" 2>&1 \
+      || fail "server restart failed before training to step $T; see $DRIVER_LOG"
     (cd "$PROJ" && uv run --frozen python -m search_r1.train \
       batch_size="$BATCH_SIZE" group_size="$GROUP_SIZE" max_steps="$T" save_every="$SAVE_EVERY" \
       log_path="$LOG_PATH" wandb_name="$NAME" behavior_if_log_dir_exists=resume "$@" \
@@ -136,7 +137,8 @@ for T in $TARGETS; do
     log "eval at step $T already done ($EVAL_RUN)"
   else
     log "eval at step $T: $STATE_T -> runs/eval/$EVAL_RUN"
-    /workspace/bin/restart_skyrl.sh "${NAME}_server_eval_$T" >>"$DRIVER_LOG" 2>&1
+    /workspace/bin/restart_skyrl.sh "${NAME}_server_eval_$T" >>"$DRIVER_LOG" 2>&1 \
+      || fail "server restart failed before eval at step $T; see $DRIVER_LOG"
     (cd "$PROJ" && uv run --frozen python -m search_r1.offline_eval backend=tinker \
       tinker_base_url="$TINKER_BASE_URL" eval_file=eval_sets/dev.jsonl \
       concurrency="$EVAL_CONCURRENCY" tinker_state_url="$STATE_T" run_name="$EVAL_RUN" \
@@ -153,7 +155,8 @@ for T in $TARGETS; do
 
   # 4. Upload this eval step's checkpoint to W&B in the background; training goes on.
   if [ "$UPLOAD" = "1" ] && [ ! -f "$UPLOAD_MARKERS/$(printf "step%04d" "$T").json" ]; then
-    UPLOAD_LOG=$(printf "/workspace/logs/%s_upload_step%04d.log" "$NAME" "$T")
+    UPLOAD_LOG=$(mktemp "/workspace/logs/${NAME}_upload_step$(printf '%04d' "$T").log.XXXXXX") \
+      || fail "cannot create upload log for step $T"
     setsid nohup "$PROJ/.venv/bin/python" /workspace/bin/upload_checkpoint.py \
       --run-name "$NAME" --log-path "$LOG_PATH" --step "$T" --prev-step "$PREV_T" \
       --eval-summary "$SUMMARY" --ckpt-base "$CKPT_BASE" --marker-dir "$UPLOAD_MARKERS" \
@@ -176,7 +179,7 @@ if [ "$UPLOAD" = "1" ]; then
     [ -f "$UPLOAD_MARKERS/$(printf "step%04d" "$T").json" ] || MISSING="$MISSING $T"
   done
   if [ -n "$MISSING" ]; then
-    log "WARNING: W&B upload missing for steps:$MISSING (see /workspace/logs/${NAME}_upload_step*.log;"
+    log "WARNING: W&B upload missing for steps:$MISSING (see /workspace/logs/${NAME}_upload_step*.log.*;"
     log "         rerun this script to retry them). Do not terminate the pod yet."
     exit 1
   fi
