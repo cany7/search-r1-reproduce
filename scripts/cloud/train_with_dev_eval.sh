@@ -29,6 +29,7 @@
 # Run it in its own tmux session, not one named "skyrl" (restart_skyrl.sh kills that session):
 #   tmux new -d -s formal "/workspace/bin/train_with_dev_eval.sh search-r1-64x8"
 # The base model is not evaluated here; run the cloud base eval (dev and test) separately first.
+# Each dev eval inherits model and rollout settings from the saved training config.json.
 # train.py exits with rc=1 on SkyRL even after a clean run (404 on session finish), so
 # success is judged from checkpoints.jsonl and the eval summary.json, not exit codes.
 set -uo pipefail
@@ -140,6 +141,7 @@ for T in $TARGETS; do
     /workspace/bin/restart_skyrl.sh "${NAME}_server_eval_$T" >>"$DRIVER_LOG" 2>&1 \
       || fail "server restart failed before eval at step $T; see $DRIVER_LOG"
     (cd "$PROJ" && uv run --frozen python -m search_r1.offline_eval backend=tinker \
+      training_config_file="$LOG_PATH/config.json" \
       tinker_base_url="$TINKER_BASE_URL" eval_file=eval_sets/dev.jsonl \
       concurrency="$EVAL_CONCURRENCY" tinker_state_url="$STATE_T" run_name="$EVAL_RUN" \
       >"/workspace/logs/${EVAL_RUN}.log" 2>&1)

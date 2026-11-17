@@ -36,6 +36,7 @@ from tinker_cookbook.tokenizer_utils import Tokenizer
 from tinker_cookbook.tool_use import build_agent_tool_env
 from tinker_cookbook.utils.git_rev import recipe_user_metadata
 
+from search_r1.eval_config import eval_settings_from_training_config
 from search_r1.local_completer import OpenAICompletionsTokenCompleter
 from search_r1.search_env import (
     DEFAULT_RETRIEVAL_URL,
@@ -69,6 +70,11 @@ Termination = Literal[
 
 @chz.chz
 class CLIConfig:
+    training_config_file: str | None = chz.field(
+        default=None,
+        doc="Saved training config.json. Its model, renderer, sampling, reward, retrieval and "
+        "rollout settings override the corresponding CLI values; eval data and concurrency do not change.",
+    )
     # Sampling backend
     backend: Literal["tinker", "omlx"] = chz.field(
         default="tinker", doc="tinker: Tinker / SkyRL sampling client. omlx: local server."
@@ -103,6 +109,7 @@ class CLIConfig:
     # EM and F1 are recorded either way; these only change the reported reward.
     prompt_name: PromptName = chz.field(default="fast", doc="System prompt variant")
     answer_score: Literal["f1", "em"] = chz.field(default="f1", doc="Answer term of the reward")
+    format_coef: float = chz.field(default=0.1, doc="Penalty for a missing well-formed answer")
     no_search_coef: float = chz.field(default=0.1, doc="Penalty when no search was made")
 
     # Evaluation data
@@ -126,12 +133,17 @@ class CLIConfig:
         doc="Token budget for the full multi-turn trajectory, matching train.py; "
         "episodes that would exceed it end instead of overflowing the model's context window",
     )
+    max_generation_tokens: int | None = chz.field(
+        default=None, doc="Optional generation reserve for the environment's context budget"
+    )
+    context_overflow_reward: float = chz.field(default=-0.1, doc="Reward on context overflow")
     temperature: float = chz.field(default=1.0, doc="Sampling temperature")
 
     # Infrastructure
     retrieval_url: str | None = chz.field(
         default=None, doc="BM25 retrieval server; defaults to $RETRIEVAL_URL"
     )
+    n_results: int = chz.field(default=3, doc="Retrieved documents per search query")
     concurrency: int = chz.field(default=8, doc="Maximum rollouts in flight")
     run_name: str | None = chz.field(default=None, doc="Output directory name under runs/eval")
 
@@ -309,7 +321,7 @@ async def evaluate_single_item(
     ) + [{"role": "user", "content": item["question"]}]
     reward_fn = TextAnswerReward(
         gold_answers=item["answer"],
-        format_coef=0.1,
+        format_coef=config.format_coef,
         answer_score=config.answer_score,
         no_search_coef=config.no_search_coef,
     )
@@ -321,6 +333,8 @@ async def evaluate_single_item(
         reward_fn=reward_fn,
         max_turns=config.max_turns,
         max_trajectory_tokens=config.max_trajectory_tokens,
+        max_generation_tokens=config.max_generation_tokens,
+        context_overflow_reward=config.context_overflow_reward,
     )
     async with semaphore:
         try:
@@ -451,6 +465,10 @@ def print_summary(summary_by_source: dict[str, dict[str, Any]]) -> None:
 
 async def cli_main(config: CLIConfig) -> None:
     load_dotenv(PROJECT_ROOT / ".env")
+    training_config = None
+    if config.training_config_file is not None:
+        training_config = json.loads(Path(config.training_config_file).read_text())
+        config = chz.replace(config, **eval_settings_from_training_config(training_config))
     items = load_eval_items(config)
 
     policy, renderer_name = await build_policy(config)
@@ -459,7 +477,10 @@ async def cli_main(config: CLIConfig) -> None:
     print(f"Using renderer: {renderer_name}")
 
     retrieval_url = config.retrieval_url or os.environ.get("RETRIEVAL_URL", DEFAULT_RETRIEVAL_URL)
-    search_tool = BM25Tool(retrieval_url=retrieval_url, retrieval_config=RetrievalConfig())
+    search_tool = BM25Tool(
+        retrieval_url=retrieval_url,
+        retrieval_config=RetrievalConfig(n_results=config.n_results),
+    )
 
     model_tag = (config.omlx_model or config.base_model).replace("/", "-")
     run_name = config.run_name or f"{model_tag}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -469,6 +490,8 @@ async def cli_main(config: CLIConfig) -> None:
         json.dump(
             {
                 **chz.asdict(config),
+                # Snapshot the source before the next training segment rewrites config.json.
+                "training_config": training_config,
                 "resolved_renderer_name": renderer_name,
                 "retrieval_url": retrieval_url,
                 "system_prompt": get_task_instructions(config.prompt_name),

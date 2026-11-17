@@ -5,7 +5,7 @@ For eval step T of a run the artifact holds:
   offline_eval.py tinker_state_url=... or for resuming, after copying it back under
   --checkpoints-base);
 - the sampler (LoRA adapter) weights of every checkpoint in (previous eval step, T];
-- the dev-set eval summary.json for step T and the checkpoints.jsonl records.
+- the dev-set eval summary/config (including its training-config snapshot) and checkpoint records.
 
 It is one version of the artifact ``<run_name>-checkpoints`` (type ``model``) with alias
 ``step-<T>``, logged from its own short W&B run (job_type ``checkpoint-upload``, grouped with the
@@ -66,11 +66,14 @@ def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dic
                 (sampler_file(args.ckpt_base, r["sampler_path"]), f"sampler/step{batch:04d}.tar.gz")
             )
     files.append((args.eval_summary, f"eval/dev_step{args.step:04d}_summary.json"))
+    eval_config_file = args.eval_summary.with_name("config.json")
+    files.append((eval_config_file, f"eval/dev_step{args.step:04d}_config.json"))
     missing = [str(p) for p, _ in files if not p.exists()]
     if missing:
         raise SystemExit("missing files:\n  " + "\n  ".join(missing))
 
     summary = json.loads(args.eval_summary.read_text())["by_source"]["OVERALL"]
+    eval_config = json.loads(eval_config_file.read_text())
     identity_file = args.log_path / "wandb_run.json"
     identity = json.loads(identity_file.read_text()) if identity_file.exists() else {}
     skyrl = os.environ.get("SKYRL", "/workspace/search-r1/SkyRL")
@@ -94,8 +97,8 @@ def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dic
         "training_wandb_run": identity.get("id"),
         "skyrl_commit": skyrl_commit,
         "skyrl_patch": "skyrl-79d4c89-trim-microbatch-padding.patch",
-        "base_model": "Qwen/Qwen3.5-4B",
-        "lora_rank": 32,
+        "base_model": eval_config["base_model"],
+        "lora_rank": eval_config["lora_rank"],
     }
     return files, metadata, identity
 
