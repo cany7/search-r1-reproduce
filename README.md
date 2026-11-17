@@ -21,6 +21,7 @@ from tinker-cookbook. The experiment plan lives in the knowledge base under
 - `search_r1/` adapts tinker-cookbook's `recipes/search_tool` recipe.
   - `tools.py` implements the BM25 search tool and the F1+ reward, with the original reward available as an option.
   - `search_env.py` defines the fast and original prompts, loads data, and builds the search environment.
+  - `renderers.py` preserves Unicode in Qwen3.5 tool arguments, matching the model's chat template.
   - `train.py` is the cloud training entry point.
   - `offline_eval.py` supports Tinker and local oMLX evaluation and writes each trajectory to disk.
   - `local_completer.py` adapts oMLX for local inference.
@@ -29,6 +30,13 @@ from tinker-cookbook. The experiment plan lives in the knowledge base under
 - `scripts/` contains environment checks, dataset splitting, base-model evaluation, and run comparison tools.
 - `tests/` contains unit tests for the reward functions.
 - `data/` and `runs/` contain local data and evaluation outputs. Git ignores both directories.
+
+Training and base-model evaluation default to
+`search_r1/qwen3_5_disable_thinking_unicode`. This renderer preserves non-ASCII
+characters in list/dict tool arguments; it retains the cookbook's message rendering,
+parsing and rollout behavior. Its name is saved in training/evaluation configuration
+and training-client metadata. Checkpoint evaluation uses the recorded renderer when
+available. The original `qwen3_5_disable_thinking` remains available for historical runs.
 
 ## Download the data
 

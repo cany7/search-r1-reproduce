@@ -10,11 +10,11 @@ import chz
 import pandas as pd
 from huggingface_hub import hf_hub_download
 from tinker_cookbook import model_info, tokenizer_utils
-from tinker_cookbook.renderers import get_renderer
 from tinker_cookbook.renderers.base import Message, Renderer
 from tinker_cookbook.rl.types import Env, EnvGroupBuilder, RLDataset, RLDatasetBuilder
 from tinker_cookbook.tool_use import build_agent_tool_env
 
+from search_r1.renderers import get_renderer
 from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward
 
 # Project data directory (datasets, index, corpus). Override with SEARCH_R1_DATA_DIR.

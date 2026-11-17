@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from tinker_cookbook import cli_utils, model_info
 from tinker_cookbook.rl import train
 
+from search_r1.renderers import DEFAULT_RENDERER_NAME
 from search_r1.search_env import DEFAULT_RETRIEVAL_URL, PromptName, SearchR1DatasetBuilder
 from search_r1.skyrl_compat import patch_create_from_state
 from search_r1.tools import RetrievalConfig
@@ -21,7 +22,7 @@ class CLIConfig:
     # Model parameters
     model_name: str = "Qwen/Qwen3.5-4B"
     lora_rank: int = 32
-    renderer_name: str | None = "qwen3_5_disable_thinking"
+    renderer_name: str | None = DEFAULT_RENDERER_NAME
 
     # Training parameters
     learning_rate: float = 4e-5

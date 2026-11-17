@@ -17,6 +17,7 @@ Search-R1 小规模复现。计划见 knowledge-base 的《Search-R1 复现计�
 - `search_r1/`：基于 cookbook 的 `recipes/search_tool` 修改。
   - `tools.py`：BM25 检索工具、reward（F1+，原版可选）。
   - `search_env.py`：prompt（fast，原版可选）、数据加载、环境构建。
+  - `renderers.py`：保留 Qwen3.5 工具参数中的 Unicode 字符，与模型 chat template 一致。
   - `train.py`：训练入口（云端用）。
   - `offline_eval.py`：评测，支持 tinker 和本地 omlx 两种后端，逐条轨迹落盘。
   - `local_completer.py`：本地推理适配，只在本地用。
@@ -25,6 +26,11 @@ Search-R1 小规模复现。计划见 knowledge-base 的《Search-R1 复现计�
 - `scripts/`：环境自检、评测集划分、基座评测、结果对比。
 - `tests/`：reward 的单元测试。
 - `data/`、`runs/`：数据和评测输出，不进 git。
+
+训练和基座评测默认使用 `search_r1/qwen3_5_disable_thinking_unicode`，仅修正列表／字典
+工具参数中的非 ASCII 字符转义，沿用 cookbook 的消息渲染、解析和 rollout 逻辑。
+renderer 名称写入训练／评测配置和训练客户端元数据；检查点评测优先使用记录的名称。
+原 `qwen3_5_disable_thinking` 仍可用于历史运行。
 
 ## 数据
 

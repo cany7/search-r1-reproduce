@@ -86,8 +86,8 @@ config() {
     q3i-*) unload "$Q35_ID" ;;
   esac
   case "$1" in
-    q35-original)       run "$1" "${Q35[@]}" renderer_name=qwen3_5_disable_thinking prompt_name=original ;;
-    q35-fast)           run "$1" "${Q35[@]}" renderer_name=qwen3_5_disable_thinking prompt_name=fast ;;
+    q35-original)       run "$1" "${Q35[@]}" prompt_name=original ;;
+    q35-fast)           run "$1" "${Q35[@]}" prompt_name=fast ;;
     q35-think-fast)     run "$1" "${Q35[@]}" renderer_name=qwen3_5 prompt_name=fast ;;
     q3i-original)       run "$1" "${Q3I[@]}" prompt_name=original ;;
     q3i-fast)           run "$1" "${Q3I[@]}" prompt_name=fast ;;

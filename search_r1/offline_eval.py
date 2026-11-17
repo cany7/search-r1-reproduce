@@ -28,7 +28,7 @@ import tinker
 from dotenv import load_dotenv
 from tinker_cookbook import checkpoint_utils, tokenizer_utils
 from tinker_cookbook.completers import TinkerTokenCompleter, TokenCompleter
-from tinker_cookbook.renderers import Renderer, get_renderer, get_text_content
+from tinker_cookbook.renderers import Renderer, get_text_content
 from tinker_cookbook.renderers.base import Message
 from tinker_cookbook.rl.rollouts import do_single_rollout
 from tinker_cookbook.rl.types import StopReason, Trajectory
@@ -38,6 +38,7 @@ from tinker_cookbook.utils.git_rev import recipe_user_metadata
 
 from search_r1.eval_config import eval_settings_from_training_config
 from search_r1.local_completer import OpenAICompletionsTokenCompleter
+from search_r1.renderers import DEFAULT_RENDERER_NAME, get_renderer
 from search_r1.search_env import (
     DEFAULT_RETRIEVAL_URL,
     PromptName,
@@ -81,7 +82,7 @@ class CLIConfig:
     )
     base_model: str = chz.field(default="Qwen/Qwen3.5-4B", doc="HF name, for tokenizer")
     renderer_name: str = chz.field(
-        default="qwen3_5_disable_thinking",
+        default=DEFAULT_RENDERER_NAME,
         doc="Renderer to use (Tinker: only if the checkpoint does not record one)",
     )
     tinker_checkpoint_url: str | None = chz.field(
