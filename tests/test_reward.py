@@ -41,6 +41,8 @@ def grade(messages: list[Message], **kwargs) -> tuple[float, dict[str, float]]:
         ("Answer: Einstein", True, 0.0, 0.0),
         ("It was Röntgen.", True, -0.1, -0.1),  # no "Answer:"
         ("It was Röntgen.", False, -0.2, -0.1),  # both penalties
+        ("Answer:", True, -0.1, -0.1),
+        ("Answer:  \n", False, -0.2, -0.1),
         ("Answer: a Answer: Wilhelm Conrad Röntgen", True, -0.1, -0.1),  # two "Answer:"
     ],
 )
@@ -60,6 +62,21 @@ def test_metrics_report_em_and_f1_under_either_reward() -> None:
 def test_f1_takes_best_gold_answer() -> None:
     # "W. C. Röntgen" normalizes to three tokens; "W C Röntgen" matches it exactly.
     assert grade(history("Answer: W C Röntgen"))[1]["f1"] == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
+    ("final", "expected_format", "expected_score"),
+    [
+        ("Answer:  ", 0.0, 0.0),
+        ("Answer: .", 1.0, 0.0),
+        ("Answer: Frederick Douglass", 1.0, 1.0),
+    ],
+)
+def test_empty_normalized_gold_alias(final, expected_format, expected_score) -> None:
+    reward, metrics = asyncio.run(TextAnswerReward(['"', "Frederick Douglass"])(history(final)))
+    assert metrics["format"] == expected_format
+    assert metrics["correct"] == metrics["f1"] == expected_score
+    assert reward == pytest.approx(expected_score + 0.1 * (expected_format - 1))
 
 
 def test_compute_f1() -> None:

@@ -150,8 +150,6 @@ def compute_f1(prediction: str, gold: str) -> float:
     """Token-level F1 between two answers after ``normalize_answer`` (SQuAD-style)."""
     prediction_tokens = normalize_answer(prediction).split()
     gold_tokens = normalize_answer(gold).split()
-    if not prediction_tokens or not gold_tokens:
-        return float(prediction_tokens == gold_tokens)
     num_same = sum((Counter(prediction_tokens) & Counter(gold_tokens)).values())
     if num_same == 0:
         return 0.0
@@ -258,16 +256,16 @@ class TextAnswerReward:
         parts = text.split("Answer:")
         if len(parts) != 2:
             return None
-        return parts[1].strip()
+        return parts[1].strip() or None
 
     def _check_answer(self, text: str) -> bool:
         model_answer = self._extract_answer(text)
-        if model_answer is None or len(self.gold_answers) == 0:
+        if model_answer is None:
             return False
-        for gold in self.gold_answers:
-            if normalize_answer(model_answer) == normalize_answer(gold):
-                return True
-        return False
+        normalized = normalize_answer(model_answer)
+        return bool(normalized) and any(
+            normalized == normalize_answer(gold) for gold in self.gold_answers
+        )
 
     def _f1(self, text: str) -> float:
         model_answer = self._extract_answer(text)
