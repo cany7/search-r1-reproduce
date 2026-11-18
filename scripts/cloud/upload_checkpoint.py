@@ -114,8 +114,13 @@ def upload(args, files, metadata, identity) -> dict:
     os.environ.setdefault("WANDB_DATA_DIR", "/workspace/.cache/wandb-data")
     Path(os.environ["WANDB_DIR"]).mkdir(parents=True, exist_ok=True)
 
+    try:  # wandb >= 0.2x moved generate_id out of wandb.util
+        from wandb.sdk.lib.runid import generate_id
+    except ImportError:
+        generate_id = wandb.util.generate_id
+
     run = wandb.init(
-        id=wandb.util.generate_id(),
+        id=generate_id(),
         resume="never",
         project=identity.get("project", args.project),
         entity=identity.get("entity"),

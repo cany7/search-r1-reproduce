@@ -96,7 +96,9 @@ def test_upload_does_not_inherit_training_identity(tmp_path, monkeypatch, fake_w
     monkeypatch.setenv("WANDB_RUN_ID", "training-id")
     monkeypatch.setenv("WANDB_RESUME", "allow")
     monkeypatch.setenv("WANDB_DIR", str(tmp_path))
-    fake_wandb.util.generate_id.return_value = "upload-id"
+    monkeypatch.setitem(
+        sys.modules, "wandb.sdk.lib.runid", SimpleNamespace(generate_id=lambda: "upload-id")
+    )
     module.upload(
         SimpleNamespace(project="test-project", run_name="simulation", step=25),
         [],
