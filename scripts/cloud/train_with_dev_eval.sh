@@ -25,6 +25,8 @@
 #                eval summary to W&B; see upload_checkpoint.py),
 #        BASE_EVAL_DIR (unset: base-model dev eval directory, logged at step 0 of the
 #                       <run_name>-monitor W&B run; see log_monitor_metrics.py)
+#        UPLOAD_FROM (0: for a run forked from step S, set S so the first upload takes
+#                     sampler weights from (S, T] only)
 # Disk: about 240 GB at the peak of a 200-step run; use a 300 GB volume.
 #
 # Needs: the BM25 retrieval server running, SkyRL with the local patch, /workspace/bin scripts.
@@ -108,7 +110,8 @@ curl -sf -X POST "$RETRIEVAL_URL/retrieve" -H "Content-Type: application/json" \
   || fail "retrieval server is not answering at $RETRIEVAL_URL"
 
 # Segment targets: EVAL_EVERY, 2*EVAL_EVERY, ..., plus TOTAL_STEPS if it is not a multiple.
-PREV_T=0
+# UPLOAD_FROM: the step a forked run starts from, so its first upload covers (UPLOAD_FROM, T].
+PREV_T=${UPLOAD_FROM:-0}
 MONITOR_SCRIPT=/workspace/bin/log_monitor_metrics.py
 if [ -n "${STAGE3_PARENT:-}" ]; then
   TARGETS="112 124"

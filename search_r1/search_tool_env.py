@@ -6,10 +6,30 @@ import json
 from typing import Annotated
 
 from tinker_cookbook.renderers.base import Message, Renderer, ToolCall, ToolSpec
+from tinker_cookbook.rl import types
 from tinker_cookbook.rl.message_env import EnvFromMessageEnv, MessageStepResult
 from tinker_cookbook.tool_use import AgentToolMessageEnv, ToolResult, tool
 
 from search_r1.tools import BM25Tool, TextAnswerReward, requested_query_list
+
+# Transition log key set on the terminal step whose reward was replaced. Its value is the
+# reward the shared scorer gave, so rollouts keep both the original and the training reward.
+MAX_TURNS_UNANSWERED_LOG = "max_turns_unanswered_original_reward"
+MAX_TURNS_STOP = f"{types.STOP_METRIC_PREFIX}{types.StopReason.MAX_TURNS}"
+
+
+def is_max_turns_unanswered(result: MessageStepResult) -> bool:
+    """The episode ended at the turn limit and its final message has no valid answer.
+
+    A fifth turn that answers without a tool call stops as completed, and a valid answer
+    next to a tool call keeps format == 1. Parse failures stop as parse_error; generation
+    truncation and context overflow end in EnvFromMessageEnv without reaching here.
+    """
+    return (
+        result.episode_done
+        and result.metrics.get(MAX_TURNS_STOP) == 1.0
+        and result.metrics.get("format") == 0.0
+    )
 
 
 class LimitedSearchMessageEnv(AgentToolMessageEnv):
@@ -22,9 +42,12 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
         reward_fn: TextAnswerReward,
         max_turns: int,
         example_id: str,
+        max_turns_unanswered_reward: float | None = None,
     ):
         self.retriever = retriever
         self.example_id = example_id
+        # Training only: terminal reward for episodes that hit max_turns without an answer.
+        self.max_turns_unanswered_reward = max_turns_unanswered_reward
         self._executed_queries: list[str] | None = None
         super().__init__([self.search], initial_messages, max_turns, reward_fn)
 
@@ -84,6 +107,10 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
         if self._turn_count == 1:
             result.logs["example_id"] = self.example_id
             result.metrics["first_turn_queries_requested"] = requested_count
+        if self.max_turns_unanswered_reward is not None and is_max_turns_unanswered(result):
+            # An absolute terminal value, settled once, in place of the scorer's reward.
+            result.logs[MAX_TURNS_UNANSWERED_LOG] = result.reward
+            result.reward = self.max_turns_unanswered_reward
         return result
 
 
@@ -104,12 +131,20 @@ def build_search_env(
     context_overflow_reward: float,
     limit_search: bool,
     example_id: str,
+    max_turns_unanswered_reward: float | None = None,
 ) -> EnvFromMessageEnv:
     if limit_search:
         message_env = LimitedSearchMessageEnv(
-            search_tool, initial_messages, reward_fn, max_turns, example_id
+            search_tool,
+            initial_messages,
+            reward_fn,
+            max_turns,
+            example_id,
+            max_turns_unanswered_reward=max_turns_unanswered_reward,
         )
     else:
+        if max_turns_unanswered_reward is not None:
+            raise ValueError("max_turns_unanswered_reward requires limit_search=True")
         message_env = AgentToolMessageEnv(
             tools=[search_tool.search],
             initial_messages=initial_messages,

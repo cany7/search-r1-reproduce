@@ -50,6 +50,11 @@ class CLIConfig:
     limit_search: bool = chz.field(
         default=False, doc="Run only the first search per turn and its first three queries."
     )
+    max_turns_unanswered_reward: float | None = chz.field(
+        default=None,
+        doc="Training reward for an episode that reaches max_turns without a valid answer "
+        "(requires limit_search). None keeps the shared scorer's reward.",
+    )
 
     # Streaming configuration
     stream_minibatch: bool = False
@@ -93,6 +98,7 @@ async def cli_main(cli_config: CLIConfig) -> None:
         retrieval_url=cli_config.retrieval_url,
         retrieval_config=retrieval_config,
         limit_search=cli_config.limit_search,
+        max_turns_unanswered_reward=cli_config.max_turns_unanswered_reward,
         seed=cli_config.seed,
         max_turns=cli_config.max_turns,
         format_coef=cli_config.format_coef,

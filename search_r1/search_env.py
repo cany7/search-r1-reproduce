@@ -11,10 +11,21 @@ import pandas as pd
 from huggingface_hub import hf_hub_download
 from tinker_cookbook import model_info, tokenizer_utils
 from tinker_cookbook.renderers.base import Message, Renderer
-from tinker_cookbook.rl.types import Env, EnvGroupBuilder, RLDataset, RLDatasetBuilder
+from tinker_cookbook.rl.types import (
+    Env,
+    EnvGroupBuilder,
+    Metrics,
+    RLDataset,
+    RLDatasetBuilder,
+    Trajectory,
+)
 
 from search_r1.renderers import get_renderer
-from search_r1.search_tool_env import build_search_env, search_tool_spec
+from search_r1.search_tool_env import (
+    MAX_TURNS_UNANSWERED_LOG,
+    build_search_env,
+    search_tool_spec,
+)
 from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward
 
 # Project data directory (datasets, index, corpus). Override with SEARCH_R1_DATA_DIR.
@@ -174,6 +185,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         answer_score: Literal["f1", "em"] = "f1",
         no_search_coef: float = 0.1,
         limit_search: bool = False,
+        max_turns_unanswered_reward: float | None = None,
     ):
         self.datum = datum
         self.model_name = model_name
@@ -189,6 +201,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         self.answer_score = answer_score
         self.no_search_coef = no_search_coef
         self.limit_search = limit_search
+        self.max_turns_unanswered_reward = max_turns_unanswered_reward
 
     async def make_envs(self) -> Sequence[Env]:
         tokenizer = tokenizer_utils.get_tokenizer(self.model_name)
@@ -220,8 +233,29 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
                 context_overflow_reward=self.context_overflow_reward,
                 limit_search=self.limit_search,
                 example_id=self.datum["id"],
+                max_turns_unanswered_reward=self.max_turns_unanswered_reward,
             )
             for _ in range(self.group_size)
+        ]
+
+    async def compute_group_rewards(
+        self, trajectory_group: list[Trajectory], env_group: Sequence[Env]
+    ) -> list[tuple[float, Metrics]]:
+        if self.max_turns_unanswered_reward is None:
+            return await super().compute_group_rewards(trajectory_group, env_group)
+        # A 0/1 value for every trajectory, so env/*/max_turns_unanswered is a fraction
+        # of all trajectories (transition metrics only average over steps that set them).
+        return [
+            (
+                0.0,
+                {
+                    "max_turns_unanswered": float(
+                        bool(traj.transitions)
+                        and MAX_TURNS_UNANSWERED_LOG in traj.transitions[-1].logs
+                    )
+                },
+            )
+            for traj in trajectory_group
         ]
 
     def logging_tags(self) -> list[str]:
@@ -271,6 +305,9 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
     prompt_name: PromptName = "fast"
     answer_score: Literal["f1", "em"] = "f1"
     no_search_coef: float = 0.1
+    # Training only (offline evaluation keeps the shared scorer): terminal reward for an
+    # episode that reaches max_turns without a valid answer. None keeps the scorer's value.
+    max_turns_unanswered_reward: float | None = None
     seed: int = 0
 
     async def __call__(self) -> tuple[RLDataset, RLDataset | None]:
@@ -300,6 +337,7 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
                 answer_score=self.answer_score,
                 no_search_coef=self.no_search_coef,
                 limit_search=self.limit_search,
+                max_turns_unanswered_reward=self.max_turns_unanswered_reward,
             )
             for datum in data
         ]
