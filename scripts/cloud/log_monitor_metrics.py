@@ -183,7 +183,18 @@ def collect(args: argparse.Namespace, state: dict) -> list[tuple[str, int, dict,
         if state["rollout"].get(str(step)) == fp:
             continue
         rows = [r for r in load_jsonl(f) if r.get("split", "train") == "train"]
-        pending.append(("rollout", step, rollout_metrics(rows, max_turns), fp))
+        if rows and "selection" in rows[0]:
+            # The historical rollout/* axis is the sampler version. Preserve that
+            # meaning; stage-three files also include the groups filtered out.
+            selected = [r for r in rows if r["selection"] == "selected"]
+            metrics = rollout_metrics(rows, max_turns)
+            metrics.update({
+                key.replace("rollout/", "selected_rollout/", 1): value
+                for key, value in rollout_metrics(selected, max_turns).items()
+            })
+        else:
+            metrics = rollout_metrics(rows, max_turns)
+        pending.append(("rollout", step, metrics, fp))
 
     evals: list[tuple[int, Path]] = []
     if args.base_eval is not None:

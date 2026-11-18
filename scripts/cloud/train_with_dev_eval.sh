@@ -108,28 +108,53 @@ curl -sf -X POST "$RETRIEVAL_URL/retrieve" -H "Content-Type: application/json" \
   || fail "retrieval server is not answering at $RETRIEVAL_URL"
 
 # Segment targets: EVAL_EVERY, 2*EVAL_EVERY, ..., plus TOTAL_STEPS if it is not a multiple.
-TARGETS=$(seq "$EVAL_EVERY" "$EVAL_EVERY" "$TOTAL_STEPS")
-[ $((TOTAL_STEPS % EVAL_EVERY)) -ne 0 ] && TARGETS="$TARGETS $TOTAL_STEPS"
+PREV_T=0
+MONITOR_SCRIPT=/workspace/bin/log_monitor_metrics.py
+if [ -n "${STAGE3_PARENT:-}" ]; then
+  TARGETS="112 124"
+  TOTAL_STEPS=124
+  PREV_T=100
+  PRUNE_STATES=0
+  MONITOR_SCRIPT="$PROJ/scripts/cloud/log_monitor_metrics.py"
+else
+  TARGETS=$(seq "$EVAL_EVERY" "$EVAL_EVERY" "$TOTAL_STEPS")
+  [ $((TOTAL_STEPS % EVAL_EVERY)) -ne 0 ] && TARGETS="$TARGETS $TOTAL_STEPS"
+fi
 log "run=$NAME targets: $(echo $TARGETS) batch=${BATCH_SIZE}x${GROUP_SIZE} save_every=$SAVE_EVERY extra: $*"
 
-PREV_T=0
 UPLOAD_PIDS=""
 for T in $TARGETS; do
   # 1. Train to step T.
   read -r BATCH STATE <<<"$(last_checkpoint)"
   if [ "$BATCH" -lt "$T" ]; then
+    if [ -n "${STAGE3_PARENT:-}" ]; then
+      [ "$BATCH" -ge 100 ] || BATCH=100
+      python3 "$PROJ/scripts/cloud/stage3_ops.py" disk-plan "$LOG_PATH" --targets "$T" --save-every "$SAVE_EVERY" \
+        || fail "insufficient space before training to $T"
+    fi
     log "training: step $BATCH -> $T"
     /workspace/bin/restart_skyrl.sh "${NAME}_server_train_$T" >>"$DRIVER_LOG" 2>&1 \
       || fail "server restart failed before training to step $T; see $DRIVER_LOG"
-    (cd "$PROJ" && uv run --frozen python -m search_r1.train \
-      batch_size="$BATCH_SIZE" group_size="$GROUP_SIZE" max_steps="$T" save_every="$SAVE_EVERY" \
-      log_path="$LOG_PATH" wandb_name="$NAME" behavior_if_log_dir_exists=resume "$@" \
+    if [ -n "${STAGE3_PARENT:-}" ]; then
+      TRAIN_ARGS=(search_r1.train_dapo --parent "$STAGE3_PARENT" --output "$LOG_PATH"
+        --target "$T" --save-every "$SAVE_EVERY")
+    else
+      TRAIN_ARGS=(search_r1.train batch_size="$BATCH_SIZE" group_size="$GROUP_SIZE"
+        max_steps="$T" save_every="$SAVE_EVERY" log_path="$LOG_PATH" wandb_name="$NAME"
+        behavior_if_log_dir_exists=resume "$@")
+    fi
+    (cd "$PROJ" && uv run --frozen python -m "${TRAIN_ARGS[@]}" \
       >"/workspace/logs/${NAME}_train_to_$T.log" 2>&1)
     read -r BATCH STATE <<<"$(last_checkpoint)"
     [ "$BATCH" -ge "$T" ] || fail "training to step $T stopped at checkpoint $BATCH; see /workspace/logs/${NAME}_train_to_$T.log"
     log "training done: checkpoint at step $BATCH ($STATE)"
   else
     log "training to step $T already done (last checkpoint at $BATCH)"
+  fi
+
+  if [ -n "${STAGE3_PARENT:-}" ]; then
+    python3 "$PROJ/scripts/cloud/stage3_ops.py" verify "$LOG_PATH" --target "$T" \
+      || fail "stage-three checkpoint or rollout verification failed at $T"
   fi
 
   # 2. Evaluate the checkpoint saved at step T on the dev set.
@@ -156,7 +181,7 @@ for T in $TARGETS; do
   # Never touches the training run; a failure only logs a warning.
   MONITOR_ARGS=(--run-name "$NAME" --log-path "$LOG_PATH" --eval-root "$PROJ/runs/eval")
   [ -n "$BASE_EVAL_DIR" ] && MONITOR_ARGS+=(--base-eval "$BASE_EVAL_DIR")
-  timeout 600 "$PROJ/.venv/bin/python" /workspace/bin/log_monitor_metrics.py "${MONITOR_ARGS[@]}" \
+  timeout 600 "$PROJ/.venv/bin/python" "$MONITOR_SCRIPT" "${MONITOR_ARGS[@]}" \
     >>"/workspace/logs/${NAME}_monitor.log" 2>&1 \
     || log "WARNING: monitor metrics not logged at step $T; see /workspace/logs/${NAME}_monitor.log"
 

@@ -195,3 +195,50 @@ def test_upload_lock_rechecks_marker_and_releases_on_exit(tmp_path, interrupt_fi
                 if process.is_alive():
                     process.terminate()
                 process.join(5)
+
+
+def test_stage3_driver_targets_and_upload_boundaries(shell_workspace):
+    workspace, env = shell_workspace
+    bin_dir = workspace / "bin"
+    project = workspace / "project"
+    cloud = project / "scripts/cloud"
+    cloud.mkdir(parents=True)
+    (cloud / "stage3_ops.py").write_text("pass\n")
+    (project / ".venv/bin").mkdir(parents=True)
+    executable(project / ".venv/bin/python", "exit 0")
+    executable(bin_dir / "restart_skyrl.sh", "exit 0")
+    executable(bin_dir / "curl", "exit 0")
+    executable(bin_dir / "timeout", "exit 0")
+    run = workspace / "runs/train/simulation"
+    run.mkdir(parents=True)
+    calls = workspace / "train_args"
+    executable(
+        bin_dir / "uv",
+        f'''echo "$*" >> "{calls}"
+if [[ "$*" == *search_r1.train_dapo* ]]; then
+  step=$(echo "$*" | sed -E 's/.*--target ([0-9]+).*/\\1/')
+  echo "{{\\"batch\\":$step,\\"state_path\\":\\"tinker://model/weights/final\\"}}" >> "{run}/checkpoints.jsonl"
+elif [[ "$*" == *search_r1.offline_eval* ]]; then
+  evaldir="{project}/runs/eval/${{@: -1}}"
+  evaldir=${{evaldir/run_name=/}}
+  mkdir -p "$evaldir"
+  echo '{{"run":{{"num_errors":0}},"by_source":{{"OVERALL":{{"n":1,"em":1,"f1":1,"answer_rate":1}}}}}}' > "$evaldir/summary.json"
+fi
+exit 0''',
+    )
+    uploads = workspace / "upload_args"
+    executable(
+        bin_dir / "setsid",
+        f'''echo "$*" >> "{uploads}"
+step=$(echo "$*" | sed -E 's/.*--step ([0-9]+).*/\\1/')
+mkdir -p "{run}/uploads"
+touch "{run}/uploads/$(printf 'step%04d' "$step").json"''',
+    )
+    result = run_shell_copy("train_with_dev_eval.sh", workspace, env | {"STAGE3_PARENT": "parent"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    lines = calls.read_text().splitlines()
+    assert len([s for s in lines if "search_r1.train_dapo" in s]) == 2
+    assert len([s for s in lines if "search_r1.offline_eval" in s]) == 2
+    for lo, hi in ((100, 112), (112, 124)):
+        assert any(f"--target {hi} " in s for s in lines)
+        assert f"--step {hi} --prev-step {lo} " in uploads.read_text()
