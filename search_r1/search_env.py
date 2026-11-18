@@ -12,9 +12,9 @@ from huggingface_hub import hf_hub_download
 from tinker_cookbook import model_info, tokenizer_utils
 from tinker_cookbook.renderers.base import Message, Renderer
 from tinker_cookbook.rl.types import Env, EnvGroupBuilder, RLDataset, RLDatasetBuilder
-from tinker_cookbook.tool_use import build_agent_tool_env
 
 from search_r1.renderers import get_renderer
+from search_r1.search_tool_env import build_search_env, search_tool_spec
 from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward
 
 # Project data directory (datasets, index, corpus). Override with SEARCH_R1_DATA_DIR.
@@ -141,16 +141,15 @@ def download_search_r1_dataset(split: Literal["train", "test"]) -> list[SearchR1
     return df_raw.apply(process_single_row, axis=1).tolist()
 
 
-def _initial_messages(
+def search_initial_messages(
     datum: SearchR1Datum,
     renderer: Renderer,
-    search_tool: BM25Tool,
-    prompt_name: PromptName = "fast",
+    prompt_name: PromptName,
+    limit_search: bool,
 ) -> list[Message]:
     """Build initial messages with tool schemas and task question."""
-    tool_schemas = [search_tool.search.to_spec()]
     prefix = renderer.create_conversation_prefix_with_tools(
-        tools=tool_schemas,
+        tools=[search_tool_spec(limit_search)],
         system_prompt=get_task_instructions(prompt_name),
     )
     return prefix + [{"role": "user", "content": datum["question"]}]
@@ -174,6 +173,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         prompt_name: PromptName = "fast",
         answer_score: Literal["f1", "em"] = "f1",
         no_search_coef: float = 0.1,
+        limit_search: bool = False,
     ):
         self.datum = datum
         self.model_name = model_name
@@ -188,6 +188,7 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         self.prompt_name = prompt_name
         self.answer_score = answer_score
         self.no_search_coef = no_search_coef
+        self.limit_search = limit_search
 
     async def make_envs(self) -> Sequence[Env]:
         tokenizer = tokenizer_utils.get_tokenizer(self.model_name)
@@ -197,8 +198,8 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         renderer = get_renderer(renderer_name, tokenizer)
 
         # Tool, initial_messages, reward_fn are all stateless - can share
-        initial_messages = _initial_messages(
-            self.datum, renderer, self.search_tool, self.prompt_name
+        initial_messages = search_initial_messages(
+            self.datum, renderer, self.prompt_name, self.limit_search
         )
         reward_fn = TextAnswerReward(
             gold_answers=self.datum["answer"],
@@ -208,15 +209,17 @@ class SearchEnvGroupBuilder(EnvGroupBuilder):
         )
 
         return [
-            build_agent_tool_env(
+            build_search_env(
                 renderer=renderer,
-                tools=[self.search_tool.search],
+                search_tool=self.search_tool,
                 initial_messages=initial_messages,
                 reward_fn=reward_fn,
                 max_turns=self.max_turns,
                 max_trajectory_tokens=self.max_trajectory_tokens,
                 max_generation_tokens=self.max_generation_tokens,
                 context_overflow_reward=self.context_overflow_reward,
+                limit_search=self.limit_search,
+                example_id=self.datum["id"],
             )
             for _ in range(self.group_size)
         ]
@@ -253,6 +256,7 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
     # BM25 retrieval server
     retrieval_url: str = DEFAULT_RETRIEVAL_URL
     retrieval_config: RetrievalConfig = RetrievalConfig()
+    limit_search: bool = False
     # Dataset params
     batch_size: int
     group_size: int
@@ -295,6 +299,7 @@ class SearchR1DatasetBuilder(RLDatasetBuilder):
                 prompt_name=self.prompt_name,
                 answer_score=self.answer_score,
                 no_search_coef=self.no_search_coef,
+                limit_search=self.limit_search,
             )
             for datum in data
         ]

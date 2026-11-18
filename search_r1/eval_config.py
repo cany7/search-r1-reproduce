@@ -8,7 +8,7 @@ def eval_settings_from_training_config(training: dict[str, Any]) -> dict[str, An
 
     Evaluation data selection, output paths and concurrency remain evaluation-specific.
     The schema is the config.json written by the pinned cookbook and SearchR1DatasetBuilder.
-    Missing fields fail explicitly instead of silently falling back to evaluation defaults.
+    Snapshots predating the per-turn search limit use the original, unlimited tool.
     """
     builder = training["dataset_builder"]
     return {
@@ -27,4 +27,5 @@ def eval_settings_from_training_config(training: dict[str, Any]) -> dict[str, An
         "context_overflow_reward": builder["context_overflow_reward"],
         "retrieval_url": builder["retrieval_url"],
         "n_results": builder["retrieval_config"]["n_results"],
+        "limit_search": builder.get("limit_search", False),
     }

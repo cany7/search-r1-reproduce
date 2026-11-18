@@ -47,6 +47,9 @@ class CLIConfig:
     # BM25 retrieval server
     retrieval_url: str = DEFAULT_RETRIEVAL_URL
     n_results: int = 3
+    limit_search: bool = chz.field(
+        default=False, doc="Run only the first search per turn and its first three queries."
+    )
 
     # Streaming configuration
     stream_minibatch: bool = False
@@ -89,6 +92,7 @@ async def cli_main(cli_config: CLIConfig) -> None:
         model_name_for_tokenizer=cli_config.model_name,
         retrieval_url=cli_config.retrieval_url,
         retrieval_config=retrieval_config,
+        limit_search=cli_config.limit_search,
         seed=cli_config.seed,
         max_turns=cli_config.max_turns,
         format_coef=cli_config.format_coef,

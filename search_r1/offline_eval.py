@@ -33,7 +33,6 @@ from tinker_cookbook.renderers.base import Message
 from tinker_cookbook.rl.rollouts import do_single_rollout
 from tinker_cookbook.rl.types import StopReason, Trajectory
 from tinker_cookbook.tokenizer_utils import Tokenizer
-from tinker_cookbook.tool_use import build_agent_tool_env
 from tinker_cookbook.utils.git_rev import recipe_user_metadata
 
 from search_r1.eval_config import eval_settings_from_training_config
@@ -45,7 +44,9 @@ from search_r1.search_env import (
     SearchR1Datum,
     download_search_r1_dataset,
     get_task_instructions,
+    search_initial_messages,
 )
+from search_r1.search_tool_env import build_search_env, search_tool_spec
 from search_r1.skyrl_compat import patch_create_from_state
 from search_r1.tools import (
     BM25Tool,
@@ -145,6 +146,9 @@ class CLIConfig:
         default=None, doc="BM25 retrieval server; defaults to $RETRIEVAL_URL"
     )
     n_results: int = chz.field(default=3, doc="Retrieved documents per search query")
+    limit_search: bool = chz.field(
+        default=False, doc="Run only the first search per turn and its first three queries."
+    )
     concurrency: int = chz.field(default=8, doc="Maximum rollouts in flight")
     run_name: str | None = chz.field(default=None, doc="Output directory name under runs/eval")
 
@@ -261,6 +265,17 @@ def build_record(
     if assistant_messages and not assistant_messages[-1].get("tool_calls"):
         answer = reward_fn._extract_answer(get_text_content(assistant_messages[-1]))
 
+    turns = []
+    for t in transitions:
+        turn = {
+            "prompt_tokens": t.ob.length,
+            "sampled_tokens": len(t.ac.tokens),
+            "stop_reason": t.ac.stop_reason,
+        }
+        if "search_calls" in t.logs:
+            turn["search_calls"] = json.loads(t.logs["search_calls"])
+        turns.append(turn)
+
     has_answer = final_metrics.get("format", 0.0) == 1.0
     return {
         "id": item.get("id", ""),
@@ -284,14 +299,7 @@ def build_record(
         "repeated_query": len(set(normalized_queries)) < len(normalized_queries),
         "parse_error": any(t.metrics.get("parse_error", 0.0) > 0 for t in transitions),
         "sampled_tokens": sum(len(t.ac.tokens) for t in transitions),
-        "turns": [
-            {
-                "prompt_tokens": t.ob.length,
-                "sampled_tokens": len(t.ac.tokens),
-                "stop_reason": t.ac.stop_reason,
-            }
-            for t in transitions
-        ],
+        "turns": turns,
         # Messages produced during the rollout. The system prompt and tool
         # declaration are the same for every item and live in config.json.
         "messages": _to_jsonable(generated),
@@ -315,11 +323,7 @@ async def evaluate_single_item(
     config: CLIConfig,
     semaphore: asyncio.Semaphore,
 ) -> dict[str, Any]:
-    tool_schemas = [search_tool.search.to_spec()]
-    initial_messages = renderer.create_conversation_prefix_with_tools(
-        tools=tool_schemas,
-        system_prompt=get_task_instructions(config.prompt_name),
-    ) + [{"role": "user", "content": item["question"]}]
+    initial_messages = search_initial_messages(item, renderer, config.prompt_name, config.limit_search)
     reward_fn = TextAnswerReward(
         gold_answers=item["answer"],
         format_coef=config.format_coef,
@@ -327,15 +331,17 @@ async def evaluate_single_item(
         no_search_coef=config.no_search_coef,
     )
 
-    env = build_agent_tool_env(
+    env = build_search_env(
         renderer=renderer,
-        tools=[search_tool.search],
+        search_tool=search_tool,
         initial_messages=initial_messages,
         reward_fn=reward_fn,
         max_turns=config.max_turns,
         max_trajectory_tokens=config.max_trajectory_tokens,
         max_generation_tokens=config.max_generation_tokens,
         context_overflow_reward=config.context_overflow_reward,
+        limit_search=config.limit_search,
+        example_id=item["id"],
     )
     async with semaphore:
         try:
@@ -496,7 +502,7 @@ async def cli_main(config: CLIConfig) -> None:
                 "resolved_renderer_name": renderer_name,
                 "retrieval_url": retrieval_url,
                 "system_prompt": get_task_instructions(config.prompt_name),
-                "tools": [search_tool.search.to_spec()],
+                "tools": [search_tool_spec(config.limit_search)],
                 "num_items": len(items),
             },
             f,

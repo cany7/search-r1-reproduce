@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 import aiohttp
 import chz
 from tinker_cookbook.renderers import get_text_content
-from tinker_cookbook.renderers.base import Message
+from tinker_cookbook.renderers.base import Message, ToolCall
 from tinker_cookbook.tool_use import ToolResult, simple_tool_result, tool
 
 
@@ -128,6 +128,10 @@ class BM25Tool:
         ],
     ) -> ToolResult:
         """Search Wikipedia for relevant information based on the given query."""
+        return await self.retrieve(query_list)
+
+    async def retrieve(self, query_list: list[str]) -> ToolResult:
+        """Retrieve these queries in order and format their passages for the model."""
         async with _CONNECTION_SEMAPHORE:
             documents_list = await self._retrieve_with_retry(query_list)
 
@@ -156,6 +160,15 @@ def compute_f1(prediction: str, gold: str) -> float:
     return 2 * precision * recall / (precision + recall)
 
 
+def requested_query_list(tool_call: ToolCall) -> object:
+    """Keep the original query_list value, including invalid stringified lists."""
+    try:
+        arguments = json.loads(tool_call.function.arguments)
+    except json.JSONDecodeError:
+        return None
+    return arguments.get("query_list") if isinstance(arguments, dict) else None
+
+
 def extract_search_queries(messages: list[Message]) -> tuple[int, list[str]]:
     """Return (number of search calls the model made, all their queries in order)."""
     num_calls = 0
@@ -167,10 +180,7 @@ def extract_search_queries(messages: list[Message]) -> tuple[int, list[str]]:
             if tool_call.function.name != "search":
                 continue
             num_calls += 1
-            try:
-                query_list = json.loads(tool_call.function.arguments).get("query_list")
-            except (json.JSONDecodeError, AttributeError):
-                continue
+            query_list = requested_query_list(tool_call)
             if isinstance(query_list, list):
                 queries.extend(str(q) for q in query_list)
     return num_calls, queries
