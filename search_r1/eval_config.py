@@ -1,4 +1,4 @@
-"""Map the saved cookbook training configuration to offline evaluation settings."""
+"""Map a saved training configuration snapshot to offline evaluation settings."""
 
 from typing import Any
 
@@ -7,7 +7,8 @@ def eval_settings_from_training_config(training: dict[str, Any]) -> dict[str, An
     """Use resolved training values, including defaults, rather than replaying CLI overrides.
 
     Evaluation data selection, output paths and concurrency remain evaluation-specific.
-    The schema is the config.json written by the pinned cookbook and SearchR1DatasetBuilder.
+    The schema is the run's config.json, written by training/checkpoints.py; historical runs
+    written by the pinned cookbook use the same fields.
     Snapshots predating the per-turn search limit use the original, unlimited tool.
     """
     builder = training["dataset_builder"]

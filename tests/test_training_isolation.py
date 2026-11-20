@@ -15,7 +15,7 @@ import search_r1.train_dapo
 import pytest
 raise SystemExit(pytest.main(["-q", "tests/test_training_data.py", "tests/test_training_loop.py",
     "tests/test_training_runtime.py", "tests/test_training_checkpoints.py", "tests/test_stage3.py",
-    "tests/test_wandb_compat.py"]))
+    "tests/test_training_logging.py"]))
 """)
     assert "passed" in result
 
