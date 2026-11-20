@@ -1,6 +1,10 @@
-#!/bin/bash
-# Stop a running train.py test (kept in a script so pkill does not match the ssh command line).
-tmux kill-session -t train 2>/dev/null
-pkill -f "python -m search_r1[.]train" 2>/dev/null
-pkill -f "python3 -m search_r1[.]train" 2>/dev/null
-sleep 2; ps -eo pid,args | grep "search_r1[.]train" || echo "train stopped"
+#!/usr/bin/env bash
+# Match the training module as a complete argv word for all three Python entries.
+pattern='^([^[:space:]]*/)?python([0-9]+([.][0-9]+)*)?[[:space:]]+-m[[:space:]]+search_r1[.]train(_dynamic_sampling|_dapo)?([[:space:]]|$)'
+tmux kill-session -t =train 2>/dev/null || true
+pkill -f "$pattern" 2>/dev/null || [ "$?" -eq 1 ] || exit 1
+sleep 2
+pgrep -af "$pattern" && exit 1
+rc=$?
+[ "$rc" -eq 1 ] || exit "$rc"
+echo "train stopped"

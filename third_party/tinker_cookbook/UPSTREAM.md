@@ -44,7 +44,7 @@ Stage 5 verified the installed bytes of `checkpoint_utils.py`, `cli_utils.py`, `
 
 | Local file under search_r1/ | Upstream source | Local changes |
 |---|---|---|
-| training/checkpoints.py | checkpoint_utils.py, cli_utils.py | Preserve full-state and sampler save names, TTLs and directory options. Add a shared lock, immutable fork source, cursor validation and atomic local records. |
+| training/checkpoints.py, checkpoint_index.py | checkpoint_utils.py, cli_utils.py | Preserve full-state and sampler save names, TTLs and directory options. Add a shared lock, immutable fork source, cursor validation and atomic local records. |
 | training/logging.py | utils/ml_log.py | Preserve the online W&B identity file and event-step convention. Use run-scoped calls, a separate identity for forks and local JSONL replay. |
 | training/usage.py | utils/cost_estimation.py | Read the four published price fields with a cached best-effort lookup at training startup. |
 

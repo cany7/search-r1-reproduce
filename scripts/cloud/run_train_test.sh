@@ -1,11 +1,8 @@
-#!/bin/bash
-# Run a short train.py test. usage: run_train_test.sh <name> <batch_size> <max_steps> [extra train.py args...]
-NAME=$1; BS=$2; STEPS=$3; shift 3
-source /workspace/bin/env_common.sh
-cd $PROJ
-echo "START $NAME $(date +%s)" >> /workspace/logs/train_tests.times
-uv run --frozen python -m search_r1.train batch_size=$BS group_size=8 max_steps=$STEPS \
-  log_path=/workspace/runs/tests/$NAME wandb_name=test-$NAME behavior_if_log_dir_exists=delete "$@" \
-  > /workspace/logs/train_$NAME.log 2>&1
-RC=$?
-echo "END $NAME $(date +%s) rc=$RC" >> /workspace/logs/train_tests.times
+#!/usr/bin/env bash
+# usage: run_train_test.sh NAME BATCH_SIZE MAX_STEPS [key=value ...]
+set -eo pipefail
+if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then echo "usage: $0 NAME BATCH_SIZE MAX_STEPS [key=value ...]"; exit 0; fi
+[ "$#" -ge 3 ] || { echo "usage: $0 NAME BATCH_SIZE MAX_STEPS [key=value ...]" >&2; exit 2; }
+source "$(dirname -- "${BASH_SOURCE[0]}")/env_common.sh"
+cd "$PROJ"
+exec python3 -m scripts.cloud.driver smoke "$@"

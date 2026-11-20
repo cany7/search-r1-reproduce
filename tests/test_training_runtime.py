@@ -186,3 +186,44 @@ def test_failed_save_replays_same_prompts_and_optimizer_from_last_child_step(
     # Repeated completion starts no SDK session and commits no duplicate records.
     asyncio.run(runtime.main(cfg))
     assert len(loads) == 2 and rows == full_records(child)
+
+
+@pytest.mark.parametrize(
+    ("completed", "compat", "path", "status", "allowed"),
+    [
+        (True, True, "/api/v1/sessions/s/finish", 404, True),
+        (False, True, "/api/v1/sessions/s/finish", 404, False),
+        (True, False, "/api/v1/sessions/s/finish", 404, False),
+        (True, True, "/api/v1/weights/a", 404, False),
+        (True, True, "/api/v1/sessions/s/finish", 500, False),
+    ],
+)
+def test_only_known_successful_session_close_is_compatible(
+    completed, compat, path, status, allowed
+):
+    import httpx
+    import tinker
+
+    error_type = tinker.NotFoundError if status == 404 else tinker.InternalServerError
+    response = httpx.Response(status, request=httpx.Request("POST", "http://unused.invalid" + path))
+
+    class Service:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            raise error_type("simulated close", response, None)
+
+    def run():
+        with runtime.tinker_backend.training_session(Service(), skyrl_compat=compat):
+            if not completed:
+                raise ValueError("update failed")
+
+    if allowed:
+        run()
+    elif not completed:
+        with pytest.raises(ValueError, match="update failed"):
+            run()
+    else:
+        with pytest.raises(error_type):
+            run()

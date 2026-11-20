@@ -1,6 +1,8 @@
 """Explicit SDK operations used by evaluation and training; no cookbook or global SDK patches."""
 
 import logging
+import re
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -10,6 +12,33 @@ from search_r1.backends.completers import TinkerTokenCompleter
 
 logger = logging.getLogger(__name__)
 SessionStatus = Literal["success", "errored", "interrupted"]
+
+
+@contextmanager
+def training_session(service, *, skyrl_compat):
+    """Older combined servers omit the finish endpoint. Only tolerate its 404 on success."""
+    active = service.__enter__()
+    try:
+        yield active
+    except BaseException as failure:
+        try:
+            service.__exit__(type(failure), failure, failure.__traceback__)
+        except Exception:
+            logger.warning("SDK cleanup also failed after the training error", exc_info=True)
+        raise
+    else:
+        # The training loop has returned after publishing its final checkpoint.
+        try:
+            service.__exit__(None, None, None)
+        except tinker.NotFoundError as error:
+            if not (
+                skyrl_compat
+                and error.status_code == 404
+                and error.request.method == "POST"
+                and re.fullmatch(r"/api/v1/sessions/[^/]+/finish", error.request.url.path)
+            ):
+                raise
+            logger.warning("SkyRL lacks session finish after successful checkpoint publication")
 
 
 async def close_service(service_client, status: SessionStatus) -> None:

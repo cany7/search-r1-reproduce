@@ -35,7 +35,9 @@ def prune(tmp_path, records, *extra):
     index.write_text(contents)
     result = subprocess.run(
         [sys.executable, str(SCRIPT), str(index), str(root), "12", *extra],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     assert index.read_text() == contents
     return root, paths, result
@@ -94,7 +96,9 @@ def test_parent_symlink_alias_protects_actual_archive(tmp_path):
     assert state_file(root, rows[0]["state_path"]).exists()
 
 
-@pytest.mark.parametrize("uri", ["other://m/weights/a", "tinker://../weights/a", "tinker://m/weights/../a"])
+@pytest.mark.parametrize(
+    "uri", ["other://m/weights/a", "tinker://../weights/a", "tinker://m/weights/../a"]
+)
 def test_invalid_archive_path_is_rejected(tmp_path, uri):
     with pytest.raises(ValueError):
         state_file(tmp_path, uri)
@@ -106,3 +110,14 @@ def test_archive_symlink_must_stay_inside_root(tmp_path):
     (root / "model").symlink_to(tmp_path, target_is_directory=True)
     with pytest.raises(ValueError):
         state_file(root, "tinker://model/weights/final")
+
+
+def test_dynamic_child_only_index_protects_parent_uri_alias(tmp_path):
+    root = tmp_path / "archives"
+    (root / "parent").mkdir(parents=True)
+    (root / "alias").symlink_to(root / "parent", target_is_directory=True)
+    rows = [record(8, "alias", "final"), record(12)]
+    for r in rows:
+        r["parent_state_path"] = "tinker://parent/weights/final"
+    prune(tmp_path, rows)
+    assert (root / "parent/final.tar.gz").is_file()

@@ -161,7 +161,7 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
     for child, target in [(smoke, 102), (smoke, 103), (formal, 101)]:
         config = dapo.build_config(parent, child, target, 1, 8, 100)
         asyncio.run(runtime.main(config))
-        ops.verify(parent, child, target)
+        ops.verify(child, target, ops.origin(child))
 
     assert loaded == [PARENT_URI, "tinker://model_1/weights/final", PARENT_URI]
     assert updates == [101, 102, 103, 101]
@@ -181,37 +181,13 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
         assert metrics["rollout/episodes"] == 1024 and metrics["selected_rollout/episodes"] == 512
 
 
-def test_cleanup_only_unlinks_listed_periodic_files(tmp_path):
-    parent = parent_run(tmp_path)
-    base = tmp_path / "archives"
-    steps = [25, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
-    rows = [
-        {"batch": s, "name": f"{s:06d}", "state_path": f"tinker://model_old/weights/{s:06d}"}
-        for s in steps
-    ]
-    rows.append({"batch": 100, "name": "final", "state_path": PARENT_URI})
-    write_jsonl(parent / "checkpoints.jsonl", rows)
-    for row in rows:
-        path = ops.state_file(base, row["state_path"])
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.touch()
-    ops.cleanup(parent, base, False)
-    assert len(list(base.glob("*/*.tar.gz"))) == len(rows)
-    ops.cleanup(parent, base, True)
-    ops.cleanup(parent, base, True)
-    for row in rows:
-        assert ops.state_file(base, row["state_path"]).exists() == (
-            row["batch"] not in ops.CLEANUP_STEPS
-        )
-
-
 def test_foreign_child_index_rejected(tmp_path):
     parent = parent_run(tmp_path)
     child = tmp_path / "s3"
     child.mkdir()
     write_jsonl(child / "checkpoints.jsonl", list(ops.records(parent / "checkpoints.jsonl")))
     with pytest.raises(ValueError):
-        ops.own_records(child, PARENT_URI)
+        ops.own_records(child, ops.origin(child, parent, 100))
     with pytest.raises(ValueError):
         from search_r1.training.checkpoints import prepare_run
 
@@ -228,9 +204,13 @@ def test_disk_plan_uses_real_free_space_and_existing_saves(tmp_path, monkeypatch
         f.truncate(1024)
     # GiB is scaled down for this test, keeping every estimate meaningful.
     monkeypatch.setattr(ops, "GIB", 1024)
-    monkeypatch.setattr(ops.shutil, "disk_usage", lambda _: SimpleNamespace(free=18 * 1024))
-    assert not ops.disk_plan(parent, child, root, [112, 124], 5)
-    assert ops.disk_plan(parent, child, root, [112, 124], 0)
-    assert not ops.disk_plan(parent, child, root, [112, 124], 0, include_smoke=True)
+    start = ops.origin(child, parent, 100)
+    # One update of batch 2 and group 3 adds six projected trajectories.
+    request = 3 * 1024 + 8 * 1024 + 2 * 6 * 512 * 1024
+    monkeypatch.setattr(ops.shutil, "disk_usage", lambda _: SimpleNamespace(free=request))
+    assert ops.disk_plan(child, root, [102], 1, start, 2, 3)
+    monkeypatch.setattr(ops.shutil, "disk_usage", lambda _: SimpleNamespace(free=request - 1))
+    assert not ops.disk_plan(child, root, [102], 1, start, 2, 3)
+    assert ops.disk_plan(child, root, [102], 0, start, 2, 3)
     with pytest.raises(ValueError):
-        ops.disk_plan(parent, parent, root, [112, 124], 0)
+        ops.origin(parent, parent, 100)

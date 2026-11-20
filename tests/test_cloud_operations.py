@@ -3,6 +3,7 @@
 import json
 import multiprocessing
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -16,106 +17,6 @@ CLOUD = Path(__file__).resolve().parents[1] / "scripts" / "cloud"
 def executable(path, body):
     path.write_text("#!/bin/bash\n" + body + "\n")
     path.chmod(0o755)
-
-
-@pytest.fixture
-def shell_workspace(tmp_path):
-    workspace = tmp_path / "workspace"
-    bin_dir = workspace / "bin"
-    bin_dir.mkdir(parents=True)
-    (workspace / "logs").mkdir()
-    (workspace / "SkyRL").mkdir()
-    (bin_dir / "env_common.sh").write_text(
-        f'export SKYRL="{workspace}/SkyRL"\n'
-        f'export PROJ="{workspace}/project"\n'
-        f'export RAY_TMPDIR="{workspace}/ray_tmp"\n'
-        "export TINKER_BASE_URL=http://invalid RETRIEVAL_URL=http://invalid\n"
-    )
-    # Replace all machine-affecting commands, even though the script copy also
-    # rewrites absolute paths into this isolated temporary directory.
-    for name in ("tmux", "pkill", "sleep", "rm", "nvidia-smi", "df", "uv"):
-        executable(bin_dir / name, "exit 0")
-    return workspace, {"PATH": f"{bin_dir}:/usr/bin:/bin"}
-
-
-def run_shell_copy(name, workspace, env):
-    script = workspace / name
-    script.write_text(
-        (CLOUD / name)
-        .read_text()
-        .replace("/workspace", str(workspace))
-        .replace("/tmp/ray", str(workspace / "tmp_ray"))
-    )
-    return subprocess.run(
-        ["/bin/bash", str(script), "simulation"],
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
-
-
-@pytest.mark.parametrize("healthy", [True, False])
-def test_restart_requires_health_response(shell_workspace, healthy):
-    workspace, env = shell_workspace
-    executable(workspace / "bin/curl", f"exit {0 if healthy else 1}")
-    # A stale startup log must not satisfy readiness.
-    (workspace / "logs/simulation.log").write_text("Uvicorn running\n")
-    result = run_shell_copy("restart_skyrl.sh", workspace, env | {"HEALTH_TIMEOUT_SECONDS": "1"})
-    assert result.returncode == (0 if healthy else 1), result.stderr
-    assert ("server up:" in result.stdout) == healthy
-    assert ("timed out" in result.stderr) == (not healthy)
-
-
-@pytest.mark.parametrize("phase", ["training", "eval"])
-def test_driver_stops_when_restart_fails(shell_workspace, phase):
-    workspace, env = shell_workspace
-    executable(workspace / "bin/curl", "exit 0")
-    executable(workspace / "bin/restart_skyrl.sh", "exit 1")
-    forbidden = workspace / "unexpected_uv"
-    executable(workspace / "bin/uv", f'touch "{forbidden}"; exit 99')
-    if phase == "eval":
-        run = workspace / "runs/train/simulation"
-        run.mkdir(parents=True)
-        (run / "checkpoints.jsonl").write_text(
-            json.dumps({"batch": 1, "state_path": "tinker://model/weights/final"}) + "\n"
-        )
-    result = run_shell_copy(
-        "train_with_dev_eval.sh",
-        workspace,
-        env | {"TOTAL_STEPS": "1", "EVAL_EVERY": "1", "UPLOAD": "0"},
-    )
-    assert result.returncode == 1, result.stderr
-    assert f"server restart failed before {phase}" in result.stdout
-    assert not forbidden.exists()
-
-
-def test_driver_rerun_uses_distinct_upload_logs(shell_workspace):
-    workspace, env = shell_workspace
-    executable(workspace / "bin/curl", "exit 0")
-    executable(workspace / "bin/setsid", "echo simulated-upload")
-    run = workspace / "runs/train/simulation"
-    run.mkdir(parents=True)
-    (run / "checkpoints.jsonl").write_text(
-        json.dumps({"batch": 1, "state_path": "tinker://model/weights/final"}) + "\n"
-    )
-    evaluation = workspace / "project/runs/eval/simulation-step0001"
-    evaluation.mkdir(parents=True)
-    (evaluation / "summary.json").write_text(
-        json.dumps({"run": {"num_errors": 0}, "by_source": {"OVERALL": {"n": 1}}})
-    )
-    env |= {"TOTAL_STEPS": "1", "EVAL_EVERY": "1", "PRUNE_STATES": "0"}
-    for attempt in range(2):
-        result = run_shell_copy("train_with_dev_eval.sh", workspace, env)
-        # The simulated uploader deliberately leaves no completion marker.
-        assert result.returncode == 1, result.stderr
-        assert "W&B upload missing" in result.stdout
-        logs = list((workspace / "logs").glob("simulation_upload_step0001.log.*"))
-        assert len(logs) == attempt + 1
-        if attempt == 0:
-            first_log = logs[0]
-            first_log.write_text("previous invocation\n")
-    assert first_log.read_text() == "previous invocation\n"
 
 
 def upload_process(root, entered, attempting):
@@ -197,48 +98,410 @@ def test_upload_lock_rechecks_marker_and_releases_on_exit(tmp_path, interrupt_fi
                 process.join(5)
 
 
-def test_stage3_driver_targets_and_upload_boundaries(shell_workspace):
-    workspace, env = shell_workspace
-    bin_dir = workspace / "bin"
-    project = workspace / "project"
+@pytest.fixture
+def pod(tmp_path):
+    # Run the distributed shell files verbatim, from a different working directory.
+    project = tmp_path / "synced project"
     cloud = project / "scripts/cloud"
-    cloud.mkdir(parents=True)
-    (cloud / "stage3_ops.py").write_text("pass\n")
-    (project / ".venv/bin").mkdir(parents=True)
-    executable(project / ".venv/bin/python", "exit 0")
-    executable(bin_dir / "restart_skyrl.sh", "exit 0")
-    executable(bin_dir / "curl", "exit 0")
-    executable(bin_dir / "timeout", "exit 0")
-    run = workspace / "runs/train/simulation"
+    shutil.copytree(CLOUD, cloud, ignore=shutil.ignore_patterns("__pycache__"))
+    (project / "search_r1").mkdir()
+    shutil.copy(CLOUD.parents[1] / "search_r1/checkpoint_index.py", project / "search_r1")
+    root = tmp_path / "pod volume"
+    (root / ".secrets").mkdir(parents=True)
+    (root / ".secrets/env.sh").write_text(
+        "export RETRIEVAL_URL=http://invalid TINKER_BASE_URL=http://invalid\n"
+    )
+    (root / "search-r1/SkyRL").mkdir(parents=True)
+    (root / "ckpts/skyrl").mkdir(parents=True)
+    (project / "eval_sets").mkdir()
+    for split, size in [("dev", 3), ("test", 5)]:
+        (project / "eval_sets" / f"{split}.jsonl").write_text('{"data_source":"nq"}\n' * size)
+    bin_dir = tmp_path / "fake-bin"
+    bin_dir.mkdir()
+    for name in ("tmux", "pkill", "sleep", "rm", "nvidia-smi", "df", "curl"):
+        executable(bin_dir / name, "exit 0")
+    (bin_dir / "python3").symlink_to(sys.executable)
+    fake = Path(__file__).with_name("cloud_simulator.py")
+    for path in (bin_dir / "uv", project / ".venv/bin/python"):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        executable(path, f'exec "{sys.executable}" "{fake}" "$@"')
+    env = {"POD_ROOT": str(root), "PATH": f"{bin_dir}:/usr/bin:/bin", "HEALTH_TIMEOUT_SECONDS": "1"}
+    # Model a Pod volume independently of the test machine's free space.
+    # Python worker processes must also stay offline even if a double regresses.
+    guard = tmp_path / "guard"
+    guard.mkdir()
+    (guard / "sitecustomize.py").write_text(
+        "import shutil, socket, types\n"
+        "shutil.disk_usage = lambda path: types.SimpleNamespace(free=128 * 1024**3)\n"
+        "def forbidden(*args): raise AssertionError('network disabled in pod simulation')\n"
+        "socket.socket.connect = socket.socket.connect_ex = forbidden\n"
+    )
+    env["PYTHONPATH"] = str(guard)
+    return root, project, bin_dir, env
+
+
+def shell(pod, name, args, **env):
+    root, project, _, environment = pod
+    return subprocess.run(
+        ["bash", project / "scripts/cloud" / name, *map(str, args)],
+        env=environment | env,
+        cwd=root.parent,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+
+
+def calls(root, match):
+    path = root / "calls.jsonl"
+    rows = [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+    return [row for row in rows if any(match in word for word in row)]
+
+
+def source_run(root):
+    run = root / "runs/train/parent"
     run.mkdir(parents=True)
-    calls = workspace / "train_args"
+    (run / "config.json").write_text(
+        json.dumps({"dataset_builder": {"batch_size": 2, "group_size": 3, "seed": 31}})
+    )
+    rows = [
+        {"batch": 7, "name": "early", "state_path": "tinker://p/weights/early"},
+        {"batch": 10, "name": "newer", "state_path": "tinker://p/weights/newer"},
+        {
+            "batch": 7,
+            "name": "chosen",
+            "state_path": "tinker://p/weights/chosen",
+            "next_prompt_offset": 14,
+        },
+        {"batch": 7, "sampler_path": "sampler-only"},
+    ]
+    (run / "checkpoints.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    files = root / "ckpts/skyrl/p"
+    files.mkdir()
+    (files / "chosen.tar.gz").write_bytes(b"PARENT")
+    return run
+
+
+@pytest.mark.parametrize("healthy", [True, False])
+def test_restart_requires_health_and_launches_synced_start_script(pod, healthy):
+    root, project, bin_dir, _ = pod
+    executable(bin_dir / "curl", f"exit {0 if healthy else 1}")
+    executable(bin_dir / "tmux", f'echo "$*" >> "{root}/tmux-args"')
+    result = shell(pod, "restart_skyrl.sh", ["simulation"])
+    assert result.returncode == (0 if healthy else 1), result.stderr
+    assert ("server up:" in result.stdout) == healthy
+    command = (root / "tmux-args").read_text()
+    assert (
+        "start_skyrl.sh" in command
+        and "scripts/cloud/" in command
+        and "/workspace/bin" not in command
+    )
+
+
+@pytest.mark.parametrize(
+    "mode,start", [("ordinary", 0), ("ordinary", 7), ("dynamic", 7), ("dynamic", 0)]
+)
+def test_shell_schedule_and_recovery(pod, mode, start):
+    root, project, _, _ = pod
+    run = root / "runs/train/simulation"
+    options = {
+        "TOTAL_STEPS": str(start + 11),
+        "EVAL_EVERY": "5",
+        "SAMPLING_MODE": mode,
+        "BATCH_SIZE": "2",
+        "GROUP_SIZE": "3",
+    }
+    if start:
+        source_run(root)
+        options.update(PARENT_RUN="parent", PARENT_STEP=str(start))
+    result = shell(
+        pod,
+        "train_with_dev_eval.sh",
+        ["simulation", "limit_search=true", "learning_rate=0.0002"],
+        **options,
+    )
+    assert result.returncode == 0, result.stderr + result.stdout
+    targets = [start + 5, start + 10, start + 11]
+    train = calls(root, "search_r1.train")
+    assert [
+        next(int(s.split("=")[1]) for s in row if s.startswith("max_steps=")) for row in train
+    ] == targets
+    module = "search_r1.train_dynamic_sampling" if mode == "dynamic" else "search_r1.train"
+    assert all(
+        module in row and "learning_rate=0.0002" in row and "limit_search=true" in row
+        for row in train
+    )
+    if start:
+        assert all("seed=31" in row and f"parent_step={start}" in row for row in train)
+        assert (root / "ckpts/skyrl/p/chosen.tar.gz").read_bytes() == b"PARENT"
+    uploads = calls(root, "upload_checkpoint.py")
+    assert sorted(
+        (int(row[row.index("--prev-step") + 1]), int(row[row.index("--step") + 1]))
+        for row in uploads
+    ) == list(zip([start, *targets[:-1]], targets))
+    evals = calls(root, "search_r1.offline_eval")
+    assert len(evals) == 3
+    # A completed child must recover its original cadence without a parent CLI argument.
+    if start:
+        (root / "runs/train/parent").rename(root / "archived")
+        options.pop("PARENT_RUN")
+        options.pop("PARENT_STEP")
+    run_name = next(word[9:] for word in evals[0] if word.startswith("run_name="))
+    (project / "runs/eval" / run_name / "summary.json").unlink()
+    (run / "uploads" / f"step{targets[1]:04d}.json").unlink()
+    result = shell(pod, "train_with_dev_eval.sh", ["simulation"], **options)
+    assert result.returncode == 0, result.stderr
+    assert len(calls(root, "search_r1.train")) == 3
+    assert len(calls(root, "search_r1.offline_eval")) == 4
+    assert len(calls(root, "upload_checkpoint.py")) == 4
+    result = shell(pod, "train_with_dev_eval.sh", ["simulation"], **options)
+    assert result.returncode == 0, result.stderr
+    assert (
+        len(calls(root, "search_r1.offline_eval")) == len(calls(root, "upload_checkpoint.py")) == 4
+    )
+
+
+@pytest.mark.parametrize("phase", ["training", "eval"])
+def test_driver_stops_when_restart_fails(pod, phase):
+    root, project, _, _ = pod
+    if phase == "eval":
+        run = source_run(root)
+        name, target = run.name, "7"
+    else:
+        name, target = "simulation", "1"
+    executable(project / "scripts/cloud/restart_skyrl.sh", "exit 1")
+    result = shell(
+        pod, "train_with_dev_eval.sh", [name], TOTAL_STEPS=target, EVAL_EVERY=target, UPLOAD="0"
+    )
+    assert result.returncode != 0
+    assert f"server restart failed before {phase}" in result.stderr
+    assert not calls(root, "search_r1.")
+
+
+def test_missing_upload_retried_with_distinct_logs(pod):
+    root, _, _, _ = pod
+    for i in (1, 2):
+        result = shell(
+            pod, "train_with_dev_eval.sh", ["simulation"], TOTAL_STEPS="1", SKIP_MARKER="1"
+        )
+        assert result.returncode and "W&B upload missing" in result.stderr
+        assert len(list((root / "logs").glob("simulation_upload_step0001.log.*"))) == i
+
+
+def test_eval_distinguishes_weights_sets_snapshots_and_checks_exact_counts(pod):
+    root, project, _, _ = pod
+    run = source_run(root)
+    alt = root / "different config.json"
+    alt.write_text('{"dataset_builder":{"limit_search":true}}')
+    base = [run, "base", "dev"]
+    for args in (
+        [run, 7, "dev"],
+        [run, 7, "test"],
+        [run, 7, "dev", f"training_config_file={alt}"],
+        base,
+    ):
+        result = shell(pod, "eval_checkpoint.sh", args)
+        assert result.returncode == 0, result.stderr
+    assert len(list((project / "runs/eval").glob("*/.complete"))) == 4
+    rows = calls(root, "search_r1.offline_eval")
+    assert all("tinker_state_url=tinker://p/weights/chosen" in r for r in rows[:3])
+    assert "skyrl_base_eval=true" in rows[-1] and not any(
+        "tinker_state_url=" in s for s in rows[-1]
+    )
+    assert f"training_config_file={alt}" in rows[2]
+    for env in ({"SHORT_EVAL": "1"}, {"EVAL_ERRORS": "1"}, {"EVAL_RC": "9"}):
+        result = shell(pod, "eval_checkpoint.sh", [run, 10, "test"], **env)
+        assert result.returncode != 0
+    assert len(list((project / "runs/eval").glob("*/.complete"))) == 4
+    assert shell(pod, "eval_checkpoint.sh", [run, 10, "test"]).returncode == 0
+    assert shell(pod, "eval_checkpoint.sh", [run, 6, "test"]).returncode != 0
+
+
+def test_stage3_smoke_restarts_and_verifies_dynamic_run(pod):
+    root, _, _, _ = pod
+    source_run(root)
+    result = shell(
+        pod,
+        "stage3.sh",
+        ["smoke", "short", 2, 10, "group_size=3"],
+        PARENT_RUN="parent",
+        PARENT_STEP="7",
+        RESTART_AT="9",
+    )
+    assert result.returncode == 0, result.stderr
+    rows = calls(root, "search_r1.train_dynamic_sampling")
+    assert len(rows) == 2 and "max_steps=9" in rows[0] and "max_steps=10" in rows[1]
+    assert all("behavior_if_log_dir_exists=resume" in row for row in rows)
+    assert (root / "logs/short_restart.log").exists()
+
+
+@pytest.mark.parametrize("env", [{"NO_SAVE": "1"}, {"FAIL_TRAIN": "1"}])
+def test_short_test_does_not_mask_trainer_or_missing_full_state(pod, env):
+    root, _, _, _ = pod
+    result = shell(pod, "run_train_test.sh", ["short", 2, 1], **env)
+    assert result.returncode != 0
+    if "FAIL_TRAIN" in env:
+        assert result.returncode == 7
+    assert "failed" in (root / "logs/train_tests.times").read_text()
+    assert "behavior_if_log_dir_exists=delete" in calls(root, "search_r1.train")[0]
+
+
+def test_tmux_restarts_the_synced_script_with_quoted_config(pod):
+    root, _, bin_dir, _ = pod
+    # Execute the nested tmux command with the real start script and a fake uv.
+    executable(bin_dir / "tmux", 'if [ "$1" = new ]; then bash -c "${@: -1}"; fi')
     executable(
         bin_dir / "uv",
-        f'''echo "$*" >> "{calls}"
-if [[ "$*" == *search_r1.train_dapo* ]]; then
-  step=$(echo "$*" | sed -E 's/.*--target ([0-9]+).*/\\1/')
-  echo "{{\\"batch\\":$step,\\"state_path\\":\\"tinker://model/weights/final\\"}}" >> "{run}/checkpoints.jsonl"
-elif [[ "$*" == *search_r1.offline_eval* ]]; then
-  evaldir="{project}/runs/eval/${{@: -1}}"
-  evaldir=${{evaldir/run_name=/}}
-  mkdir -p "$evaldir"
-  echo '{{"run":{{"num_errors":0}},"by_source":{{"OVERALL":{{"n":1,"em":1,"f1":1,"answer_rate":1}}}}}}' > "$evaldir/summary.json"
-fi
-exit 0''',
+        f'''if [[ "$*" == *skyrl.tinker.api* ]]; then printf '%s' "${{@: -1}}" > "{root}/server-config"; fi''',
     )
-    uploads = workspace / "upload_args"
-    executable(
-        bin_dir / "setsid",
-        f'''echo "$*" >> "{uploads}"
-step=$(echo "$*" | sed -E 's/.*--step ([0-9]+).*/\\1/')
-mkdir -p "{run}/uploads"
-touch "{run}/uploads/$(printf 'step%04d' "$step").json"''',
+    result = shell(
+        pod,
+        "restart_skyrl.sh",
+        ["quoted log"],
+        EXTRA_CFG=json.dumps({"option": "it's spaced"})[1:-1],
     )
-    result = run_shell_copy("train_with_dev_eval.sh", workspace, env | {"STAGE3_PARENT": "parent"})
-    assert result.returncode == 0, result.stdout + result.stderr
-    lines = calls.read_text().splitlines()
-    assert len([s for s in lines if "search_r1.train_dapo" in s]) == 2
-    assert len([s for s in lines if "search_r1.offline_eval" in s]) == 2
-    for lo, hi in ((100, 112), (112, 124)):
-        assert any(f"--target {hi} " in s for s in lines)
-        assert f"--step {hi} --prev-step {lo} " in uploads.read_text()
+    assert result.returncode == 0, result.stderr
+    config = json.loads((root / "server-config").read_text())
+    assert config["option"] == "it's spaced"
+    assert config["trainer.ckpt_path"] == str(root / "ckpts/skyrl-train")
+
+
+def test_installer_uses_adjacent_patch_without_network(pod):
+    root, project, bin_dir, _ = pod
+    repo = root / "search-r1/SkyRL"
+    (repo / ".venv/bin").mkdir(parents=True)
+    executable(repo / ".venv/bin/python", "exit 0")
+    executable(bin_dir / "git", "exit 0")
+    executable(bin_dir / "uv", "exit 0")
+    # Replace the patcher in the copied checkout with a recording stand-in.
+    (project / "scripts/cloud/apply_patch.py").write_text(
+        "import pathlib,sys\npathlib.Path(sys.argv[1], 'patch-path').write_text(__file__)\n"
+    )
+    result = shell(pod, "skyrl_install.sh", [])
+    assert result.returncode == 0, result.stderr
+    assert (repo / "patch-path").read_text() == str(project / "scripts/cloud/apply_patch.py")
+
+
+def test_stop_selects_only_python_training_modules(pod):
+    root, _, bin_dir, _ = pod
+    executable(bin_dir / "pkill", f'printf "%s" "$2" > "{root}/pattern"')
+    executable(bin_dir / "pgrep", "exit 1")
+    assert shell(pod, "stop_train.sh", []).returncode == 0
+    pattern = (root / "pattern").read_text()
+    commands = [
+        "python -m search_r1.train",
+        "/opt/venv/bin/python3.12 -m search_r1.train_dynamic_sampling a=b",
+        "python3 -m search_r1.train_dapo --target 7",
+        "python -m search_r1.offline_eval",
+        "python -m search_r1.training.loop",
+        "python -m search_r1.train_extra",
+        "bash -c python -m search_r1.train",
+    ]
+    # Use POSIX ERE, the same dialect as pkill.
+    result = subprocess.run(
+        ["grep", "-E", pattern],
+        input="\n".join(commands),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.splitlines() == commands[:3]
+
+
+def test_base_before_first_training_snapshot(pod):
+    root, _, _, _ = pod
+    result = shell(
+        pod, "eval_checkpoint.sh", ["baseline", "base", "test", "base_model=custom/model"]
+    )
+    assert result.returncode == 0, result.stderr
+    args = calls(root, "search_r1.offline_eval")[0]
+    assert "skyrl_base_eval=true" in args and "base_model=custom/model" in args
+    assert not any(arg.startswith("training_config_file=") for arg in args)
+
+
+def test_empty_dynamic_child_index_and_midsegment_resume_keep_fork_cadence(pod):
+    root, _, _, _ = pod
+    parent = source_run(root)
+    run = root / "runs/train/partial"
+    run.mkdir()
+    row = json.loads((parent / "checkpoints.jsonl").read_text().splitlines()[2])
+    cfg = {
+        "dataset_builder": {"batch_size": 2, "group_size": 3},
+        "sampling_mode": "dynamic",
+        "parent_step": 7,
+        "parent_run": str(parent),
+        "parent_state_path": row["state_path"],
+        "parent_checkpoint": row,
+    }
+    (run / "config.json").write_text(json.dumps(cfg))
+    (run / "checkpoints.jsonl").touch()
+    # Simulate an already committed periodic save before the first scheduled eval.
+    result = shell(
+        pod,
+        "run_train_test.sh",
+        ["partial", 2, 9, f"log_path={run}", "behavior_if_log_dir_exists=resume"],
+    )
+    assert result.returncode == 0, result.stderr
+    result = shell(
+        pod, "stage3.sh", ["formal"], RUN_NAME="partial", TOTAL_STEPS="13", EVAL_EVERY="5"
+    )
+    assert result.returncode == 0, result.stderr
+    assert "training 9 -> 12" in result.stdout
+    uploads = calls(root, "upload_checkpoint.py")
+    assert sorted(
+        (int(r[r.index("--prev-step") + 1]), int(r[r.index("--step") + 1])) for r in uploads
+    ) == [(7, 12), (12, 13)]
+
+
+def test_real_upload_collection_uses_last_full_state_and_exact_interval(tmp_path):
+    from types import SimpleNamespace
+
+    from scripts.cloud import upload_checkpoint as upload
+
+    rows = [
+        {
+            "batch": 7,
+            "owner": "parent",
+            "state_path": "tinker://p/weights/start",
+            "sampler_path": "tinker://p/start",
+        },
+        {"batch": 10, "sampler_path": "tinker://c/sampler_weights/ten"},
+        {"batch": 12, "state_path": "tinker://c/weights/earlier"},
+        {
+            "batch": 12,
+            "state_path": "tinker://c/weights/chosen",
+            "sampler_path": "tinker://c/twelve",
+        },
+        {"batch": 12, "sampler_path": "tinker://c/sampler-only"},
+        {"batch": 17, "state_path": "tinker://c/weights/later"},
+    ]
+    (tmp_path / "checkpoints.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+    archive = tmp_path / "archives"
+    (archive / "c/sampler_weights").mkdir(parents=True)
+    for name in ("chosen", "sampler_weights/ten", "sampler_weights/twelve"):
+        (archive / "c" / f"{name}.tar.gz").touch()
+    summary = tmp_path / "eval/summary.json"
+    summary.parent.mkdir()
+    summary.write_text('{"by_source":{"OVERALL":{"n":3}}}')
+    summary.with_name("config.json").write_text(
+        json.dumps(
+            {"tinker_state_url": rows[3]["state_path"], "base_model": "test", "lora_rank": 8}
+        )
+    )
+    files, meta, _ = upload.collect(
+        SimpleNamespace(
+            log_path=tmp_path,
+            prev_step=7,
+            step=12,
+            ckpt_base=archive,
+            eval_summary=summary,
+            run_name="test",
+        )
+    )
+    assert meta["state_path"] == rows[3]["state_path"]
+    assert [name for _, name in files[:3]] == [
+        "state/step0012.tar.gz",
+        "sampler/step0010.tar.gz",
+        "sampler/step0012.tar.gz",
+    ]
+    assert len(files) == 5

@@ -1,6 +1,6 @@
 """Log dev-eval results and rollout behavior of a training run to a side W&B run.
 
-The training run's own W&B history (written by tinker_cookbook) is never touched. This script
+The training run's own W&B history is never touched. This script
 reads files that training and evaluation have already written and logs them to a separate run
 in the same project:
 
@@ -188,10 +188,12 @@ def collect(args: argparse.Namespace, state: dict) -> list[tuple[str, int, dict,
             # meaning; stage-three files also include the groups filtered out.
             selected = [r for r in rows if r["selection"] == "selected"]
             metrics = rollout_metrics(rows, max_turns)
-            metrics.update({
-                key.replace("rollout/", "selected_rollout/", 1): value
-                for key, value in rollout_metrics(selected, max_turns).items()
-            })
+            metrics.update(
+                {
+                    key.replace("rollout/", "selected_rollout/", 1): value
+                    for key, value in rollout_metrics(selected, max_turns).items()
+                }
+            )
         else:
             metrics = rollout_metrics(rows, max_turns)
         pending.append(("rollout", step, metrics, fp))
@@ -199,11 +201,15 @@ def collect(args: argparse.Namespace, state: dict) -> list[tuple[str, int, dict,
     evals: list[tuple[int, Path]] = []
     if args.base_eval is not None:
         evals.append((0, args.base_eval / "summary.json"))
-    pattern = re.compile(re.escape(args.run_name) + r"-step(\d+)")
-    for d in sorted(args.eval_root.glob(f"{args.run_name}-step*")):
-        m = pattern.fullmatch(d.name)
-        if m and (d / "summary.json").exists():
-            evals.append((int(m.group(1)), d / "summary.json"))
+    if explicit := getattr(args, "dev_summary", None):
+        step, path = explicit
+        evals.append((int(step), Path(path)))
+    else:
+        pattern = re.compile(re.escape(args.run_name) + r"-step(\d+)")
+        for d in sorted(args.eval_root.glob(f"{args.run_name}-step*")):
+            m = pattern.fullmatch(d.name)
+            if m and (d / "summary.json").exists():
+                evals.append((int(m.group(1)), d / "summary.json"))
     for step, f in evals:
         if not f.exists():
             raise SystemExit(f"missing eval summary: {f}")
@@ -257,6 +263,12 @@ def log_to_wandb(args: argparse.Namespace, pending: list) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--dev-summary",
+        nargs=2,
+        metavar=("STEP", "FILE"),
+        help="Exact dev result for this driver segment",
+    )
     parser.add_argument("--run-name", required=True)
     parser.add_argument("--log-path", type=Path, required=True, help="training log_path")
     parser.add_argument(

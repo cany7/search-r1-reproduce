@@ -74,10 +74,13 @@ async def _train(config, dataset, start, end, log):
         cumulative=TokenUsage(**start.record.get("cumulative_tokens", {})),
         discarded=TokenUsage(**start.record.get("discarded_tokens", {})),
     )
-    with tinker.ServiceClient(
+    service_client = tinker.ServiceClient(
         base_url=config.base_url,
         display_name=config.session_name or config.wandb_name,
         user_metadata={"recipe_name": config.recipe_name},
+    )
+    with tinker_backend.training_session(
+        service_client, skyrl_compat=config.skyrl_compat
     ) as service:
         metadata = {}
         if log.run is not None and log.run.url:

@@ -15,6 +15,7 @@ from pathlib import Path
 
 import chz
 
+from search_r1.checkpoint_index import full_records, index_bytes, latest
 from search_r1.training.config import from_snapshot
 
 
@@ -70,42 +71,6 @@ def run_lock(directory, behavior="resume"):
                     else:
                         path.unlink()
         yield
-
-
-def index_bytes(path):
-    """An old append-only writer could leave a partial last line. Keep its complete prefix."""
-    if not path.exists():
-        return b""
-    data = path.read_bytes()
-    if data and not data.endswith(b"\n"):
-        prefix, separator, tail = data.rpartition(b"\n")
-        try:
-            json.loads(tail)
-        except ValueError:
-            return prefix + separator
-        data += b"\n"
-    return data
-
-
-def full_records(directory):
-    rows = (
-        json.loads(line)
-        for line in index_bytes(directory / "checkpoints.jsonl").splitlines()
-        if line.strip()
-    )
-    return [
-        row
-        for row in rows
-        if isinstance(row.get("state_path"), str)
-        and row["state_path"].strip()
-        and type(row.get("batch")) is int
-        and row["batch"] >= 0
-    ]
-
-
-def latest(rows):
-    # At equal step, prefer the last full record in file order.
-    return max(reversed(rows), key=lambda row: row["batch"], default=None)
 
 
 def commit_record(directory, record):
@@ -233,8 +198,13 @@ def prepare_run(config, dataset):
     directory = Path(config.log_path).resolve()
     config_file = directory / "config.json"
     saved = read_config(directory) if config_file.exists() else {}
-    if not saved and any(p.name not in (LOCK, ".config.json.pending") for p in directory.iterdir()):
-        raise ValueError("Refusing to adopt a populated run directory without config.json")
+    if not saved:
+        allowed = {LOCK, ".config.json.pending"}
+        index = directory / "checkpoints.jsonl"
+        if index.is_file() and not index.is_symlink() and index.stat().st_size == 0:
+            allowed.add(index.name)
+        if any(p.name not in allowed for p in directory.iterdir()):
+            raise ValueError("Refusing to adopt a populated run directory without config.json")
     digest = dataset_digest(dataset)
     count = len(dataset.env_group_builders)
     if saved:

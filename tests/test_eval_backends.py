@@ -249,3 +249,89 @@ def test_cancelled_eval_drains_rollouts_before_closing_resources(tmp_path, monke
     asyncio.run(run())
     assert events == ["rollout_done", "rollout_done", "tool_closed", "sdk_closed"]
     sdk.service.close.assert_awaited_once_with(status="interrupted")
+
+
+def test_skyrl_base_keeps_lora_session_live_while_sampling_base_model(sdk):
+    config = offline_eval.CLIConfig(skyrl_base_eval=True)
+    events = []
+
+    async def create(model, rank):
+        events.append(("session-and-heartbeat", model, rank))
+        return sdk.training
+
+    async def sample(base_model):
+        events.append(("base-sampler", base_model))
+        return sdk.sampler
+
+    sdk.service.create_lora_training_client.side_effect = create
+    sdk.service.create_sampling_client.side_effect = sample
+
+    async def run():
+        async with offline_eval.policy_session(config) as (policy, _):
+            assert policy.training_client is sdk.training and policy.service_client is sdk.service
+            sdk.service.close.assert_not_called()
+
+    asyncio.run(run())
+    assert events == [
+        ("session-and-heartbeat", config.base_model, config.lora_rank),
+        ("base-sampler", config.base_model),
+    ]
+    sdk.training.load_state.assert_not_called()
+    sdk.training.save_weights_and_get_sampling_client.assert_not_called()
+    sdk.service.close.assert_awaited_once_with(status="success")
+
+
+def test_skyrl_base_cannot_be_combined_with_checkpoint(sdk):
+    with pytest.raises(ValueError, match="base weights"):
+        asyncio.run(
+            offline_eval.build_policy(
+                offline_eval.CLIConfig(skyrl_base_eval=True, tinker_state_url="state")
+            )
+        )
+    sdk.factory.assert_not_called()
+
+
+def test_training_snapshot_renderer_overrides_checkpoint_metadata(sdk):
+    cfg = offline_eval.CLIConfig(
+        tinker_state_url="state", renderer_name="from-snapshot", training_config_file="config.json"
+    )
+
+    async def run():
+        async with offline_eval.policy_session(cfg) as (_, renderer):
+            assert renderer == "from-snapshot"
+
+    asyncio.run(run())
+
+
+def test_cli_snapshot_wins_and_keeps_eval_specific_options(tmp_path, sdk, monkeypatch):
+    import chz
+    from test_training_loop import config
+
+    settings = chz.asdict(
+        config(tmp_path, max_tokens=128, limit_search=True, max_turns_unanswered_reward=-0.3)
+    )
+    path = tmp_path / "alternative.json"
+    path.write_text(json.dumps(settings))
+    data = tmp_path / "test.jsonl"
+    data.write_text('{"data_source":"example"}\n')
+    capture = AsyncMock()
+    monkeypatch.setattr(offline_eval, "_evaluate_with_policy", capture)
+    asyncio.run(
+        offline_eval.cli_main(
+            offline_eval.CLIConfig(
+                training_config_file=str(path),
+                max_tokens=777,
+                limit_search=False,
+                base_model="overridden",
+                concurrency=3,
+                eval_file=str(data),
+                tinker_state_url="state",
+                renderer_name="overridden",
+            )
+        )
+    )
+    cfg, items, snapshot, _, renderer = capture.await_args.args
+    assert cfg.max_tokens == 128 and cfg.limit_search and cfg.base_model == settings["model_name"]
+    assert cfg.concurrency == 3 and items == [{"data_source": "example"}]
+    assert snapshot == settings and renderer == settings["renderer_name"]
+    assert not hasattr(cfg, "max_turns_unanswered_reward")

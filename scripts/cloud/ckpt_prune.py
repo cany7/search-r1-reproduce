@@ -31,7 +31,9 @@ def state_file(ckpt_base: Path, state_path: str) -> Path:
         raise ValueError(f"unexpected state path: {state_path}")
     rest = state_path.removeprefix("tinker://")
     model, _, name = rest.partition("/weights/")
-    if any(not part or part in (".", "..") or "/" in part or "\\" in part for part in (model, name)):
+    if any(
+        not part or part in (".", "..") or "/" in part or "\\" in part for part in (model, name)
+    ):
         raise ValueError(f"unexpected state path: {state_path}")
     result = (ckpt_base / model / f"{name}.tar.gz").resolve()
     if not result.is_relative_to(ckpt_base.resolve()):
@@ -52,7 +54,7 @@ def plan(records: list[dict], eval_steps: set[int]) -> tuple[list[dict], list[di
     canonical: dict[int, dict] = {}
     for r in children:  # Last complete record at a step wins.
         canonical[r["batch"]] = r
-    latest_batch = children[-1]["batch"]
+    latest_batch = max(canonical)
     keep, delete = [], []
     for r in records:
         if r["owner"] == "parent":
@@ -81,6 +83,11 @@ def main() -> int:
         return 0
     keep, delete = plan(records, eval_steps)
     keep_files = {state_file(args.ckpt_base, r["state_path"]) for r in keep}
+    keep_files.update(
+        state_file(args.ckpt_base, r["parent_state_path"])
+        for r in records
+        if r.get("parent_state_path")
+    )
     # Resolve and validate the entire plan before deleting any file.
     delete_files = [(r, state_file(args.ckpt_base, r["state_path"])) for r in delete]
 

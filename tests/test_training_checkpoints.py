@@ -316,3 +316,16 @@ def test_invalid_start_options_rejected_before_creating_a_run(tmp_path, options)
     with pytest.raises(ValueError):
         config(tmp_path / "child", **options)
     assert not (tmp_path / "child").exists()
+
+
+@pytest.mark.parametrize("mode", ["ordinary", "dynamic"])
+def test_driver_can_start_fork_with_precreated_empty_local_index(tmp_path, dataset, mode):
+    parent = write_parent(tmp_path / "parent", dataset)
+    child = tmp_path / "child"
+    child.mkdir()
+    (child / "checkpoints.jsonl").touch()
+    cfg = config(child, sampling_mode=mode, parent_run=str(parent), parent_step=7, max_steps=12)
+    with run_lock(child):
+        start = prepare_run(cfg, dataset)
+    assert (start.step, start.offset) == (7, 28)
+    assert [r["owner"] for r in full_records(child)] == (["parent"] if mode == "ordinary" else [])

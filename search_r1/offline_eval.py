@@ -103,6 +103,11 @@ class CLIConfig:
         "Not reliable on self-hosted SkyRL (FSDP): it ignores the checkpoint and samples the "
         "model's current weights, or fails after a restart. Use tinker_state_url there.",
     )
+    skyrl_base_eval: bool = chz.field(
+        default=False,
+        doc="Keep a LoRA client and its SDK session heartbeat alive while sampling base_model "
+        "on a fresh SkyRL combined runtime.",
+    )
     tinker_state_url: str | None = chz.field(
         default=None,
         doc="Full training state to evaluate (tinker://<model>/weights/<name>). Loads it into a "
@@ -374,6 +379,10 @@ async def evaluate_single_item(
 
 async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
     """Return the sampling policy and the renderer name to use."""
+    if config.skyrl_base_eval and (
+        config.backend != "tinker" or config.tinker_state_url or config.tinker_checkpoint_url
+    ):
+        raise ValueError("skyrl_base_eval requires the Tinker backend and base weights")
     if config.backend == "omlx":
         if config.omlx_model is None:
             raise ValueError("backend=omlx requires omlx_model")
@@ -415,6 +424,12 @@ async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
                 service_client, config.tinker_checkpoint_url
             )
         else:
+            if config.skyrl_base_eval:
+                # Creating a training client starts the pinned SDK's session heartbeat.
+                # Retain both clients until policy_session has drained all rollouts.
+                training_client = await service_client.create_lora_training_client(
+                    config.base_model, rank=config.lora_rank
+                )
             sampling_client = await service_client.create_sampling_client(
                 base_model=config.base_model
             )
@@ -425,7 +440,9 @@ async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
             service_client=service_client,
             training_client=training_client,
         )
-        return policy, renderer_name or config.renderer_name
+        return policy, config.renderer_name if config.training_config_file else (
+            renderer_name or config.renderer_name
+        )
     except BaseException as error:
         status = (
             "interrupted"

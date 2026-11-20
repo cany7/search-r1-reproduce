@@ -28,31 +28,47 @@ import sys
 import time
 from pathlib import Path
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.cloud.ckpt_prune import state_file
+from search_r1.checkpoint_index import index_bytes
+
 RETRIES = 3
-
-
-def state_file(ckpt_base: Path, state_path: str) -> Path:
-    """tinker://<model>/weights/<name> -> <ckpt_base>/<model>/<name>.tar.gz"""
-    model, _, name = state_path.removeprefix("tinker://").partition("/weights/")
-    return ckpt_base / model / f"{name}.tar.gz"
 
 
 def sampler_file(ckpt_base: Path, sampler_path: str) -> Path:
     """tinker://<model>/<name> -> <ckpt_base>/<model>/sampler_weights/<name>.tar.gz"""
-    model, _, name = sampler_path.removeprefix("tinker://").partition("/")
-    return ckpt_base / model / "sampler_weights" / f"{name}.tar.gz"
+    model, sep, name = sampler_path.removeprefix("tinker://").partition("/")
+    name = name.removeprefix("sampler_weights/")
+    if not sampler_path.startswith("tinker://") or not sep:
+        raise ValueError(f"Unexpected sampler path: {sampler_path}")
+    # Validate the same model and archive name used by full-state exports.
+    state_file(ckpt_base, f"tinker://{model}/weights/{name}")
+    result = (ckpt_base / model / "sampler_weights" / f"{name}.tar.gz").resolve()
+    if not result.is_relative_to(ckpt_base.resolve()):
+        raise ValueError(f"Sampler archive outside checkpoint root: {result}")
+    return result
 
 
 def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dict]:
     """Files to upload as (local path, path inside the artifact), the metadata, and the
     training run's W&B identity (project/entity/id, empty if unknown)."""
     records = [
-        json.loads(line) for line in (args.log_path / "checkpoints.jsonl").open() if line.strip()
+        json.loads(line)
+        for line in index_bytes(args.log_path / "checkpoints.jsonl").splitlines()
+        if line.strip()
     ]
     canonical: dict[int, dict] = {}
+    full = {}
     for r in records:  # later records win, as in the driver and the cookbook
+        if type(r.get("batch")) is not int or r.get("owner") == "parent":
+            continue
         canonical[r["batch"]] = r
-    if args.step not in canonical or not canonical[args.step].get("state_path"):
+        if isinstance(r.get("state_path"), str) and r["state_path"].strip():
+            full[r["batch"]] = r
+    canonical.update(full)
+    if args.step not in full:
         raise SystemExit(f"no checkpoint with a full state at step {args.step}")
     at_step = canonical[args.step]
 
@@ -74,9 +90,14 @@ def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dic
 
     summary = json.loads(args.eval_summary.read_text())["by_source"]["OVERALL"]
     eval_config = json.loads(eval_config_file.read_text())
+    if eval_config.get("tinker_state_url") != at_step["state_path"]:
+        raise ValueError("Evaluation snapshot and upload state differ")
     identity_file = args.log_path / "wandb_run.json"
     identity = json.loads(identity_file.read_text()) if identity_file.exists() else {}
-    skyrl = os.environ.get("SKYRL", "/workspace/search-r1/SkyRL")
+    skyrl = (
+        os.environ.get("SKYRL")
+        or Path(os.environ.get("POD_ROOT", "/workspace")) / "search-r1/SkyRL"
+    )
     try:
         skyrl_commit = subprocess.run(
             ["git", "-C", skyrl, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
@@ -109,9 +130,10 @@ def upload(args, files, metadata, identity) -> dict:
         os.environ.pop(key, None)
     import wandb
 
-    os.environ.setdefault("WANDB_DIR", "/workspace/wandb_upload")
-    os.environ.setdefault("WANDB_CACHE_DIR", "/workspace/.cache/wandb")
-    os.environ.setdefault("WANDB_DATA_DIR", "/workspace/.cache/wandb-data")
+    volume = Path(os.environ.get("POD_ROOT", "/workspace"))
+    os.environ.setdefault("WANDB_DIR", str(volume / "wandb_upload"))
+    os.environ.setdefault("WANDB_CACHE_DIR", str(volume / ".cache/wandb"))
+    os.environ.setdefault("WANDB_DATA_DIR", str(volume / ".cache/wandb-data"))
     Path(os.environ["WANDB_DIR"]).mkdir(parents=True, exist_ok=True)
 
     try:  # wandb >= 0.2x moved generate_id out of wandb.util
@@ -141,10 +163,28 @@ def upload(args, files, metadata, identity) -> dict:
     return info
 
 
+def marker_matches(marker, summary, previous_step):
+    try:
+        info = json.loads(marker.read_bytes())
+        return (
+            isinstance(info, dict)
+            and bool(info.get("artifact"))
+            and (
+                "eval_directory" not in info  # Historical completed uploads.
+                or (
+                    info["eval_directory"] == summary.parent.name
+                    and info["previous_step"] == previous_step
+                )
+            )
+        )
+    except (FileNotFoundError, ValueError, KeyError, TypeError):
+        return False
+
+
 def upload_step(args: argparse.Namespace) -> int:
     """Check the marker and upload; the caller holds the step lock unless dry-running."""
     marker = args.marker_dir / f"step{args.step:04d}.json"
-    if marker.exists():
+    if marker_matches(marker, args.eval_summary, args.prev_step):
         print(f"already uploaded: {marker.read_text().strip()}")
         return 0
 
@@ -167,7 +207,12 @@ def upload_step(args: argparse.Namespace) -> int:
                 return 1
             time.sleep(60 * attempt)
             continue
-        info.update(seconds=round(time.monotonic() - start), bytes=total)
+        info.update(
+            seconds=round(time.monotonic() - start),
+            bytes=total,
+            eval_directory=args.eval_summary.parent.name,
+            previous_step=args.prev_step,
+        )
         args.marker_dir.mkdir(parents=True, exist_ok=True)
         pending_marker = marker.with_suffix(".tmp")
         pending_marker.write_text(json.dumps(info) + "\n")

@@ -1,11 +1,11 @@
 # REFACTOR STATUS
 
-更新：2026-11-20。**阶段 1–5 已完成。下一步是阶段 6 的云端驱动与评测脚本整合，只做本地模拟。** 原完整方案保留在 [REFACTOR_PLAN.md](REFACTOR_PLAN.md)。按用户最新要求，进度、验收说明和接续记录统一维护在本文，不再另建说明文档。
+更新：2026-11-20。**阶段 1–6 已完成。下一步是阶段 7 的安装依赖清除、干净环境验收和展示文档更新。** 原完整方案保留在 [REFACTOR_PLAN.md](REFACTOR_PLAN.md)。按用户最新要求，进度、验收说明和接续记录统一维护在本文，不再另建说明文档。
 
 ## 接续须知
 
 - 当前工作分支：`codex/self-contained-refactor`。
-- 用户本次授权“继续完成第五步”。本次交付起点、分叉与恢复协议。阶段 6–7 留待后续。
+- 用户本次授权“继续完成第6步”。本次交付 Pod 驱动与评测脚本，验收限于本地模拟。
 - 不运行训练、不做云端验证、不连接或修改云端服务/归档、不推送。实验已结束，未来实际复现的问题另行处理。
 - 原 main=`2c53127`、codex/stage3-dapo=`094bc2c`、claude/r75-cap030=`8165fec` 保持不变；最终全量验收后才替换 main。
 - 已删除的 handoff 和未跟踪 runs/local_docs 已由用户备份；接续不依赖它们。
@@ -20,7 +20,7 @@
 | 3 公共组件/评测迁移 | 完成 | 7 renderer、12 类轨迹对照；导入/网络阻断；SDK 模拟与生命周期；全套 130 passed |
 | 4 统一训练循环 | 完成 | 本地主循环、数据/优势/更新、动态补齐、普通 streaming；固定上游对照 + fake SDK + 导入阻断 |
 | 5 恢复与兼容 | 完成 | 指定父步、优化器与游标、归属与锁、W&B 身份、保存失败重放和旧格式回归 |
-| 6 云端脚本整合 | 未开始 | 仅本地实现/模拟，包括旧 SkyRL 基座模式 |
+| 6 云端脚本整合 | 完成 | 普通/动态分段、精确评测与补传、动态短训重启、旧 SkyRL 基座会话、同步副本路径和失败传播 |
 | 7 清除依赖/最终验收 | 未开始 | 干净环境不安装 cookbook；最终整体文档；全量验收后才替换 main |
 
 ## 验证记录
@@ -32,6 +32,7 @@
 - 第三步完成：`uv run --frozen pytest tests/ -q` → **130 passed in 17.21s**。新增 64 项，包含独立子进程中的导入阻断与网络阻断回归。
 - 第四步完整测试：`uv run --frozen pytest tests/ -q` → **176 passed in 19.26s**（删除 4 项 bridge 测试，新增 50 项训练迁移测试）；迁入代码、入口、相关测试 ruff 和 `git diff --check` 通过。
 - 第五步完整测试：`uv run --offline --frozen pytest tests/ -q` → **209 passed in 15.96s**。其中包括独立进程的 cookbook 导入和网络连接阻断。改动的 Python 文件通过 ruff，暂存差异通过 `git diff --cached --check`。
+- 第六步完整测试：`uv run --offline --frozen pytest tests/ -q` → **233 passed in 46.82s**。13 个云端 shell 脚本通过 `bash -n`，本阶段改动的 Python 文件通过 ruff，暂存差异通过 `git diff --cached --check`。
 - 参考 fixture 来自原项目 `8165fec2edbd0fc569375ae3d6a21043ddc537c3` + cookbook `1991897cba59ea9d9b0030d183d1867b28eba9d9`，不是从迁移后的实现生成。原项目通过 git archive 解到临时目录，没有切换或移动原分支。
 - 源文件与许可核对：13 个提取源文件在安装包和 pinned Git 树中逐字节一致；LICENSE 一致，该树无 NOTICE。来源映射见 `third_party/tinker_cookbook/UPSTREAM.md`。
 - 迁入代码、新测试及相关调用方 ruff、`git diff --check` 通过。未执行实际训练、模型推理、云端或检索请求。
@@ -115,11 +116,22 @@
 - 专项测试用临时目录和 fake SDK 从第 7 步分叉，父索引另有第 11 步、重复记录及 sampler-only 记录。覆盖首次登记中断、父目录移走、锁竞争、数据重排、旧配置与错误游标。两种模式都在第 9 步注入保存失败，验证从子 run 的第 8 步恢复优化器、重放相同题目、最终每个更新仅留一条指标。W&B 使用内存假客户端。
 - 独立子进程同时阻断 cookbook import 和 socket connect，覆盖训练入口、启动、日志、检查点、旧 CLI 与本地回归。保留安装依赖至第七步。全部验证只使用本地文件与模拟，未运行训练、在线 W&B、模型推理或云端操作。
 
-## 下一次从第六步开始
+## 第六步交付与验收
 
-1. 按总计划整合普通/动态云端驱动，将固定分叉起点和当前恢复步分别传递。用临时目录验证从 7 到 18 的评测与上传区间、空子索引和重跑补齐。
-2. 整合评测脚本、stage3 兼容脚本与运维路径，模拟旧 SkyRL 基座评测和保存后关闭会话异常。继续使用本地假服务。
-3. 第七步再处理安装依赖、干净环境验收和中英文展示文档。保持原分支指针，直至最终验收。
+- `scripts/cloud/train_with_dev_eval.sh RUN [key=value ...]` 调用同目录的驱动。用 `SAMPLING_MODE=ordinary|dynamic` 选模式，`PARENT_RUN` 和 `PARENT_STEP` 指定父 run 及其精确步数，`TOTAL_STEPS` 是全局终点。父 run 可用名称或绝对目录。子 run 重启可从自己的快照取分叉点、采样模式和训练参数。显式传入的训练参数优先。
+- 评测间隔从固定分叉步计算。以 7 → 18、间隔 5 为例，目标为 12、17、18，上传各自覆盖 (7,12]、(12,17]、(17,18]。恢复进度只决定下一段是否需要训练。`driver_targets.json` 记录已经到达的评测步，延长训练后仍可补做先前段尾的评测或上传。带完整记录的父归档、动态索引中显式引用的父归档及实际路径别名均受清理保护。
+- `eval_checkpoint.sh RUN STEP|base dev|test [training_config_file=FILE] [key=value ...]` 选择该步最后一条完整记录。默认读取 run 的配置，可用另一个快照评估同一权重。快照决定模型、renderer、搜索和基础评分，保留评测专用数据与并发参数。基座在首训前也可使用 CLI 配置。输出目录包含步数或 base、题集和输入摘要；缓存命中还须有成功标记，配置匹配，实际成功题数准确且错误数为零。
+- 旧 SkyRL 的基座模式通过 `skyrl_base_eval=true` 建立 LoRA 训练客户端。Tinker SDK 创建并维持会话心跳，评测持有该客户端并通过 `base_model` 采样。完整状态评测显式加载指定权重、发布 sampler。SDK 模拟验证调用顺序、客户端生命周期及清理。
+- `stage3.sh formal RUN` 和 `stage3.sh smoke NAME BATCH_SIZE MAX_STEPS` 转入通用驱动。保留单独使用 `formal`、`smoke` 动词的方式，此时通过 `RUN_NAME` 等环境变量传入实参。动态工具按实际父步、batch、group 和游标校验归属、逐组轨迹及指标。磁盘估算采用参考归档大小、剩余保存次数和实际补采样比例。基座首次保存前可通过 `STATE_BYTES` 提供估值；缺少参考时会提示，取得真实归档后再估算。旧实验专用删除清单已退出入口。
+- `run_train_test.sh NAME BATCH_SIZE MAX_STEPS [key=value ...]` 保留原短训调用。指定 `RESTART_AT` 后先保存，再重启服务并向最终目标续跑。脚本校验目标完整状态并传播训练失败码。仅在训练正常返回且 SkyRL 兼容模式启用时，SDK 层接受 POST 会话 finish 接口的 404。其他关闭错误会失败，训练本身的异常优先保留。
+- 部署使用同步项目副本内的 `scripts/cloud/`。入口按自身位置找到环境、tmux 启动脚本、安装补丁、monitor、prune 和 upload。凭据默认读 Pod 的 `/workspace/.secrets/env.sh`，也支持 `POD_ENV_FILE`、`POD_ROOT`、`SEARCH_R1_DATA_DIR` 和 `CKPT_BASE`。训练、短训及独立评测驱动共用一个本地 Pod 锁，每次后台上传保留独立日志及每步上传锁。
+- 测试在带空格的临时 Pod 路径运行仓库原 shell 入口。覆盖普通/动态从零或第 7 步起跑、空子索引、第 9 步续跑、父目录归档后补评测与补传、dev/test、交叉配置、题数不符和非零退出。模拟嵌套 tmux 命令、安装到相邻补丁的调用，并核对 stop_train 的进程选择。实际训练、GPU、远程服务与 W&B 上传仍未执行。
+
+## 下一次从第七步开始
+
+1. 显式声明实际运行所需依赖，从 pyproject/uv.lock 清除 cookbook。在全新环境验收安装、导入、普通/动态/评测 CLI 帮助和全套测试。
+2. 更新 README.md、README_zh.md、scripts/README.md 中的四种配方、同步项目副本的部署方式和新入口，整理最终架构及验证说明。
+3. 按总计划完成最终分支验收，再按用户约定处理本地 main。继续只做本地验证。
 
 ## 提交与原分支保护
 
@@ -128,7 +140,8 @@
 - `805f753`：第三步中间态及暂停记录（WIP）。
 - `f61152c`：第三步完成，130 项本地测试通过。
 - 第四步完成提交：`Move ordinary and dynamic training into the local shared loop`；具体 hash 见当前分支 git log。
-- 第五步完成提交：`Unify checkpoint forks, recovery and run logging`，具体 hash 见当前分支 git log。
+- `0778dd3`：第五步完成，209 项本地测试通过。
+- 第六步完成提交：`Generalize Pod training segments and checkpoint evaluation`，具体 hash 见当前分支 git log。
 - 本次核对原分支仍为 main=`2c53127`、codex/stage3-dapo=`094bc2c`、claude/r75-cap030=`8165fec`。
 
 ## 已确定的检查点迁移约定
