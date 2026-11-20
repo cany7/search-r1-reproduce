@@ -1,4 +1,4 @@
-# Cookbook source provenance — stages 3–5
+# Cookbook source provenance
 
 Source repository: https://github.com/thinking-machines-lab/tinker-cookbook
 
@@ -48,4 +48,4 @@ Stage 5 verified the installed bytes of `checkpoint_utils.py`, `cli_utils.py`, `
 | training/logging.py | utils/ml_log.py | Preserve the online W&B identity file and event-step convention. Use run-scoped calls, a separate identity for forks and local JSONL replay. |
 | training/usage.py | utils/cost_estimation.py | Read the four published price fields with a cached best-effort lookup at training startup. |
 
-Both training entry points and evaluation use local implementations. The installation dependency and clean-environment checks are scheduled for stage 7. See [REFACTOR_STATUS.md](../../docs/REFACTOR_STATUS.md).
+Both training entry points and evaluation use local implementations. The project installs the Tinker SDK directly. The reference fixtures and this source map retain the pinned cookbook revision used for comparison. See [REFACTOR_STATUS.md](../../docs/REFACTOR_STATUS.md).

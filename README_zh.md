@@ -1,7 +1,6 @@
 # search-r1-reproduce
 
-基于 tinker-cookbook `recipes/search_tool` 的 Search-R1 小规模复现，使用 BM25 检索、
-Qwen3.5 和通过自部署 SkyRL Tinker 服务进行的 LoRA 训练。
+使用 Qwen3.5、BM25 检索和 LoRA 小规模复现 Search-R1。普通采样和动态采样共用仓库内的训练循环，通过 Tinker SDK 向模型服务（如自部署 SkyRL）提交采样和优化器请求。
 
 [English version](README.md)
 
@@ -22,7 +21,8 @@ Qwen3.5 和通过自部署 SkyRL Tinker 服务进行的 LoRA 训练。
 
 | 项 | 版本 |
 |---|---|
-| tinker-cookbook | `1991897`（2026-11-14），在 `pyproject.toml` 里固定 |
+| Tinker SDK | 客户端锁文件固定为 0.39.0 |
+| 迁入的 cookbook 源码 | 取自 `1991897`，代码及 Apache-2.0 许可随仓库提供，详见[来源映射](third_party/tinker_cookbook/UPSTREAM.md) |
 | Search-R1（只取 `retrieval_server.py`） | `598e61b` |
 | SkyRL（云端才用） | 固定 `79d4c89` 加本地补丁；A100 归档使用 padding 裁剪，当前部署另加按序列长度切换梯度检查点（尚无 GPU 验证），见[脚本说明](scripts/README.md)。客户端与服务端环境独立 |
 | Python | 3.12.14，`pyenv local` 指定，uv 只用它 |
@@ -30,20 +30,17 @@ Qwen3.5 和通过自部署 SkyRL Tinker 服务进行的 LoRA 训练。
 
 ## 目录
 
-- `search_r1/`：基于 cookbook 的 `recipes/search_tool` 修改。
-  - `tools.py`：BM25 检索工具、reward（F1+，原版可选）。
-  - `search_env.py`：prompt（fast，原版可选）、数据加载、环境构建。
-  - `renderers.py`：保留 Qwen3.5 工具参数中的 Unicode 字符，与模型 chat template 一致。
-  - `train.py`：训练入口（云端用）。
-  - `offline_eval.py`：评测，支持 tinker 和本地 omlx 两种后端，逐条轨迹落盘。
-  - `local_completer.py`：本地推理适配，只在本地用。
-- `retrieval/`：BM25 检索服务，独立的 uv 环境。`retrieval_server.py` 相对原文件只加了 `--host` / `--port`。
-- `eval_sets/`：固定的开发集和测试集，由 `scripts/make_eval_sets.py` 生成。
-- `experiments/`：用于 GitHub 展示的归档结果与分析。
-- `scripts/`：部署、评测和分析工具，见[脚本说明](scripts/README.md)。
-- `tests/`：reward、云端操作和 W&B 兼容检查。
-- `data/`、`runs/`：本地数据与运行中的输出，不进 Git。
-- `local_docs/`：本地工作记录，继续忽略，不作为公开实验记录提交。
+可以按一次训练更新的顺序阅读代码。
+
+| 环节 | 实现 |
+|---|---|
+| 参数入口 | [普通](search_r1/train.py)和[动态](search_r1/train_dynamic_sampling.py)入口共用一套[配置](search_r1/config.py)。 |
+| 启动和恢复 | [runtime.py](search_r1/training/runtime.py) 锁定 run 并初始化 SDK 客户端。[checkpoints.py](search_r1/training/checkpoints.py) 选择完整状态，恢复优化器和下一题游标。 |
+| 收集轨迹 | [loop.py](search_r1/training/loop.py) 通过 [sampling.py](search_r1/training/sampling.py) 收集题组。每条轨迹经过[多轮作答](search_r1/env/rollout.py)、[搜索环境](search_r1/env/search_tool_env.py)、[BM25 工具与评分](search_r1/env/tools.py)和 [Qwen renderer](search_r1/env/renderers/)。 |
+| 更新和保存 | [data.py](search_r1/training/data.py) 用组内奖励减均值计算优势，对齐 action target 与旧 logprob。[update.py](search_r1/training/update.py) 提交梯度、执行 Adam 并发布采样权重。主循环写出轨迹与[指标](search_r1/training/logging.py)后提交检查点索引。 |
+| 评测 | [offline_eval.py](search_r1/offline_eval.py) 通过 [Tinker 或 oMLX 后端](search_r1/backends/)复用同一套环境和多轮作答逻辑。固定的[开发集和测试集](eval_sets/)随仓库提供。 |
+
+[检索服务](retrieval/)使用独立环境。[脚本指南](scripts/README.md)说明部署和分析工具的用法。Git 忽略本地数据及运行输出。
 
 训练和基座评测默认使用 `search_r1/qwen3_5_disable_thinking_unicode`，仅修正列表／字典
 工具参数中的非 ASCII 字符转义，沿用 cookbook 的消息渲染、解析和 rollout 逻辑。
@@ -53,18 +50,21 @@ renderer 名称写入训练／评测配置和训练客户端元数据；检查�
 ## 数据
 
 ```bash
-cd data
-hf download PeterJinGo/nq_hotpotqa_train --repo-type dataset --local-dir nq_hotpotqa_train
-hf download PeterJinGo/wiki-18-bm25-index --repo-type dataset --local-dir bm25-index
-hf download PeterJinGo/wiki-18-corpus --repo-type dataset --local-dir corpus
-gunzip -k corpus/wiki-18.jsonl.gz
+mkdir -p data
+(
+    cd data
+    hf download PeterJinGo/nq_hotpotqa_train --repo-type dataset --local-dir nq_hotpotqa_train
+    hf download PeterJinGo/wiki-18-bm25-index --repo-type dataset --local-dir bm25-index
+    hf download PeterJinGo/wiki-18-corpus --repo-type dataset --local-dir corpus
+    gunzip -k corpus/wiki-18.jsonl.gz
+)
 ```
 
 ## 环境
 
 ```bash
-uv sync                          # 主环境
-(cd retrieval && uv sync)        # 检索环境
+uv sync --locked                 # 主环境
+(cd retrieval && uv sync --locked)  # 检索环境
 cp .env.example .env             # 首次配置；本地评测填 OMLX_API_KEY，训练填 WANDB_API_KEY
 ```
 
@@ -72,33 +72,29 @@ cp .env.example .env             # 首次配置；本地评测填 OMLX_API_KEY�
 训练入口自动读取项目根目录的 `.env`，已有环境变量优先。
 可用 `wandb_project=<项目名>` 改名，或 `wandb_project=None` 关闭上传；本地日志仍会保存。
 
-迁移到云端时带上 `pyproject.toml` 和 `uv.lock`，执行 `uv sync --locked` 即会安装包括
-`wandb` 在内的锁定依赖。云端另行配置 `WANDB_API_KEY`，无需复制本地 `.venv`。
+## 四种训练配方
 
-## 云端训练
-
-先启动 SkyRL Tinker 服务和 BM25 检索服务，部署目录约定见[脚本说明](scripts/README.md)。
-以下参数只展示 CLI 用法，不代表后续正式训练规模或 GPU 已确定：
+先启动 BM25，配置 `TINKER_BASE_URL` 和 `TINKER_API_KEY`，再从项目根目录运行。自部署 Pod 的配置见[脚本指南](scripts/README.md)。四个示例每批选 64 道题，每题采样 8 条轨迹。普通 CLI 默认每批 512 题。可追加 `max_steps`、`save_every`（默认 25）和 `log_path`，分别指定全局终点、保存间隔和运行目录。
 
 ```bash
-TINKER_API_KEY=tml-dummy TINKER_BASE_URL=http://127.0.0.1:8000 \
-    uv run python -m search_r1.train batch_size=64 group_size=8 max_steps=100 \
-    save_every=5 log_path=/workspace/runs/search-r1-train
+# 普通采样
+uv run --frozen python -m search_r1.train batch_size=64 group_size=8
+
+# 限制搜索，每轮只执行第一个 search 的前三条 query
+uv run --frozen python -m search_r1.train batch_size=64 group_size=8 limit_search=true
+
+# 训练时达到轮数上限且没有有效答案，终局奖励设为 -0.3
+uv run --frozen python -m search_r1.train batch_size=64 group_size=8 limit_search=true max_turns_unanswered_reward=-0.3
+
+# 动态采样，剔除奖励全同的题组，再用新题补齐
+uv run --frozen python -m search_r1.train_dynamic_sampling batch_size=64 group_size=8 limit_search=true
 ```
 
-直接训练 CLI 的 `save_every` 默认 25，此处覆盖为 5。训练入口的 `batch_size` 默认仍是
-cookbook 的 512 题，所以示例显式传 64。
+最后一轮有效回答沿用基础评分。评测继承快照里的搜索规则和基础评分，封顶未答惩罚仅用于训练。动态采样在同一策略下补齐整批后才更新。普通采样另支持流式 minibatch。
 
-固定开发集评测需另行运行 `offline_eval.py backend=tinker`，将 `checkpoints.jsonl` 中的
-完整训练状态路径传给 `tinker_state_url`，并指定 `eval_file=eval_sets/dev.jsonl`。
-自部署 SkyRL 应使用这条完整状态加载路径，`tinker_checkpoint_url` 的 sampler 路径不能可靠替代。
-训练参数 `eval_every` 不会自动执行这项评测。
+两个入口均可从基座起跑。从普通 run 分叉时传 `parent_run=路径 parent_step=N` 和新的 `log_path`。同一 run 续训时复用原目录与配方，传 `behavior_if_log_dir_exists=resume`。两者都恢复优化器。仅加载权重时用 `load_checkpoint_path=URI`。
 
-分段训练和开发集评测使用 `scripts/cloud/train_with_dev_eval.sh <run_name> [额外 train.py 参数]`。
-默认 `TOTAL_STEPS=100`、`BATCH_SIZE=64`、`GROUP_SIZE=8`、`EVAL_EVERY=25`、`SAVE_EVERY=5`、
-`EVAL_CONCURRENCY=32`、`PRUNE_STATES=1`、`UPLOAD=1`；正式运行按选定配置显式设置。
-驱动从保存的训练配置读取评测参数，并上传检查点到 W&B。基座评测需单独进行。
-已有 A100 短测不代表完整分段驱动和真实上传／恢复流程已经验证。
+在同步的 Pod 项目副本中运行 `scripts/cloud/train_with_dev_eval.sh RUN [key=value ...]`，可在分段训练之间评测开发集。单独评测用 `scripts/cloud/eval_checkpoint.sh RUN STEP dev`，测试集用 `test`。驱动读取指定步的完整状态和 run 的配置。基座评测、跨配置评测和上传选项见[脚本指南](scripts/README.md)。
 
 ## 启动检索服务
 
@@ -140,5 +136,7 @@ uv run python -m search_r1.offline_eval backend=omlx omlx_model=Qwen3.5-4B-bf16 
 ## 测试
 
 ```bash
-uv run pytest tests/
+uv run --locked pytest tests/ -q
 ```
+
+测试使用固定参考轨迹、本地文件和模拟的 SDK／Pod 进程，覆盖两种采样、检查点恢复，以及未安装 cookbook 时的离线 CLI 帮助。重构后的 GPU 训练和在线服务行为未经实测。详见[验收记录](docs/REFACTOR_STATUS.md)。

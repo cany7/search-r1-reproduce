@@ -1,29 +1,35 @@
 [project]
 name = "search-r1-reproduce"
 version = "0.1.0"
-description = "Small-scale Search-R1 reproduction on tinker-cookbook's search_tool recipe"
+description = "Search-R1 training and evaluation with BM25 retrieval and the Tinker SDK"
 requires-python = ">=3.12,<3.13"
+license-files = ["third_party/tinker_cookbook/LICENSE", "third_party/tinker_cookbook/UPSTREAM.md"]
 dependencies = [
-    "tinker-cookbook",
+    "aiohttp",
+    "chz",
+    "huggingface-hub",
+    "numpy",
     "pandas",
     "pyarrow",
+    "pydantic>=2",
+    "pydantic-core",
     "python-dotenv",
+    "tinker",
+    "tokenizers",
+    "torch",
+    "transformers",
     "wandb>=0.31.0",
 ]
 
 [dependency-groups]
-dev = ["pytest", "ruff"]
+dev = ["httpx", "pytest", "ruff"]
 
 [tool.uv]
 # Use the interpreter selected by pyenv local (see .python-version) and disable uv downloads.
 python-preference = "only-system"
 
-[tool.uv.sources]
-# Pin the commit used to review the reproduction plan on 2026-11-14. Review changes before upgrading.
-tinker-cookbook = { git = "https://github.com/thinking-machines-lab/tinker-cookbook", rev = "1991897cba59ea9d9b0030d183d1867b28eba9d9" }
-
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]

@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pandas as pd
@@ -22,6 +23,12 @@ def no_network(*args, **kwargs):
 socket.socket.connect = no_network
 socket.socket.connect_ex = no_network
 """
+
+
+def test_locked_environment_excludes_cookbook():
+    with (ROOT / "uv.lock").open("rb") as lockfile:
+        packages = tomllib.load(lockfile)["package"]
+    assert "tinker-cookbook" not in {package["name"] for package in packages}
 
 
 def isolated(code, *, expected_returncode=0, **env):

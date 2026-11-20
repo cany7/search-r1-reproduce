@@ -26,26 +26,32 @@ as well as a working directory under `runs/eval/`.
 
 ## Cloud layout and deployment
 
-Cloud shell scripts expect the project under `/workspace/search-r1/project`,
-SkyRL under `/workspace/search-r1/SkyRL`, and these cloud helpers copied into
-`/workspace/bin`. They load cloud credentials from `/workspace/.secrets/env.sh`,
-which is not part of the repository or experiment archive. Working logs and
-checkpoints are written under `/workspace`.
+Synchronize the project checkout to the Pod, including its lockfiles, fixed
+evaluation sets, and `scripts/cloud/`. Run the scripts in that checkout. The
+helpers find each other relative to their own files. From the project root,
+`bash scripts/cloud/proj_install.sh` installs the locked client and the
+independent retrieval environment. SkyRL uses a third environment.
+
+By default the scripts read credentials from `/workspace/.secrets/env.sh`,
+use `/workspace/search-r1/SkyRL` for the server checkout and write logs under
+`/workspace/logs`. Set `POD_ROOT` to change the workspace root or `POD_ENV_FILE`
+to choose a credentials file. The Pod can also set `SKYRL`, `CKPT_BASE`,
+`RETRIEVAL_URL`, `SEARCH_R1_DATA_DIR`, `TINKER_BASE_URL` and `TINKER_API_KEY`.
+Start BM25 with the chosen data directory (`DATA_DIR` for `retrieval/start.sh`).
 
 | Script | Purpose |
 |---|---|
 | [cloud/env_common.sh](cloud/env_common.sh) | Shared environment and project path |
 | [cloud/proj_install.sh](cloud/proj_install.sh) | Install locked client/retrieval dependencies |
 | [cloud/download_data.sh](cloud/download_data.sh) | Download datasets, corpus and BM25 index |
-| [cloud/skyrl_install.sh](cloud/skyrl_install.sh) | Install pinned SkyRL and apply the local padding patch |
+| [cloud/skyrl_install.sh](cloud/skyrl_install.sh) | Install pinned SkyRL and apply the padding and gradient-checkpointing patch |
 | [cloud/start_skyrl.sh](cloud/start_skyrl.sh) | Start the configured server |
 | [cloud/restart_skyrl.sh](cloud/restart_skyrl.sh) | Restart the server and wait for API readiness |
 | [cloud/sysmon.sh](cloud/sysmon.sh) | Record GPU and container memory samples |
 
 `skyrl_install.sh` invokes [cloud/apply_patch.py](cloud/apply_patch.py). The matching
 [patch file](cloud/skyrl-79d4c89-trim-microbatch-padding.patch) documents the source
-change. Both are retained; deleting either is not a substitute for consolidating
-their maintenance.
+change.
 
 The current patch also supports length-based gradient checkpointing. Deployment
 defaults to `GC_SHORT_SEQ_THRESHOLD=8000`: for plain text microbatches of size 1,
@@ -68,7 +74,7 @@ per backend request, not necessarily per optimizer step.
 
 To recover the previous always-on behavior, restart the server/driver with
 `GC_SHORT_SEQ_THRESHOLD=0` (for example,
-`GC_SHORT_SEQ_THRESHOLD=0 bash /workspace/bin/train_with_dev_eval.sh RUN_NAME`).
+`GC_SHORT_SEQ_THRESHOLD=0 bash scripts/cloud/train_with_dev_eval.sh RUN_NAME`).
 Use the same run directory and training arguments to resume from the latest
 complete checkpoint. This does not retry a failed backward or preserve unsaved
 updates. Install the updated patch and cloud helpers before starting the server;
@@ -80,15 +86,57 @@ patch. Existing checkpoints remain usable.
 | Script | Purpose |
 |---|---|
 | [cloud/train_with_dev_eval.sh](cloud/train_with_dev_eval.sh) | Segmented training, full-state dev evaluation, cleanup and background W&B uploads |
+| [cloud/eval_checkpoint.sh](cloud/eval_checkpoint.sh) | Evaluate a specific full state or the base model on dev or test |
+| [cloud/stage3.sh](cloud/stage3.sh) | Compatibility entry for dynamic segmented (`formal`) and short (`smoke`) runs |
 | [cloud/ckpt_prune.py](cloud/ckpt_prune.py) | Retain evaluation/latest full states and remove other or duplicate full states |
 | [cloud/upload_checkpoint.py](cloud/upload_checkpoint.py) | Upload selected states, samplers and evaluation records |
 | [cloud/log_monitor_metrics.py](cloud/log_monitor_metrics.py) | Log dev-eval and rollout-behavior curves to a side W&B run |
 | [cloud/stop_train.sh](cloud/stop_train.sh) | Explicitly stop the train session and matching training processes |
 
-Run the segmented driver in its own session, not the `skyrl` session it restarts.
-Its argument is a run name, followed by optional `train.py` arguments. The saved
-training configuration supplies the development evaluation settings. The full
-driver/upload/recovery workflow is not established by the archived short tests.
+Run the segmented driver in its own session so it can restart the `skyrl`
+session. It accepts a run name followed by training CLI overrides. The four
+recipes below use 64 questions per batch and eight trajectories per question.
+
+```bash
+BATCH_SIZE=64 GROUP_SIZE=8 scripts/cloud/train_with_dev_eval.sh ordinary
+BATCH_SIZE=64 GROUP_SIZE=8 scripts/cloud/train_with_dev_eval.sh limited limit_search=true
+BATCH_SIZE=64 GROUP_SIZE=8 scripts/cloud/train_with_dev_eval.sh unanswered limit_search=true max_turns_unanswered_reward=-0.3
+SAMPLING_MODE=dynamic BATCH_SIZE=64 GROUP_SIZE=8 scripts/cloud/train_with_dev_eval.sh dynamic limit_search=true
+```
+
+New runs default to ordinary sampling, `TOTAL_STEPS=100`, `SAVE_EVERY=5`,
+`EVAL_EVERY=25` and `EVAL_CONCURRENCY=32`. By default the driver prunes
+eligible child states and uploads artifacts to W&B. `PRUNE_STATES=0` and
+`UPLOAD=0` disable those operations independently. Pruning protects parent
+archives by their resolved paths and skips indexes with unknown ownership.
+
+For example, fork from an ordinary parent's step 7 and stop at global step 18:
+
+```bash
+PARENT_RUN=ordinary PARENT_STEP=7 TOTAL_STEPS=18 EVAL_EVERY=5 SAMPLING_MODE=dynamic \
+    scripts/cloud/train_with_dev_eval.sh refill limit_search=true
+```
+
+The driver evaluates steps 12, 17 and 18. The first upload covers steps
+`(7, 12]`. Rerun with the same name, interval and end step to finish missing
+evaluations or uploads. Training resumes at the latest complete child state.
+
+Standalone evaluation takes a run name or absolute directory, a step or `base`,
+and `dev` or `test`. By default it uses the run's configuration. An explicit
+training snapshot overrides the corresponding model and environment options.
+The fixed set and evaluation-only settings (such as concurrency) remain selectable.
+
+```bash
+scripts/cloud/eval_checkpoint.sh refill 12 dev
+scripts/cloud/eval_checkpoint.sh refill 18 test training_config_file=/workspace/runs/train/ordinary/config.json
+scripts/cloud/eval_checkpoint.sh ordinary base dev
+```
+
+The helper selects the last complete record at the requested step. For base
+evaluation on the combined SkyRL server it keeps a LoRA client alive while
+sampling the base model. Results under `runs/eval/` include the run, weight,
+split and a digest of the evaluation inputs in the directory name. A reusable
+result needs the expected question count, zero errors and a completion marker.
 
 `log_monitor_metrics.py` fills two gaps in the training run's W&B charts. It reads
 the files training and evaluation already write and logs them to a separate run
@@ -96,12 +144,12 @@ the files training and evaluation already write and logs them to a separate run
 `job_type=monitor`, axis `training/step`); it clears inherited `WANDB_RUN_ID` and
 `WANDB_RESUME`, so it never resumes the training run.
 
-- `dev/*`: one point per dev eval from `runs/eval/<run_name>-stepXXXX/summary.json`
+- `dev/*`: one point per dev eval from the exact summary supplied by the driver
   (overall EM, F1, answer rate, EM when answered, `max_turns_rate`, search calls,
   no-search and tool-error rates, turns, sampled tokens; EM/F1/answer rate per
   source). `--base-eval DIR` (driver: `BASE_EVAL_DIR`) adds the base model at step 0.
 - `rollout/*`: one point per training step from
-  `iteration_XXXXXX/train_rollout_summaries.jsonl`. The cookbook's
+  `iteration_XXXXXX/train_rollout_summaries.jsonl`. The training
   `env/*/max_turns` and `env/*/stop/*` are averages over the episodes that report
   them and are always 1.0; these are fractions of all episodes. `max_turns_rate`
   counts episodes stopped by the turn cap (as in the dev termination);
@@ -116,13 +164,19 @@ logged, so reruns log only new or rewritten files. `--dry-run` prints the points
 without touching W&B or the state file. Manual run on the pod:
 
 ```bash
-/workspace/search-r1/project/.venv/bin/python /workspace/bin/log_monitor_metrics.py --run-name RUN_NAME --log-path /workspace/runs/train/RUN_NAME --eval-root /workspace/search-r1/project/runs/eval
+uv run --frozen python scripts/cloud/log_monitor_metrics.py --run-name RUN_NAME \
+    --log-path /workspace/runs/train/RUN_NAME --eval-root runs/eval \
+    --dev-summary 12 runs/eval/RUN_NAME-step0012-dev-DIGEST/summary.json
 ```
 
 ## Short validation and analysis tools
 
 - [cloud/run_train_test.sh](cloud/run_train_test.sh): short named training jobs.
-  It uses `behavior_if_log_dir_exists=delete`; use distinct names for new evidence.
+  Usage is `run_train_test.sh NAME BATCH_SIZE MAX_STEPS [key=value ...]`. A fresh
+  short run defaults to `behavior_if_log_dir_exists=delete`, so use a distinct name.
+  With `RESTART_AT`, the default becomes `resume`. For example,
+  `SAMPLING_MODE=dynamic RESTART_AT=2 scripts/cloud/run_train_test.sh short 4 3 limit_search=true`
+  saves at step 2, restarts the service, then verifies the complete step-3 state.
 - [cloud/conc_test.sh](cloud/conc_test.sh): evaluation concurrency comparisons.
 - [cloud/stats_window.py](cloud/stats_window.py): summarize a time window from
   `/workspace/logs/sysmon.csv` and vLLM logs. Its log-time conversion uses the host

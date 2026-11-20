@@ -1,15 +1,12 @@
 # REFACTOR STATUS
 
-更新：2026-11-20。**阶段 1–6 已完成。下一步是阶段 7 的安装依赖清除、干净环境验收和展示文档更新。** 原完整方案保留在 [REFACTOR_PLAN.md](REFACTOR_PLAN.md)。按用户最新要求，进度、验收说明和接续记录统一维护在本文，不再另建说明文档。
+更新：2026-11-20。**阶段 1–7 已完成。** 四种训练配方、共享训练循环的阅读顺序和评测用法见[中文 README](../README_zh.md)。Pod 入口见[脚本指南](../scripts/README.md)。[原始方案](REFACTOR_PLAN.md)保留设计与阶段划分。
 
-## 接续须知
+## 交付范围
 
-- 当前工作分支：`codex/self-contained-refactor`。
-- 用户本次授权“继续完成第6步”。本次交付 Pod 驱动与评测脚本，验收限于本地模拟。
-- 不运行训练、不做云端验证、不连接或修改云端服务/归档、不推送。实验已结束，未来实际复现的问题另行处理。
-- 原 main=`2c53127`、codex/stage3-dapo=`094bc2c`、claude/r75-cap030=`8165fec` 保持不变；最终全量验收后才替换 main。
-- 已删除的 handoff 和未跟踪 runs/local_docs 已由用户备份；接续不依赖它们。
-- `.codex-attachments/` 是用户未跟踪目录，不纳入提交、不修改。
+- 用户已授权完成第七步，并在最终本地验收通过后将本地 `main` 快进到 `codex/self-contained-refactor`。下方各阶段记录按当时的代码状态保留。
+- 验收使用本地文件、固定 fixture 与模拟客户端。历史 GPU 结果保存在[实验档案](../experiments/README_zh.md)。本次未执行训练、模型推理、云端验证、服务操作或实际归档上传／清理。
+- 实验分支和工作树保留，未推送。干净副本不含 `.env`、训练数据、`runs/`、`local_docs/` 或用户的 `.codex-attachments/`。
 
 ## 阶段状态
 
@@ -21,18 +18,19 @@
 | 4 统一训练循环 | 完成 | 本地主循环、数据/优势/更新、动态补齐、普通 streaming；固定上游对照 + fake SDK + 导入阻断 |
 | 5 恢复与兼容 | 完成 | 指定父步、优化器与游标、归属与锁、W&B 身份、保存失败重放和旧格式回归 |
 | 6 云端脚本整合 | 完成 | 普通/动态分段、精确评测与补传、动态短训重启、旧 SkyRL 基座会话、同步副本路径和失败传播 |
-| 7 清除依赖/最终验收 | 未开始 | 干净环境不安装 cookbook；最终整体文档；全量验收后才替换 main |
+| 7 清除依赖/最终验收 | 完成 | 客户端直接依赖及新锁文件、独立安装与全套测试、双语配方和脚本指南、本地 main 快进 |
 
 ## 验证记录
 
 - 基线：`uv run --frozen pytest tests/` → **55 passed in 8.14s**。
-- 环境：macOS arm64，Python 3.12.14，uv 0.13.9，pytest 9.2.0，tinker 0.39.0，cookbook 0.6.2.dev1+g1991897cb，transformers 5.23.0，torch 2.15.0。
+- 初始基线环境：macOS arm64，Python 3.12.14，uv 0.13.9，pytest 9.2.0，tinker 0.39.0，cookbook 0.6.2.dev1+g1991897cb，transformers 5.23.0，torch 2.15.0。
 - 阶段 2：checkpoint pruning + cloud operations → **19 passed in 5.39s**；ruff 通过。删除测试仅操作 pytest 临时文件。
 - 第三步暂停中间态：**66 passed in 6.00s**，当时尚无迁移专项验收。
 - 第三步完成：`uv run --frozen pytest tests/ -q` → **130 passed in 17.21s**。新增 64 项，包含独立子进程中的导入阻断与网络阻断回归。
 - 第四步完整测试：`uv run --frozen pytest tests/ -q` → **176 passed in 19.26s**（删除 4 项 bridge 测试，新增 50 项训练迁移测试）；迁入代码、入口、相关测试 ruff 和 `git diff --check` 通过。
 - 第五步完整测试：`uv run --offline --frozen pytest tests/ -q` → **209 passed in 15.96s**。其中包括独立进程的 cookbook 导入和网络连接阻断。改动的 Python 文件通过 ruff，暂存差异通过 `git diff --cached --check`。
 - 第六步完整测试：`uv run --offline --frozen pytest tests/ -q` → **233 passed in 46.82s**。13 个云端 shell 脚本通过 `bash -n`，本阶段改动的 Python 文件通过 ruff，暂存差异通过 `git diff --cached --check`。
+- 第七步干净环境全套测试：**234 passed in 49.11s**。运行时安装、CLI、锁文件及静态检查见[第七步交付与最终验收](#第七步交付与最终验收)。
 - 参考 fixture 来自原项目 `8165fec2edbd0fc569375ae3d6a21043ddc537c3` + cookbook `1991897cba59ea9d9b0030d183d1867b28eba9d9`，不是从迁移后的实现生成。原项目通过 git archive 解到临时目录，没有切换或移动原分支。
 - 源文件与许可核对：13 个提取源文件在安装包和 pinned Git 树中逐字节一致；LICENSE 一致，该树无 NOTICE。来源映射见 `third_party/tinker_cookbook/UPSTREAM.md`。
 - 迁入代码、新测试及相关调用方 ruff、`git diff --check` 通过。未执行实际训练、模型推理、云端或检索请求。
@@ -127,11 +125,13 @@
 - 部署使用同步项目副本内的 `scripts/cloud/`。入口按自身位置找到环境、tmux 启动脚本、安装补丁、monitor、prune 和 upload。凭据默认读 Pod 的 `/workspace/.secrets/env.sh`，也支持 `POD_ENV_FILE`、`POD_ROOT`、`SEARCH_R1_DATA_DIR` 和 `CKPT_BASE`。训练、短训及独立评测驱动共用一个本地 Pod 锁，每次后台上传保留独立日志及每步上传锁。
 - 测试在带空格的临时 Pod 路径运行仓库原 shell 入口。覆盖普通/动态从零或第 7 步起跑、空子索引、第 9 步续跑、父目录归档后补评测与补传、dev/test、交叉配置、题数不符和非零退出。模拟嵌套 tmux 命令、安装到相邻补丁的调用，并核对 stop_train 的进程选择。实际训练、GPU、远程服务与 W&B 上传仍未执行。
 
-## 下一次从第七步开始
+## 第七步交付与最终验收
 
-1. 显式声明实际运行所需依赖，从 pyproject/uv.lock 清除 cookbook。在全新环境验收安装、导入、普通/动态/评测 CLI 帮助和全套测试。
-2. 更新 README.md、README_zh.md、scripts/README.md 中的四种配方、同步项目副本的部署方式和新入口，整理最终架构及验证说明。
-3. 按总计划完成最终分支验收，再按用户约定处理本地 main。继续只做本地验证。
+- `pyproject.toml` 显式声明环境、渲染、训练与日志使用的库，保留 Parquet 引擎 `pyarrow`，测试直接用到的 `httpx` 放入 dev 组。`uv lock` 从跨平台依赖图移除了 cookbook 和另外 12 个包，保留 Tinker SDK 0.39.0；检索服务继续使用独立的锁文件。新增回归检查防止 cookbook 经间接依赖重新进入客户端锁文件。
+- 在 macOS arm64、Python 3.12.14、uv 0.13.9 上，用 Git 跟踪文件和本阶段改动创建临时副本。在其中执行 `uv sync --locked --offline --no-dev --no-editable`，从本机包缓存安装到新虚拟环境。用仓库目录外的 `python -I` 验证 cookbook 的分发元数据及可导入模块均不存在，从已安装的 wheel 导入全部 40 个项目子模块，并核对 wheel 中上游许可和来源映射的内容。
+- 新环境中普通训练、动态训练和离线评测三个入口均能输出 `--help`。chz 0.4.0 打印帮助后返回 1。测试另外在禁止 socket 连接和 cookbook 导入的子进程中核对帮助字段、固定轨迹与模拟 SDK 行为。
+- 加入锁定的开发依赖后执行 `uv run --locked --offline pytest tests/ -q`，**234 项通过**。相对原 main 的 68 个新增或修改的 Python 文件通过 ruff；16 个跟踪的 shell 脚本通过 `bash -n`。运行和开发环境分别通过 `uv pip check`，锁文件通过 `uv lock --check --offline`。
+- 中英文 README 的四个 64×8 示例已与计划逐条核对，并用 chz 实际解析和构建有效配置。普通 CLI 默认仍为 512 题。脚本指南给出同步副本上的四种驱动调用、分叉和恢复、基座与完整状态评测、上传与清理开关。固定对照、临时文件和进程模拟的范围见上方各阶段记录。
 
 ## 提交与原分支保护
 
@@ -139,10 +139,10 @@
 - `55101ee`：父归档保护及本地文件回归测试，阶段 2 完成。
 - `805f753`：第三步中间态及暂停记录（WIP）。
 - `f61152c`：第三步完成，130 项本地测试通过。
-- 第四步完成提交：`Move ordinary and dynamic training into the local shared loop`；具体 hash 见当前分支 git log。
+- `411b0bc`：第四步完成，176 项本地测试通过。
 - `0778dd3`：第五步完成，209 项本地测试通过。
-- 第六步完成提交：`Generalize Pod training segments and checkpoint evaluation`，具体 hash 见当前分支 git log。
-- 本次核对原分支仍为 main=`2c53127`、codex/stage3-dapo=`094bc2c`、claude/r75-cap030=`8165fec`。
+- `fc556f9`：第六步完成，233 项本地测试通过。
+- 第七步交付提交可用 `git log -1 codex/self-contained-refactor` 查看。本地 `main` 从 `2c53127` 快进到同一提交。两个实验分支分别保留在 `094bc2c` 和 `8165fec`。
 
 ## 已确定的检查点迁移约定
 
