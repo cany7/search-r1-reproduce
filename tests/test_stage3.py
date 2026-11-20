@@ -11,7 +11,9 @@ from scripts.cloud import log_monitor_metrics as monitor
 from scripts.cloud import stage3_ops as ops
 from search_r1 import train_dapo as dapo
 from search_r1.backends.completers import TokensWithLogprobs
+from search_r1.env.search_env import SearchRLDataset
 from search_r1.env.types import TrajectoryGroup
+from search_r1.training import sampling
 
 ROOT = Path(__file__).resolve().parents[1]
 PARENT_URI = "tinker://model_parent/weights/final"
@@ -28,6 +30,7 @@ def parent_run(tmp_path):
     config = json.loads(source.read_text())
     config["dataset_builder"]["limit_search"] = True
     config["wandb_project"] = None
+    config["sampling_mode"] = "ordinary"  # New ordinary snapshots must still fork into dynamic mode.
     (parent / "config.json").write_text(json.dumps(config))
     write_jsonl(
         parent / "checkpoints.jsonl", [{"batch": 100, "name": "final", "state_path": PARENT_URI}]
@@ -55,7 +58,7 @@ def test_cap_or_dataset_end_never_trains_a_tail(builders, max_rounds, attempted)
         return [group([0.5, 0.5]) for _ in items]
 
     with pytest.raises(RuntimeError, match=f"{attempted} prompts"):
-        asyncio.run(dapo.collect_batch(builders, 0, 4, 2, max_rounds, wave, lambda *args: None))
+        asyncio.run(sampling.collect_batch(builders, 0, 4, 2, max_rounds, wave, lambda *args: None))
 
 
 def test_surplus_and_partial_rewards():
@@ -64,7 +67,7 @@ def test_surplus_and_partial_rewards():
 
     seen = []
     b = asyncio.run(
-        dapo.collect_batch(
+        sampling.collect_batch(
             list(range(12)), 0, 4, 2, 3, wave, lambda _, __, pos, reason: seen.append((pos, reason))
         )
     )
@@ -88,7 +91,7 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
             return ["nq"]
 
     async def make_dataset(self):
-        return dapo.SearchRLDataset([Builder(i) for i in range(7400)], 64), None
+        return SearchRLDataset([Builder(i) for i in range(7400)], 64), None
 
     async def rollout(sampler, builder, **kwargs):
         n = int(builder.datum["id"])
@@ -144,10 +147,8 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
         dapo.checkpoint_utils, "check_renderer_name_for_checkpoint_async", AsyncMock()
     )
     monkeypatch.setattr(dapo, "fetch_model_pricing", lambda model: None)
-    monkeypatch.setattr(dapo.train, "get_tokenizer", lambda model: None)
     monkeypatch.setattr(dapo.SearchR1DatasetBuilder, "__call__", make_dataset)
-    monkeypatch.setattr(dapo.train, "do_group_rollout_and_filter_constant_reward", rollout)
-    monkeypatch.setattr(dapo.train, "print_group", lambda *args: None)
+    monkeypatch.setattr(sampling, "sample_group", rollout)
 
     smoke = tmp_path / "s3-smoke"
     formal = tmp_path / "s3"

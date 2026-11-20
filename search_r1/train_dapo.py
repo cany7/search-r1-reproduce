@@ -5,24 +5,21 @@ import asyncio
 import fcntl
 import json
 import logging
-import math
-from dataclasses import dataclass, field
 from pathlib import Path
-from time import monotonic
 
 import chz
 import tinker
 from tinker_cookbook import checkpoint_utils
-from tinker_cookbook.rl import train
-from tinker_cookbook.rl.rollout_logging import serialize_rollout_summaries
-from tinker_cookbook.utils import ml_log, trace
-from tinker_cookbook.utils.cost_estimation import CostTracker, TokenUsage, fetch_model_pricing
-from tinker_cookbook.utils.misc_utils import all_same
+from tinker_cookbook.utils import ml_log
+from tinker_cookbook.utils.cost_estimation import fetch_model_pricing
 
-from search_r1.env.search_env import SearchRLDataset
+from search_r1.env.search_env import SearchR1DatasetBuilder
 from search_r1.env.tools import RetrievalConfig
 from search_r1.skyrl_compat import patch_create_from_state
-from search_r1.training.cookbook_bridge import SearchR1DatasetBuilder
+from search_r1.training.config import Config
+from search_r1.training.legacy_runtime import close_dataset
+from search_r1.training.loop import run_updates
+from search_r1.training.usage import CostTracker, TokenUsage
 from search_r1.wandb_compat import persistent_wandb_run
 
 START_STEP = 100
@@ -30,9 +27,9 @@ logger = logging.getLogger(__name__)
 
 
 @chz.chz
-class Stage3Config(train.Config):
+class Stage3Config(Config):
     parent_state_path: str
-    max_sampling_rounds: int = 8
+    sampling_mode: str = "dynamic"
 
 
 def load_run(parent: Path, output: Path, target: int, save_every: int, max_rounds: int):
@@ -74,6 +71,7 @@ def load_run(parent: Path, output: Path, target: int, save_every: int, max_round
         save_every=save_every,
         eval_every=0,
         remove_constant_reward_groups=True,
+        sampling_mode="dynamic",
         parent_state_path=root.state_path,
         max_sampling_rounds=max_rounds,
     )
@@ -104,203 +102,31 @@ def load_run(parent: Path, output: Path, target: int, save_every: int, max_round
     return config, resume, offset
 
 
-@dataclass
-class Batch:
-    start: int
-    attempted: int = 0
-    rounds: int = 0
-    constant: int = 0
-    surplus: int = 0
-    perfect: int = 0
-    nonpositive: int = 0
-    builders: list = field(default_factory=list)
-    groups: list = field(default_factory=list)
-
-    @property
-    def offset(self):
-        return self.start + self.attempted
-
-    def metrics(self):
-        return {
-            "sampling/attempted_groups": self.attempted,
-            "sampling/selected_groups": len(self.groups),
-            "sampling/constant_groups": self.constant,
-            "sampling/surplus_groups": self.surplus,
-            "sampling/discarded_groups": self.constant + self.surplus,
-            "sampling/eligible_fraction": (self.attempted - self.constant) / self.attempted,
-            "sampling/all_full_reward_fraction": self.perfect / self.attempted,
-            "sampling/all_same_nonpositive_fraction": self.nonpositive / self.attempted,
-            "sampling/rounds": self.rounds,
-            "sampling/start_prompt_offset": self.start,
-            "sampling/next_prompt_offset": self.offset,
-        }
-
-
-async def collect_batch(
-    builders, offset, target_size, group_size, max_rounds, rollout_wave, record
-):
-    """Select in shuffled dataset order. No rollout from the old policy crosses an update."""
-    batch = Batch(offset)
-    for _ in range(max_rounds):
-        need = target_size - len(batch.groups)
-        # One wave never exceeds the established concurrency. Estimate the final
-        # wave from the observed pass rate to avoid generating a whole extra batch.
-        wave_size = target_size
-        if batch.groups:
-            wave_size = min(
-                target_size, max(8, math.ceil(need * batch.attempted / len(batch.groups)))
-            )
-        wave = builders[batch.offset : batch.offset + wave_size]
-        if not wave:
-            break
-        results = await rollout_wave(wave)
-        batch.rounds += 1
-        for builder, group in zip(wave, results, strict=True):
-            pos = batch.offset
-            if group is None:
-                raise RuntimeError(f"Rollout failed at prompt offset {pos}")
-            rewards = group.get_total_rewards()
-            if len(rewards) != group_size or not all(math.isfinite(r) for r in rewards):
-                raise ValueError(f"Incomplete group or nonfinite reward at prompt offset {pos}")
-            batch.attempted += 1
-            if all_same(rewards):
-                reason = "constant"
-                batch.constant += 1
-                batch.perfect += rewards[0] == 1
-                batch.nonpositive += rewards[0] <= 0
-            elif len(batch.groups) == target_size:
-                reason = "surplus"
-                batch.surplus += 1
-            else:
-                reason = "selected"
-                batch.groups.append(group)
-                batch.builders.append(builder)
-            record(builder, group, pos, reason)
-        logger.info(
-            "Refill round %d: %d/%d selected after %d prompts",
-            batch.rounds,
-            len(batch.groups),
-            target_size,
-            batch.attempted,
-        )
-        if len(batch.groups) == target_size:
-            return batch
-    raise RuntimeError(
-        f"Refill stopped before update: {len(batch.groups)}/{target_size} groups, "
-        f"{batch.attempted} prompts, {batch.rounds} rounds, offsets [{offset}, {batch.offset})"
-    )
-
-
 async def train_updates(config, resume, offset, client, manager, log, costs):
+    config.validate()
     dataset, _ = await config.dataset_builder()
-    if not isinstance(dataset, SearchRLDataset) or not 0 <= offset <= len(
-        dataset.env_group_builders
-    ):
-        raise ValueError(f"Invalid stage-three dataset or prompt offset {offset}")
-    tokenizer = train.get_tokenizer(config.model_name)
-    sampler = await client.save_weights_and_get_sampling_client()
-    strategy = config.effective_rollout_strategy()
-    for step in range(resume.batch, config.max_steps):
-        start = monotonic()
-        discarded_before = costs.discarded.sampled
-        iteration = Path(config.log_path) / f"iteration_{step:06d}"
-        iteration.mkdir(exist_ok=True)
-        pending = iteration / "train_rollout_summaries.pending.jsonl"
-
-        async def rollout_wave(wave):
-            return await train.gather_with_progress(
-                (
-                    train.do_group_rollout_and_filter_constant_reward(
-                        sampler,
-                        builder,
-                        max_tokens=config.max_tokens,
-                        temperature=config.temperature,
-                        do_remove_constant_reward_groups=False,
-                        enable_logging=False,
-                        strategy=strategy,
-                        termination=config.effective_termination(),
-                    )
-                    for builder in wave
-                ),
-                desc=f"Update {step + 1} refill",
-            )
-
-        with trace.trace_iteration(step=step) as window:
-            with pending.open("w") as output:
-
-                def record(builder, group, pos, reason):
-                    if reason != "selected":
-                        train.count_discarded_rollout(costs, group)
-                    rows = serialize_rollout_summaries(
-                        split="train",
-                        iteration=step,
-                        trajectory_groups_P=[group],
-                        taglist_P=[builder.logging_tags()],
-                        sampling_client_steps_P=[step],
-                    )
-                    for row in rows:
-                        row.update(
-                            group_idx=pos - offset,
-                            prompt_offset=pos,
-                            example_id=builder.datum["id"],
-                            selection=reason,
-                        )
-                        output.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-                async with trace.scope_span("sampling"):
-                    batch = await collect_batch(
-                        dataset.env_group_builders,
-                        offset,
-                        dataset.batch_size,
-                        config.dataset_builder.group_size,
-                        config.max_sampling_rounds,
-                        rollout_wave,
-                        record,
-                    )
-            sampler, metrics = await train.do_train_step_and_get_sampling_client(
-                config,
-                step,
-                client,
-                manager,
-                None,
-                tokenizer,
-                batch.builders,
-                batch.groups,
-                cost_tracker=costs,
-            )
-
-        completed = step + 1
-        offset = batch.offset
-        pending.replace(iteration / "train_rollout_summaries.jsonl")
-        metrics.update(window.get_timing_metrics())
-        metrics.update(batch.metrics())
-        del batch  # Release full trajectories before starting another refill.
-        discarded_tokens = costs.discarded.sampled - discarded_before
-        metrics["sampling/discarded_action_tokens"] = discarded_tokens
-        metrics["sampling/all_action_tokens"] = costs.step.sampled + discarded_tokens
-        metrics.update(
-            {
-                "progress/batch": step,
-                "progress/completed_updates": completed,
-                "optim/lr": config.learning_rate,
-                "time/total": monotonic() - start,
-            }
+    try:
+        await run_updates(
+            config,
+            dataset,
+            resume.batch,
+            config.max_steps,
+            offset,
+            client,
+            manager,
+            log,
+            costs,
+            checkpoint_fields={
+                "stage3_run": config.wandb_name,
+                "parent_state_path": config.parent_state_path,
+            },
         )
-        log.log_metrics(metrics, step=step)
-        state = train._loop_state(completed, costs) | {
-            "next_prompt_offset": offset,
-            "stage3_run": config.wandb_name,
-            "parent_state_path": config.parent_state_path,
-        }
-        # Commit the cursor together with the actual optimizer state, only after
-        # metrics/rollouts have been published. A crash replays from the last pair.
-        if completed == config.max_steps:
-            await manager.save_final_async(loop_state=state)
-        elif config.save_every and completed % config.save_every == 0:
-            await manager.save_periodic_async(step=completed, loop_state=state)
+    finally:
+        await close_dataset(dataset)
 
 
 async def run(config, resume, offset):
+    config.validate()
     if resume.batch == config.max_steps:
         return
     patch_create_from_state(config.model_name, config.lora_rank)
@@ -312,7 +138,8 @@ async def run(config, resume, offset):
             wandb_name=config.wandb_name,
         )
     try:
-        train._drop_metrics_logged_after_checkpoint(log.store, resume.batch)
+        if log.store is not None:
+            log.store.truncate_metrics(resume.batch)
         costs = CostTracker(
             fetch_model_pricing(config.model_name),
             cumulative=TokenUsage(**resume.get("cumulative_tokens", {})),

@@ -1,0 +1,2693 @@
+{
+  "source_commit": "1991897cba59ea9d9b0030d183d1867b28eba9d9",
+  "cases": {
+    "centered_partial_rewards": {
+      "advantages": [
+        [
+          0.12666666507720947,
+          0.14666667580604553,
+          -0.273333340883255
+        ],
+        [
+          0.5,
+          -0.5
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.12666666507720947,
+                0.12666666507720947
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.14666667580604553,
+                0.14666667580604553
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.273333340883255,
+                -0.273333340883255
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.5,
+                0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.5,
+                -0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 2
+        },
+        {
+          "group_idx": 1,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 1,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/nq/ac_tokens_per_turn": 2.0,
+        "env/nq/ob_tokens_per_turn": 2.0,
+        "env/nq/turns_per_episode": 1.0,
+        "env/nq/total_episodes": 3,
+        "env/nq/total_turns": 3,
+        "env/nq/total_ac_tokens": 6,
+        "env/nq/total_ob_tokens": 6,
+        "env/nq/total_cached_ob_tokens": 3,
+        "env/nq/reward/total": -0.02666666666666666,
+        "env/nq/format": 1.0,
+        "env/nq/by_group/frac_mixed": 1.0,
+        "env/nq/by_group/frac_all_good": 0.0,
+        "env/nq/by_group/frac_all_bad": 0.0,
+        "env/hotpot/ac_tokens_per_turn": 2.0,
+        "env/hotpot/ob_tokens_per_turn": 2.0,
+        "env/hotpot/turns_per_episode": 1.0,
+        "env/hotpot/total_episodes": 2,
+        "env/hotpot/total_turns": 2,
+        "env/hotpot/total_ac_tokens": 4,
+        "env/hotpot/total_ob_tokens": 4,
+        "env/hotpot/total_cached_ob_tokens": 2,
+        "env/hotpot/reward/total": 0.5,
+        "env/hotpot/format": 1.0,
+        "env/hotpot/by_group/frac_mixed": 1.0,
+        "env/hotpot/by_group/frac_all_good": 0.0,
+        "env/hotpot/by_group/frac_all_bad": 0.0,
+        "env/all/ac_tokens_per_turn": 2.0,
+        "env/all/ob_tokens_per_turn": 2.0,
+        "env/all/turns_per_episode": 1.0,
+        "env/all/total_episodes": 5,
+        "env/all/total_turns": 5,
+        "env/all/total_ac_tokens": 10,
+        "env/all/total_ob_tokens": 10,
+        "env/all/total_cached_ob_tokens": 5,
+        "env/all/reward/total": 0.184,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.1,
+          "final_reward": 0.1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.12,
+          "final_reward": 0.12,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 2,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": -0.3,
+          "final_reward": -0.3,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 1,
+          "traj_idx": 0,
+          "tags": [
+            "hotpot"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 1.0,
+          "final_reward": 1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 1,
+          "traj_idx": 1,
+          "tags": [
+            "hotpot"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.0,
+          "final_reward": 0,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.375
+      }
+    },
+    "constant": {
+      "advantages": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 2.0,
+        "env/all/ob_tokens_per_turn": 2.0,
+        "env/all/turns_per_episode": 1.0,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 2,
+        "env/all/total_ac_tokens": 4,
+        "env/all/total_ob_tokens": 4,
+        "env/all/total_cached_ob_tokens": 2,
+        "env/all/reward/total": 0.5,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 0.0,
+        "env/all/by_group/frac_all_good": 1.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.5,
+          "final_reward": 0.5,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.5,
+          "final_reward": 0.5,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.375
+      }
+    },
+    "prefix_and_tool_observations": {
+      "advantages": [
+        [
+          0.5,
+          -0.5
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                7
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                7
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5,
+                0.0,
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                7
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.5,
+                0.5,
+                0.0,
+                0.0,
+                0.5,
+                0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                7
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "s1",
+              "offset": 0,
+              "length": 2
+            },
+            {
+              "sequence_id": "s1",
+              "offset": 0,
+              "length": 2
+            },
+            {
+              "sequence_id": "s2",
+              "offset": 4,
+              "length": 2
+            },
+            {
+              "sequence_id": "s2",
+              "offset": 0,
+              "length": 1
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "s1",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "s1",
+              "offset": 0,
+              "length": 2
+            },
+            {
+              "sequence_id": "s2",
+              "offset": 4,
+              "length": 2
+            },
+            {
+              "sequence_id": "s2",
+              "offset": 0,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  10,
+                  11,
+                  18
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                11,
+                18,
+                19
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                -0.5
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.5,
+                -0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                3
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "s3",
+              "offset": 0,
+              "length": 2
+            },
+            {
+              "sequence_id": "s3",
+              "offset": 0,
+              "length": 1
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "s3",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "s3",
+              "offset": 0,
+              "length": 2
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 2.0,
+        "env/all/ob_tokens_per_turn": 3.3333333333333335,
+        "env/all/turns_per_episode": 1.5,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 3,
+        "env/all/total_ac_tokens": 6,
+        "env/all/total_ob_tokens": 10,
+        "env/all/total_cached_ob_tokens": 3,
+        "env/all/reward/total": 0.5,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 1.0,
+          "final_reward": 1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            },
+            {
+              "step_idx": 1,
+              "ob_len": 6,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.0,
+          "final_reward": 0,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 2,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.375
+      }
+    },
+    "nonprefix_reset": {
+      "advantages": [
+        [
+          0.5,
+          -0.5
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "a",
+              "offset": 0,
+              "length": 2
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "a",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "a",
+              "offset": 0,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  7,
+                  8
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                8,
+                9
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "b",
+              "offset": 0,
+              "length": 2
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "b",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "b",
+              "offset": 0,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  4,
+                  5
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                5,
+                6
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.5
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "c",
+              "offset": 0,
+              "length": 2
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "c",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "c",
+              "offset": 0,
+              "length": 1
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 1.0,
+        "env/all/ob_tokens_per_turn": 2.0,
+        "env/all/turns_per_episode": 1.5,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 3,
+        "env/all/total_ac_tokens": 3,
+        "env/all/total_ob_tokens": 6,
+        "env/all/total_cached_ob_tokens": 3,
+        "env/all/reward/total": 0.5,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 1.0,
+          "final_reward": 1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            },
+            {
+              "step_idx": 1,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.0,
+          "final_reward": 0,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.25
+      }
+    },
+    "masked_turn": {
+      "advantages": [
+        [
+          1.0,
+          -1.0
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "x",
+              "offset": 0,
+              "length": 2
+            },
+            {
+              "sequence_id": "x",
+              "offset": 0,
+              "length": 1
+            },
+            {
+              "sequence_id": "y",
+              "offset": 3,
+              "length": 1
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "x",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "x",
+              "offset": 0,
+              "length": 1
+            },
+            {
+              "sequence_id": "y",
+              "offset": 3,
+              "length": 1
+            },
+            {
+              "sequence_id": "y",
+              "offset": 0,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                6
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -1.0
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 1.0,
+        "env/all/ob_tokens_per_turn": 2.6666666666666665,
+        "env/all/turns_per_episode": 1.5,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 3,
+        "env/all/total_ac_tokens": 3,
+        "env/all/total_ob_tokens": 8,
+        "env/all/total_cached_ob_tokens": 3,
+        "env/all/reward/total": 0.0,
+        "env/all/parse_error_masked": 1.0,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 1.0,
+          "final_reward": 1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "parse_error_masked": 1.0
+              },
+              "logs": {}
+            },
+            {
+              "step_idx": 1,
+              "ob_len": 4,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": -1.0,
+          "final_reward": -1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.25
+      }
+    },
+    "partial_provenance": {
+      "advantages": [
+        [
+          0.25,
+          -0.25
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25,
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.25,
+                0.0,
+                0.25
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                4
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                6
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": [
+            {
+              "sequence_id": "b",
+              "offset": 0,
+              "length": 2
+            }
+          ],
+          "loss_fn_input_spans": [
+            {
+              "sequence_id": "b",
+              "offset": 1,
+              "length": 1
+            },
+            {
+              "sequence_id": "b",
+              "offset": 0,
+              "length": 1
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 1.0,
+        "env/all/ob_tokens_per_turn": 2.6666666666666665,
+        "env/all/turns_per_episode": 1.5,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 3,
+        "env/all/total_ac_tokens": 3,
+        "env/all/total_ob_tokens": 8,
+        "env/all/total_cached_ob_tokens": 3,
+        "env/all/reward/total": 0.25,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.5,
+          "final_reward": 0.5,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            },
+            {
+              "step_idx": 1,
+              "ob_len": 4,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.0,
+          "final_reward": 0,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.25
+      }
+    },
+    "overflow": {
+      "advantages": [
+        [
+          -0.6000000238418579,
+          0.6000000238418579
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.6000000238418579
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 0.5,
+        "env/all/ob_tokens_per_turn": 1.0,
+        "env/all/turns_per_episode": 1.0,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 2,
+        "env/all/total_ac_tokens": 1,
+        "env/all/total_ob_tokens": 2,
+        "env/all/total_cached_ob_tokens": 1,
+        "env/all/reward/total": 0.4,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": -0.2,
+          "final_reward": -0.1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 0,
+              "ac_len": 0,
+              "reward": -0.1,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 1.0,
+          "final_reward": 1,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.0,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.25
+      }
+    },
+    "all_overflow": {
+      "advantages": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "data": [],
+      "metadata": [],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 0.0,
+        "env/all/ob_tokens_per_turn": 0.0,
+        "env/all/turns_per_episode": 1.0,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 2,
+        "env/all/total_ac_tokens": 0,
+        "env/all/total_ob_tokens": 0,
+        "env/all/total_cached_ob_tokens": 0,
+        "env/all/reward/total": -0.1,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 0.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 1.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": -0.1,
+          "final_reward": 0,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 0,
+              "ac_len": 0,
+              "reward": -0.1,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": -0.1,
+          "final_reward": 0,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 0,
+              "ac_len": 0,
+              "reward": -0.1,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ]
+    },
+    "transition_and_final_rewards": {
+      "advantages": [
+        [
+          0.75,
+          -0.75
+        ]
+      ],
+      "data": [
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                3
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                0.75
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        },
+        {
+          "model_input": {
+            "chunks": [
+              {
+                "tokens": [
+                  1,
+                  2
+                ],
+                "type": "encoded_text"
+              }
+            ]
+          },
+          "loss_fn_inputs": {
+            "target_tokens": {
+              "dtype": "int64",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                2,
+                4
+              ]
+            },
+            "logprobs": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.25
+              ]
+            },
+            "advantages": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                -0.75
+              ]
+            },
+            "mask": {
+              "dtype": "float32",
+              "shape": [
+                2
+              ],
+              "sparse_crow_indices": null,
+              "sparse_col_indices": null,
+              "_numpy": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "model_input_spans": null,
+          "loss_fn_input_spans": null
+        }
+      ],
+      "metadata": [
+        {
+          "group_idx": 0,
+          "traj_idx": 0
+        },
+        {
+          "group_idx": 0,
+          "traj_idx": 1
+        }
+      ],
+      "metrics": {
+        "env/all/ac_tokens_per_turn": 1.0,
+        "env/all/ob_tokens_per_turn": 2.0,
+        "env/all/turns_per_episode": 1.0,
+        "env/all/total_episodes": 2,
+        "env/all/total_turns": 2,
+        "env/all/total_ac_tokens": 2,
+        "env/all/total_ob_tokens": 4,
+        "env/all/total_cached_ob_tokens": 2,
+        "env/all/reward/total": 0.0,
+        "env/all/format": 1.0,
+        "env/all/by_group/frac_mixed": 1.0,
+        "env/all/by_group/frac_all_good": 0.0,
+        "env/all/by_group/frac_all_bad": 0.0
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 0,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": 0.75,
+          "final_reward": 0.25,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": 0.5,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        },
+        {
+          "schema_version": 1,
+          "split": "train",
+          "iteration": 7,
+          "group_idx": 0,
+          "traj_idx": 1,
+          "tags": [
+            "nq"
+          ],
+          "sampling_client_step": 7,
+          "total_reward": -0.75,
+          "final_reward": -0.25,
+          "trajectory_metrics": {},
+          "steps": [
+            {
+              "step_idx": 0,
+              "ob_len": 2,
+              "ac_len": 1,
+              "reward": -0.5,
+              "episode_done": true,
+              "metrics": {
+                "format": 1.0
+              },
+              "logs": {}
+            }
+          ],
+          "final_ob_len": 0
+        }
+      ],
+      "kl": {
+        "optim/kl_sample_train_v1": -0.125,
+        "optim/kl_sample_train_v2": 0.0078125,
+        "optim/entropy": 0.25
+      }
+    }
+  },
+  "updates": {
+    "1": {
+      "events": [
+        [
+          "forward",
+          5,
+          "importance_sampling",
+          {
+            "clip_low_threshold": 0.2
+          }
+        ],
+        [
+          "adam",
+          {
+            "learning_rate": 0.0003,
+            "beta1": 0.9,
+            "beta2": 0.95,
+            "eps": 1e-08,
+            "weight_decay": 0.0,
+            "grad_clip_norm": 0.0
+          }
+        ],
+        [
+          "publish",
+          {
+            "record_stability_info": false,
+            "kind": "snapshot"
+          }
+        ]
+      ],
+      "logprobs": [
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ]
+      ],
+      "metrics": {
+        "last_optimizer": 1
+      }
+    },
+    "3": {
+      "events": [
+        [
+          "forward",
+          1,
+          "importance_sampling",
+          {
+            "clip_low_threshold": 0.2
+          }
+        ],
+        [
+          "adam",
+          {
+            "learning_rate": 0.0003,
+            "beta1": 0.9,
+            "beta2": 0.95,
+            "eps": 1e-08,
+            "weight_decay": 0.0,
+            "grad_clip_norm": 0.0
+          }
+        ],
+        [
+          "forward",
+          2,
+          "importance_sampling",
+          {
+            "clip_low_threshold": 0.2
+          }
+        ],
+        [
+          "adam",
+          {
+            "learning_rate": 0.0003,
+            "beta1": 0.9,
+            "beta2": 0.95,
+            "eps": 1e-08,
+            "weight_decay": 0.0,
+            "grad_clip_norm": 0.0
+          }
+        ],
+        [
+          "forward",
+          2,
+          "importance_sampling",
+          {
+            "clip_low_threshold": 0.2
+          }
+        ],
+        [
+          "adam",
+          {
+            "learning_rate": 0.0003,
+            "beta1": 0.9,
+            "beta2": 0.95,
+            "eps": 1e-08,
+            "weight_decay": 0.0,
+            "grad_clip_norm": 0.0
+          }
+        ],
+        [
+          "publish",
+          {
+            "record_stability_info": false,
+            "kind": "snapshot"
+          }
+        ]
+      ],
+      "logprobs": [
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ],
+        [
+          0.0,
+          -0.25,
+          -0.5
+        ]
+      ],
+      "metrics": {
+        "last_optimizer": 3
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-# Cookbook source provenance — stage 3
+# Cookbook source provenance — stages 3–4
 
 Source repository: https://github.com/thinking-machines-lab/tinker-cookbook
 
@@ -26,4 +26,18 @@ On 2026-11-20 the local Git checkout was verified at the full pinned commit. All
 
 The project-specific Unicode renderer and search task code were moved from this repository. Earlier recipe adaptations remain in `env/search_env.py` (from `recipes/search_tool/search_env.py`), `env/tools.py` (from `recipes/search_tool/tools.py`) and `offline_eval.py` (from `recipes/search_tool/offline_eval.py`): local BM25 retrieval, rewards, dataset paths, evaluation records and limits are project changes. The same root license covers those recipe sources; they carry no additional notices at the pinned commit.
 
-No complete cookbook package is vendored. Stage 3's text-search evaluation path has passed fixed offline behavior comparisons and an import blocker. The old training paths still depend on the installed cookbook through a temporary training-only bridge. Complete dependency removal belongs to later stages, not this checkpoint. See [REFACTOR_STATUS.md](../../docs/REFACTOR_STATUS.md) for the tested scope and limitations.
+Stage 4 also verified the installed bytes against the same pinned checkout for `rl/train.py`, `rl/data_processing.py`, `supervised/common.py`, `utils/misc_utils.py`, `rl/rollouts.py`, `rl/metrics.py`, `rl/metric_util.py`, `rl/rollout_logging.py` and `utils/cost_estimation.py`. These sources have no additional file-level copyright or attribution notices. The root license audit above applies unchanged.
+
+| Local file under search_r1/ | Upstream source | Local changes |
+|---|---|---|
+| training/config.py | rl/train.py | Retain configuration field vocabulary; validate project-supported synchronous modes; omit generic dispatch and presets |
+| training/data.py | rl/data_processing.py; supervised/common.py | Retain centered advantages, prefix merge/split, targets, masks, logprobs and provenance; text-only input/target shift; local types/helpers |
+| training/update.py | rl/train.py | Focused SDK gradient/Adam/snapshot API for full and streaming batches, remove mask before SDK calls; explicit pending-task cleanup; omit KL/reference/async framework |
+| training/loop.py | rl/train.py; existing project train_dapo.py | One ordinary/dynamic loop with iteration-scoped data, completion-ordered minibatches and post-log checkpoint boundary; no HTML/trace framework |
+| training/sampling.py | rl/rollouts.py; existing project train_dapo.py | Local fail-fast group creation/grading/cleanup and task draining; preserve project dynamic refill selection/cursor |
+| training/metrics.py | rl/metric_util.py; rl/metrics.py; rl/train.py | Extract trajectory metrics, sample/train KL and usage counts; omit evaluators and reference/post-KL requests |
+| training/records.py | rl/rollout_logging.py | Retain JSON-safe rollout serialization and historical schema; local types; omit store/deprecated write wrappers |
+| training/usage.py | utils/cost_estimation.py | Retain token/rate value types and accounting; omit pricing network helper from local computation modules |
+| training/utils.py | utils/misc_utils.py | Retain strict zip, equality, means and linspace split; omit unrelated helpers |
+
+No complete cookbook package is vendored. Evaluation and training computation now use local implementations. A temporary startup/checkpoint/logging adapter still imports cookbook auxiliary modules; complete dependency removal is deferred. See [REFACTOR_STATUS.md](../../docs/REFACTOR_STATUS.md) for the tested scope, deliberate behavior differences and remaining work.
