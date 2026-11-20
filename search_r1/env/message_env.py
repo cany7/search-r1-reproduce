@@ -80,10 +80,8 @@ class EnvFromMessageEnv(types.Env):
         self.context_overflow_reward = context_overflow_reward
         self.terminate_on_length = terminate_on_length
         self.parse_error_policy = parse_error_policy
-        # Budgets this env wants a rollout runner to enforce. The runner reads
-        # this when it is given no limits of its own (run_rollout's fallback),
-        # so envs built from a RolloutConfig keep their token budgets in the
-        # training loop, which calls run_rollout with no configuration.
+        # Retained for the temporary training bridge. The local Search-R1 runner
+        # rejects non-None runner budgets; the task uses explicit env limits.
         self.rollout_limits = rollout_limits
         self._base_stop_condition = renderer.get_stop_sequences()
 
@@ -241,7 +239,7 @@ class EnvFromMessageEnv(types.Env):
         )
 
     def set_parse_error_policy(self, policy: ParseErrorPolicy) -> None:
-        """Apply a rollout-level parse-error policy (seam used by the rollout"""
+        """Apply a parse-error policy to the token and message environments."""
         self.parse_error_policy = policy
         setter = getattr(self.message_env, "set_parse_error_policy", None)
         if setter is not None:

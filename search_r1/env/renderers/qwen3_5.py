@@ -11,7 +11,6 @@ import re
 from .base import (
     UNTERMINATED_TOOL_BLOCK_ERROR,
     ContentPart,
-    ImagePart,
     Message,
     ParseTermination,
     RenderContext,
@@ -23,7 +22,7 @@ from .base import (
     UnparsedToolCall,
     has_thinking,
 )
-from .qwen3 import Qwen3VLRenderer
+from .qwen3 import Qwen3ToolRenderer
 
 _FUNCTION_BLOCK_RE = re.compile(
     r"^\s*<tool_call>\s*<function=(?P<name>[^>\n]+)>\s*(?P<body>.*?)\s*</function>\s*</tool_call>\s*$",
@@ -53,7 +52,7 @@ def _strip_visible_content(content: list[ContentPart]) -> list[ContentPart]:
     return parts
 
 
-class Qwen3_5Renderer(Qwen3VLRenderer):
+class Qwen3_5Renderer(Qwen3ToolRenderer):
     """Renderer for Qwen3.5 models."""
 
     # The Qwen3.5-family templates wrap a run of consecutive tool responses in a
@@ -105,7 +104,6 @@ class Qwen3_5Renderer(Qwen3VLRenderer):
     def _format_thinking_text(self, thinking: str) -> str:
         """Qwen3.5 uses newline-padded think blocks."""
         return f"<think>\n{thinking}\n</think>\n\n"
-
 
     def _parse_qwen3_5_tool_call_xml(self, raw_text: str) -> ToolCall | UnparsedToolCall:
         """Parse Qwen3.5 XML-style tool calls from a raw <tool_call> block."""
@@ -221,7 +219,6 @@ class Qwen3_5Renderer(Qwen3VLRenderer):
         self._postprocess_parsed_message(message)
         return message, termination
 
-
     def _format_tool_call_argument(self, value: object) -> str:
         """Serialize one tool-call argument value the way the template does."""
         if isinstance(value, (dict, list)):
@@ -238,7 +235,7 @@ class Qwen3_5Renderer(Qwen3VLRenderer):
         lines.append("</function>\n</tool_call>")
         return "\n".join(lines)
 
-    def _format_tool_calls_chunks(self, message: Message) -> list[ImagePart | TextPart]:
+    def _format_tool_calls_chunks(self, message: Message) -> list[TextPart]:
         """Format tool_calls using Qwen3.5's XML parameter format."""
         assert "tool_calls" in message, "tool_calls are required to format tool calls"
         content = message.get("content", "")
@@ -246,10 +243,8 @@ class Qwen3_5Renderer(Qwen3VLRenderer):
             has_visible_content = bool(content.strip())
         else:
             # Thinking parts are rendered separately by the template, so only text
-            # and image parts count as content for the separator.
-            has_visible_content = any(
-                (p["type"] == "text" and p["text"].strip()) or p["type"] == "image" for p in content
-            )
+            # parts count as content for the separator.
+            has_visible_content = any(p["type"] == "text" and p["text"].strip() for p in content)
         separator = "\n\n" if has_visible_content else ""
         return [
             TextPart(

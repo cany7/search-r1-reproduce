@@ -57,7 +57,7 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
         self, query_list: Annotated[list[str], "A list of fully-formed semantic queries."]
     ) -> ToolResult:
         """Search Wikipedia for relevant information based on the given query."""
-        # The cookbook validates the entire argument before invoking this method.
+        # The tool dispatcher validates the entire argument before invoking this method.
         self._executed_queries = query_list[:3]
         return await self.retriever.retrieve(self._executed_queries)
 
@@ -97,7 +97,7 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
                     "status": status,
                 }
             )
-        # Cookbook transition logs accept scalar values and are saved in rollout JSONL.
+        # Transition logs accept scalar values and are saved in rollout JSONL.
         result.logs["search_calls"] = json.dumps(records, ensure_ascii=False)
         result.metrics.update(
             search_calls_requested=len(calls),

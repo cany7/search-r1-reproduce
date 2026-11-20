@@ -1,0 +1,4409 @@
+{
+  "source_commit": "1991897cba59ea9d9b0030d183d1867b28eba9d9",
+  "project_commit": "8165fec2edbd0fc569375ae3d6a21043ddc537c3",
+  "tokenizer": "fixed-codepoint-tokenizer-v1",
+  "renderers": {
+    "qwen3": {
+      "stop": [
+        1
+      ],
+      "extension": false,
+      "initial": {
+        "count": 876,
+        "sha256": "745d3e396128ccfb9cb8f61a86e4fc9d91ebf203a940b229c1340e9cad1999ad",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n"
+      },
+      "history": {
+        "count": 1215,
+        "sha256": "07caaec297a405077d38a568da784de958345d59733f8ef27256da9311af7485",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n  Searching.  \n<tool_call>\n{\"name\": \"search\", \"arguments\": {\"query_list\": [\"\\u838e\\u58eb\\u6bd4\\u4e9a\", \"Hamlet\"]}}\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response><|im_end|>\n<|im_start|>user\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n"
+      },
+      "prefill": {
+        "count": 883,
+        "sha256": "84a8adba4017593d6aa7821ed85734ffd2041b2c294257a18f682a33d6d51047",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": "reasoning\n</think>\n\nAnswer: yes"
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              },
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    },
+    "qwen3_disable_thinking": {
+      "stop": [
+        1
+      ],
+      "extension": false,
+      "initial": {
+        "count": 882,
+        "sha256": "5014b6db12f6e9aa6fbdeac19c053dba47495c0d4b0c80b884ba0009cd91689e",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      },
+      "history": {
+        "count": 1221,
+        "sha256": "50da1ffda523a98329ae07798688f948c3e030043b1abb2953353569c5dad992",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n  Searching.  \n<tool_call>\n{\"name\": \"search\", \"arguments\": {\"query_list\": [\"\\u838e\\u58eb\\u6bd4\\u4e9a\", \"Hamlet\"]}}\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response><|im_end|>\n<|im_start|>user\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      },
+      "prefill": {
+        "count": 889,
+        "sha256": "c88f7af72bb5320e89111399ec8243f8dd064fb404b1c1bc5fc129099dc1c648",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": "reasoning\n</think>\n\nAnswer: yes"
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              },
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    },
+    "qwen3_instruct": {
+      "stop": [
+        1
+      ],
+      "extension": true,
+      "initial": {
+        "count": 876,
+        "sha256": "745d3e396128ccfb9cb8f61a86e4fc9d91ebf203a940b229c1340e9cad1999ad",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n"
+      },
+      "history": {
+        "count": 1215,
+        "sha256": "07caaec297a405077d38a568da784de958345d59733f8ef27256da9311af7485",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\n  Searching.  \n<tool_call>\n{\"name\": \"search\", \"arguments\": {\"query_list\": [\"\\u838e\\u58eb\\u6bd4\\u4e9a\", \"Hamlet\"]}}\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response><|im_end|>\n<|im_start|>user\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n"
+      },
+      "prefill": {
+        "count": 883,
+        "sha256": "84a8adba4017593d6aa7821ed85734ffd2041b2c294257a18f682a33d6d51047",
+        "text": "<|im_start|>system\nFind the answer.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\n  Who wrote 哈姆雷特?  <|im_end|>\n<|im_start|>assistant\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": "reasoning\n</think>\n\nAnswer: yes"
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              },
+              {
+                "raw_text": "<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Invalid JSON: Expecting value: line 1 column 1 (char 0)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    },
+    "qwen3_5": {
+      "stop": [
+        1
+      ],
+      "extension": false,
+      "initial": {
+        "count": 1356,
+        "sha256": "10fb90222f108485031d513c8e75800e0ffb4a18971f5608ec6215846ccabf25",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n"
+      },
+      "history": {
+        "count": 1693,
+        "sha256": "a498d6d12ec77fe0f9c5589777e156cac57d312c26da86f351a06591cca4bfbf",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\nSearching.\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"\\u838e\\u58eb\\u6bd4\\u4e9a\", \"Hamlet\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response>\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n<think>\n"
+      },
+      "prefill": {
+        "count": 1363,
+        "sha256": "db1765230f5162ded0abad61e11ead44f52f2611db2679e383df04f0bfec93f8",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "thinking",
+                "thinking": "reasoning"
+              },
+              {
+                "type": "text",
+                "text": "Answer: yes"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              },
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Unexpected trailing content inside <function> block"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    },
+    "qwen3_5_disable_thinking": {
+      "stop": [
+        1
+      ],
+      "extension": false,
+      "initial": {
+        "count": 1360,
+        "sha256": "3ba93451fb7f3c50d20cd95882285c6ce674481cbc1daf8f71445d61ed0beb87",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      },
+      "history": {
+        "count": 1697,
+        "sha256": "680d7d8c316730ae8c55cdcf20de1a53c8be0b263fddc161a7d8ea759b11bca8",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\nSearching.\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"\\u838e\\u58eb\\u6bd4\\u4e9a\", \"Hamlet\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response>\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      },
+      "prefill": {
+        "count": 1367,
+        "sha256": "e55827c1edd0fc59176a9bfeaf7ce3770416db98f208ba0fe55572992ed21100",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "thinking",
+                "thinking": "reasoning"
+              },
+              {
+                "type": "text",
+                "text": "Answer: yes"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              },
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Unexpected trailing content inside <function> block"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    },
+    "qwen3_5_preserve_thinking": {
+      "stop": [
+        1
+      ],
+      "extension": false,
+      "initial": {
+        "count": 1356,
+        "sha256": "10fb90222f108485031d513c8e75800e0ffb4a18971f5608ec6215846ccabf25",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n"
+      },
+      "history": {
+        "count": 1715,
+        "sha256": "9138942db18a4ac8f3758b9a78423523acad4b3270a02b013c22017cff558c14",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n  find sources  \n</think>\n\nSearching.\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"\\u838e\\u58eb\\u6bd4\\u4e9a\", \"Hamlet\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response>\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n<think>\n"
+      },
+      "prefill": {
+        "count": 1363,
+        "sha256": "db1765230f5162ded0abad61e11ead44f52f2611db2679e383df04f0bfec93f8",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "thinking",
+                "thinking": "reasoning"
+              },
+              {
+                "type": "text",
+                "text": "Answer: yes"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              },
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Unexpected trailing content inside <function> block"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    },
+    "search_r1/qwen3_5_disable_thinking_unicode": {
+      "stop": [
+        1
+      ],
+      "extension": false,
+      "initial": {
+        "count": 1360,
+        "sha256": "3ba93451fb7f3c50d20cd95882285c6ce674481cbc1daf8f71445d61ed0beb87",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      },
+      "history": {
+        "count": 1677,
+        "sha256": "4b11b513eaac7b50fd6e5a3d8ad8cb8d5198589cbb831a7f3885f803cbd98566",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\nSearching.\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"莎士比亚\", \"Hamlet\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nfirst result\n</tool_response>\n<tool_response>\n第二条 result\n</tool_response><|im_end|>\n<|im_start|>assistant\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>user\nLiteral <|im_end|> in user text. Next question?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      },
+      "prefill": {
+        "count": 1367,
+        "sha256": "e55827c1edd0fc59176a9bfeaf7ce3770416db98f208ba0fe55572992ed21100",
+        "text": "<|im_start|>system\n# Tools\n\nYou have access to the following functions:\n\n<tools>\n{\"name\": \"search\", \"description\": \"Search Wikipedia for relevant information based on the given query.\", \"parameters\": {\"properties\": {\"query_list\": {\"description\": \"A list of fully-formed semantic queries. The tool will return search results for each query.\", \"items\": {\"type\": \"string\"}, \"title\": \"Query List\", \"type\": \"array\"}}, \"required\": [\"query_list\"], \"title\": \"search_params\", \"type\": \"object\"}}\n</tools>\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<tool_call>\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n</tool_call>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n\nFind the answer.<|im_end|>\n<|im_start|>user\nWho wrote 哈姆雷特?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer:"
+      },
+      "parsed": {
+        "answer": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: William Shakespeare"
+          },
+          "termination": "stop_sequence"
+        },
+        "json_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "xml_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "thinking": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "thinking",
+                "thinking": "reasoning"
+              },
+              {
+                "type": "text",
+                "text": "Answer: yes"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "multiple_calls": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "tool_calls": [
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              },
+              {
+                "type": "function",
+                "id": null,
+                "function": {
+                  "name": "search",
+                  "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+                }
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_json": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call>{bad}</tool_call>",
+                "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "bad_xml": {
+          "message": {
+            "role": "assistant",
+            "content": [],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>oops</function></tool_call>",
+                "error": "Unexpected trailing content inside <function> block"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "unfinished_tool": {
+          "message": {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "<tool_call><function=search>"
+              }
+            ],
+            "unparsed_tool_calls": [
+              {
+                "raw_text": "<tool_call><function=search>",
+                "error": "unterminated tool block: '<tool_call>' opened without a matching '</tool_call>'"
+              }
+            ]
+          },
+          "termination": "stop_sequence"
+        },
+        "no_stop": {
+          "message": {
+            "role": "assistant",
+            "content": "Answer: incomplete"
+          },
+          "termination": "malformed"
+        },
+        "duplicate_stop": {
+          "error_type": "RendererError",
+          "error": "When parsing response, expected to split into 1 or 2 pieces using stop tokens, but got 2. You probably are using the wrong stop tokens when sampling"
+        }
+      }
+    }
+  },
+  "tool_specs": {
+    "False": {
+      "name": "search",
+      "description": "Search Wikipedia for relevant information based on the given query.",
+      "parameters": {
+        "properties": {
+          "query_list": {
+            "description": "A list of fully-formed semantic queries. The tool will return search results for each query.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Query List",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query_list"
+        ],
+        "title": "search_params",
+        "type": "object"
+      }
+    },
+    "True": {
+      "name": "search",
+      "description": "Search Wikipedia for relevant information based on the given query.",
+      "parameters": {
+        "properties": {
+          "query_list": {
+            "description": "A list of fully-formed semantic queries.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Query List",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query_list"
+        ],
+        "title": "search_params",
+        "type": "object"
+      }
+    }
+  },
+  "rollouts": {
+    "answer": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1087,
+              1105,
+              1108,
+              1108,
+              1105,
+              1097,
+              1109,
+              1032,
+              1083,
+              1104,
+              1097,
+              1107,
+              1101,
+              1115,
+              1112,
+              1101,
+              1097,
+              1114,
+              1101,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.9,
+          "done": true,
+          "metrics": {
+            "stop/completed": 1.0,
+            "format": 1.0,
+            "correct": 1.0,
+            "f1": 1.0,
+            "searched": 0.0
+          },
+          "logs": {
+            "assistant_content": "Answer: William Shakespeare"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer: William Shakespeare"
+        }
+      ],
+      "stop_reason": "completed",
+      "final_ob": {
+        "count": 88,
+        "sha256": "321fbf586bd0fad7bf08bf230480590fcc45378d4706faf05e192c02474a95c3",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "search_answer": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        },
+        {
+          "prompt": {
+            "count": 545,
+            "sha256": "d4cd274e1e330a77905b8a2d79fee846a60d9cda11eb38a26cbb8001950b39d0",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [
+        [
+          "北京",
+          "Hamlet",
+          "third",
+          "fourth"
+        ]
+      ],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1010,
+              1060,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1061,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1062,
+              1010,
+              1060,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1061,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1062,
+              1010,
+              1091,
+              1034,
+              22271,
+              21140,
+              1034,
+              1044,
+              1032,
+              1034,
+              1072,
+              1097,
+              1109,
+              1108,
+              1101,
+              1116,
+              1034,
+              1044,
+              1032,
+              1034,
+              1116,
+              1104,
+              1105,
+              1114,
+              1100,
+              1034,
+              1044,
+              1032,
+              1034,
+              1102,
+              1111,
+              1117,
+              1114,
+              1116,
+              1104,
+              1034,
+              1093,
+              1010,
+              1060,
+              1047,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1062,
+              1010,
+              1060,
+              1047,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1062,
+              1010,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.0,
+          "done": false,
+          "metrics": {},
+          "logs": {
+            "tool_call_0": "search({\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]})",
+            "tool_result_0": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n"
+          }
+        },
+        {
+          "ob": {
+            "count": 545,
+            "sha256": "d4cd274e1e330a77905b8a2d79fee846a60d9cda11eb38a26cbb8001950b39d0",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1087,
+              1105,
+              1108,
+              1108,
+              1105,
+              1097,
+              1109,
+              1032,
+              1083,
+              1104,
+              1097,
+              1107,
+              1101,
+              1115,
+              1112,
+              1101,
+              1097,
+              1114,
+              1101,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 1.0,
+          "done": true,
+          "metrics": {
+            "stop/completed": 1.0,
+            "format": 1.0,
+            "correct": 1.0,
+            "f1": 1.0,
+            "searched": 1.0
+          },
+          "logs": {
+            "assistant_content": "Answer: William Shakespeare"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n",
+          "tool_call_id": "",
+          "name": "search"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer: William Shakespeare"
+        }
+      ],
+      "stop_reason": "completed",
+      "final_ob": {
+        "count": 591,
+        "sha256": "2b3cbec2b0553418534bff0e3b68187b6c670603c8cfc5bafc3d1b07dc0bb61c",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "limited_search": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        },
+        {
+          "prompt": {
+            "count": 590,
+            "sha256": "a4bbdc31e1b3a60f0d3d0a6839ce8f9bfaf026abfa947b5683457fd949ba0459",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [
+        [
+          "北京",
+          "Hamlet",
+          "third"
+        ]
+      ],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1010,
+              1060,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1061,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1062,
+              1010,
+              1060,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1061,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1062,
+              1010,
+              1091,
+              1034,
+              22271,
+              21140,
+              1034,
+              1044,
+              1032,
+              1034,
+              1072,
+              1097,
+              1109,
+              1108,
+              1101,
+              1116,
+              1034,
+              1044,
+              1032,
+              1034,
+              1116,
+              1104,
+              1105,
+              1114,
+              1100,
+              1034,
+              1044,
+              1032,
+              1034,
+              1102,
+              1111,
+              1117,
+              1114,
+              1116,
+              1104,
+              1034,
+              1093,
+              1010,
+              1060,
+              1047,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1062,
+              1010,
+              1060,
+              1047,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1062,
+              1010,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1010,
+              1060,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1061,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1062,
+              1010,
+              1060,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1061,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1062,
+              1010,
+              1091,
+              1034,
+              22271,
+              21140,
+              1034,
+              1044,
+              1032,
+              1034,
+              1072,
+              1097,
+              1109,
+              1108,
+              1101,
+              1116,
+              1034,
+              1044,
+              1032,
+              1034,
+              1116,
+              1104,
+              1105,
+              1114,
+              1100,
+              1034,
+              1044,
+              1032,
+              1034,
+              1102,
+              1111,
+              1117,
+              1114,
+              1116,
+              1104,
+              1034,
+              1093,
+              1010,
+              1060,
+              1047,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1062,
+              1010,
+              1060,
+              1047,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1062,
+              1010,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.0,
+          "done": false,
+          "metrics": {
+            "search_calls_requested": 2,
+            "search_calls_executed": 1,
+            "search_queries_requested": 8,
+            "search_queries_executed": 3,
+            "first_turn_queries_requested": 8
+          },
+          "logs": {
+            "tool_call_0": "search({\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]})",
+            "tool_call_1": "search({\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]})",
+            "tool_result_0": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\n",
+            "search_calls": "[{\"requested_queries\": [\"北京\", \"Hamlet\", \"third\", \"fourth\"], \"executed_queries\": [\"北京\", \"Hamlet\", \"third\"], \"status\": \"dispatched\"}, {\"requested_queries\": [\"北京\", \"Hamlet\", \"third\", \"fourth\"], \"executed_queries\": [], \"status\": \"skipped\"}]",
+            "example_id": "fixture-question"
+          }
+        },
+        {
+          "ob": {
+            "count": 590,
+            "sha256": "a4bbdc31e1b3a60f0d3d0a6839ce8f9bfaf026abfa947b5683457fd949ba0459",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1087,
+              1105,
+              1108,
+              1108,
+              1105,
+              1097,
+              1109,
+              1032,
+              1083,
+              1104,
+              1097,
+              1107,
+              1101,
+              1115,
+              1112,
+              1101,
+              1097,
+              1114,
+              1101,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 1.0,
+          "done": true,
+          "metrics": {
+            "stop/completed": 1.0,
+            "format": 1.0,
+            "correct": 1.0,
+            "f1": 1.0,
+            "searched": 1.0,
+            "search_calls_requested": 0,
+            "search_calls_executed": 0,
+            "search_queries_requested": 0,
+            "search_queries_executed": 0
+          },
+          "logs": {
+            "assistant_content": "Answer: William Shakespeare",
+            "search_calls": "[]"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+              }
+            },
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\n",
+          "tool_call_id": "",
+          "name": "search"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer: William Shakespeare"
+        }
+      ],
+      "stop_reason": "completed",
+      "final_ob": {
+        "count": 636,
+        "sha256": "4450bc1b257a94b3eb0f66f935c0c0212f2d639579e601b758f3bb2359a97f12",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "max_turns": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        },
+        {
+          "prompt": {
+            "count": 545,
+            "sha256": "d4cd274e1e330a77905b8a2d79fee846a60d9cda11eb38a26cbb8001950b39d0",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [
+        [
+          "北京",
+          "Hamlet",
+          "third",
+          "fourth"
+        ],
+        [
+          "北京",
+          "Hamlet",
+          "third",
+          "fourth"
+        ]
+      ],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1010,
+              1060,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1061,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1062,
+              1010,
+              1060,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1061,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1062,
+              1010,
+              1091,
+              1034,
+              22271,
+              21140,
+              1034,
+              1044,
+              1032,
+              1034,
+              1072,
+              1097,
+              1109,
+              1108,
+              1101,
+              1116,
+              1034,
+              1044,
+              1032,
+              1034,
+              1116,
+              1104,
+              1105,
+              1114,
+              1100,
+              1034,
+              1044,
+              1032,
+              1034,
+              1102,
+              1111,
+              1117,
+              1114,
+              1116,
+              1104,
+              1034,
+              1093,
+              1010,
+              1060,
+              1047,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1062,
+              1010,
+              1060,
+              1047,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1062,
+              1010,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.0,
+          "done": false,
+          "metrics": {},
+          "logs": {
+            "tool_call_0": "search({\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]})",
+            "tool_result_0": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n"
+          }
+        },
+        {
+          "ob": {
+            "count": 545,
+            "sha256": "d4cd274e1e330a77905b8a2d79fee846a60d9cda11eb38a26cbb8001950b39d0",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1010,
+              1060,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1061,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1062,
+              1010,
+              1060,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1061,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1062,
+              1010,
+              1091,
+              1034,
+              22271,
+              21140,
+              1034,
+              1044,
+              1032,
+              1034,
+              1072,
+              1097,
+              1109,
+              1108,
+              1101,
+              1116,
+              1034,
+              1044,
+              1032,
+              1034,
+              1116,
+              1104,
+              1105,
+              1114,
+              1100,
+              1034,
+              1044,
+              1032,
+              1034,
+              1102,
+              1111,
+              1117,
+              1114,
+              1116,
+              1104,
+              1034,
+              1093,
+              1010,
+              1060,
+              1047,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1062,
+              1010,
+              1060,
+              1047,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1062,
+              1010,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": -0.1,
+          "done": true,
+          "metrics": {
+            "max_turns": 1.0,
+            "stop/max_turns": 1.0,
+            "format": 0.0,
+            "correct": 0.0,
+            "f1": 0.0,
+            "searched": 1.0
+          },
+          "logs": {
+            "tool_call_0": "search({\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]})",
+            "tool_result_0": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n",
+          "tool_call_id": "",
+          "name": "search"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n",
+          "tool_call_id": "",
+          "name": "search"
+        }
+      ],
+      "stop_reason": "max_turns",
+      "final_ob": {
+        "count": 1048,
+        "sha256": "04df951c902eb9caab4b038ec43205f718d4fce2681cd35dbee944fd719d7783",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n[\"北京\", \"Hamlet\", \"third\", \"fourth\"]\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\nQuery: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "length": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1105,
+              1110,
+              1099,
+              1111,
+              1109,
+              1112,
+              1108,
+              1101,
+              1116,
+              1101
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "length",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": -0.1,
+          "done": true,
+          "metrics": {
+            "max_tokens_reached": 1.0,
+            "stop/max_tokens": 1.0
+          },
+          "logs": {}
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        }
+      ],
+      "stop_reason": "max_tokens",
+      "final_ob": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": ""
+      }
+    },
+    "structural_error": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1110,
+              1111,
+              1032,
+              1115,
+              1116,
+              1111,
+              1112,
+              1032,
+              1116,
+              1111,
+              1107,
+              1101,
+              1110
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": -0.1,
+          "done": true,
+          "metrics": {
+            "parse_error": 1.0,
+            "stop/parse_error": 1.0
+          },
+          "logs": {}
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        }
+      ],
+      "stop_reason": "parse_error",
+      "final_ob": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": ""
+      }
+    },
+    "content_error": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1123,
+              1098,
+              1097,
+              1100,
+              1125,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": -0.1,
+          "done": true,
+          "metrics": {
+            "parse_error": 1.0,
+            "stop/parse_error": 1.0
+          },
+          "logs": {
+            "parse_errors": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "unparsed_tool_calls": [
+            {
+              "raw_text": "<tool_call>{bad}</tool_call>",
+              "error": "Invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+            }
+          ]
+        }
+      ],
+      "stop_reason": "parse_error",
+      "final_ob": {
+        "count": 61,
+        "sha256": "c88ef468bd85d60c3824ac6c24c8bdcad1a2658774054ecdf0a0dfb9ff071762",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "invalid_arguments": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        },
+        {
+          "prompt": {
+            "count": 446,
+            "sha256": "995c2012baf83bad4c36837ca7a65aea4fe9f786b1e50f55cb91925eca959976",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n12\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"error\": \"Parameter validation failed: 1 validation error for search_params\\nquery_list\\n  Input should be a valid list [type=list_type, input_value=12, input_type=int]\\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type\"}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1123,
+              1034,
+              1110,
+              1097,
+              1109,
+              1101,
+              1034,
+              1058,
+              1034,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1034,
+              1044,
+              1034,
+              1097,
+              1114,
+              1103,
+              1117,
+              1109,
+              1101,
+              1110,
+              1116,
+              1115,
+              1034,
+              1058,
+              1123,
+              1034,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1034,
+              1058,
+              1049,
+              1050,
+              1125,
+              1125,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.0,
+          "done": false,
+          "metrics": {},
+          "logs": {
+            "tool_call_0": "search({\"query_list\": 12})",
+            "tool_result_0": "{\"error\": \"Parameter validation failed: 1 validation error for search_params\\nquery_list\\n  Input should be a valid list [type=list_type, input_value=12, input_type=int]\\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type\"}"
+          }
+        },
+        {
+          "ob": {
+            "count": 446,
+            "sha256": "995c2012baf83bad4c36837ca7a65aea4fe9f786b1e50f55cb91925eca959976",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n12\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"error\": \"Parameter validation failed: 1 validation error for search_params\\nquery_list\\n  Input should be a valid list [type=list_type, input_value=12, input_type=int]\\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type\"}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1087,
+              1105,
+              1108,
+              1108,
+              1105,
+              1097,
+              1109,
+              1032,
+              1083,
+              1104,
+              1097,
+              1107,
+              1101,
+              1115,
+              1112,
+              1101,
+              1097,
+              1114,
+              1101,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 1.0,
+          "done": true,
+          "metrics": {
+            "stop/completed": 1.0,
+            "format": 1.0,
+            "correct": 1.0,
+            "f1": 1.0,
+            "searched": 1.0
+          },
+          "logs": {
+            "assistant_content": "Answer: William Shakespeare"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": 12}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "{\"error\": \"Parameter validation failed: 1 validation error for search_params\\nquery_list\\n  Input should be a valid list [type=list_type, input_value=12, input_type=int]\\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type\"}",
+          "tool_call_id": "",
+          "name": "search"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer: William Shakespeare"
+        }
+      ],
+      "stop_reason": "completed",
+      "final_ob": {
+        "count": 492,
+        "sha256": "310e30b82e6fe41a502c50ab5de05b453a749e1ad5f60216b31682bacc4c3221",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=search>\n<parameter=query_list>\n12\n</parameter>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"error\": \"Parameter validation failed: 1 validation error for search_params\\nquery_list\\n  Input should be a valid list [type=list_type, input_value=12, input_type=int]\\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type\"}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "unknown_tool": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        },
+        {
+          "prompt": {
+            "count": 194,
+            "sha256": "7ba720200ed5ae939ff018104329ad9b507ef159e373418c2e62d0a484a92425",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=missing>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"error\": \"Tool 'missing' not found\"}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1123,
+              1034,
+              1110,
+              1097,
+              1109,
+              1101,
+              1034,
+              1058,
+              1034,
+              1109,
+              1105,
+              1115,
+              1115,
+              1105,
+              1110,
+              1103,
+              1034,
+              1044,
+              1034,
+              1097,
+              1114,
+              1103,
+              1117,
+              1109,
+              1101,
+              1110,
+              1116,
+              1115,
+              1034,
+              1058,
+              1123,
+              1125,
+              1125,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.0,
+          "done": false,
+          "metrics": {},
+          "logs": {
+            "tool_call_0": "missing({})",
+            "tool_result_0": "{\"error\": \"Tool 'missing' not found\"}"
+          }
+        },
+        {
+          "ob": {
+            "count": 194,
+            "sha256": "7ba720200ed5ae939ff018104329ad9b507ef159e373418c2e62d0a484a92425",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=missing>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"error\": \"Tool 'missing' not found\"}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1087,
+              1105,
+              1108,
+              1108,
+              1105,
+              1097,
+              1109,
+              1032,
+              1083,
+              1104,
+              1097,
+              1107,
+              1101,
+              1115,
+              1112,
+              1101,
+              1097,
+              1114,
+              1101,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.9,
+          "done": true,
+          "metrics": {
+            "stop/completed": 1.0,
+            "format": 1.0,
+            "correct": 1.0,
+            "f1": 1.0,
+            "searched": 0.0
+          },
+          "logs": {
+            "assistant_content": "Answer: William Shakespeare"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "missing",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "{\"error\": \"Tool 'missing' not found\"}",
+          "tool_call_id": "",
+          "name": "missing"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer: William Shakespeare"
+        }
+      ],
+      "stop_reason": "completed",
+      "final_ob": {
+        "count": 240,
+        "sha256": "9c2dc65229992508f358160f0469876f12786cbfd7ad046ed894c77a356d52d6",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<tool_call>\n<function=missing>\n</function>\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"error\": \"Tool 'missing' not found\"}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    "initial_overflow": {
+      "sampled": [],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "text": ""
+          },
+          "ac": {
+            "tokens": [],
+            "maybe_logprobs": [],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": -0.1,
+          "done": true,
+          "metrics": {
+            "max_tokens_reached": 1.0,
+            "stop/max_tokens": 1.0
+          },
+          "logs": {
+            "initial_observation_overflow": "Initial observation (42 tokens) + max_generation_tokens (0) = 42 exceeds max_trajectory_tokens (41). This task's prompt is too long for the model's context window."
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        }
+      ],
+      "stop_reason": "max_tokens",
+      "final_ob": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": ""
+      }
+    },
+    "mid_overflow": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [
+        [
+          "北京",
+          "Hamlet",
+          "third",
+          "fourth"
+        ]
+      ],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1060,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1010,
+              1060,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1061,
+              1115,
+              1101,
+              1097,
+              1114,
+              1099,
+              1104,
+              1062,
+              1010,
+              1060,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1061,
+              1113,
+              1117,
+              1101,
+              1114,
+              1121,
+              1095,
+              1108,
+              1105,
+              1115,
+              1116,
+              1062,
+              1010,
+              1091,
+              1034,
+              22271,
+              21140,
+              1034,
+              1044,
+              1032,
+              1034,
+              1072,
+              1097,
+              1109,
+              1108,
+              1101,
+              1116,
+              1034,
+              1044,
+              1032,
+              1034,
+              1116,
+              1104,
+              1105,
+              1114,
+              1100,
+              1034,
+              1044,
+              1032,
+              1034,
+              1102,
+              1111,
+              1117,
+              1114,
+              1116,
+              1104,
+              1034,
+              1093,
+              1010,
+              1060,
+              1047,
+              1112,
+              1097,
+              1114,
+              1097,
+              1109,
+              1101,
+              1116,
+              1101,
+              1114,
+              1062,
+              1010,
+              1060,
+              1047,
+              1102,
+              1117,
+              1110,
+              1099,
+              1116,
+              1105,
+              1111,
+              1110,
+              1062,
+              1010,
+              1060,
+              1047,
+              1116,
+              1111,
+              1111,
+              1108,
+              1095,
+              1099,
+              1097,
+              1108,
+              1108,
+              1062,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": -0.1,
+          "done": true,
+          "metrics": {
+            "context_overflow": 1.0,
+            "stop/context_overflow": 1.0
+          },
+          "logs": {
+            "tool_call_0": "search({\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]})",
+            "tool_result_0": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": [],
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": null,
+              "function": {
+                "name": "search",
+                "arguments": "{\"query_list\": [\"\\u5317\\u4eac\", \"Hamlet\", \"third\", \"fourth\"]}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Query: 北京\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: 北京\nQuery: Hamlet\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: Hamlet\nQuery: third\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: third\nQuery: fourth\nDocument 1:\ndocument\nDocument 2:\ntitle\nDocument 3:\nevidence: fourth\n",
+          "tool_call_id": "",
+          "name": "search"
+        }
+      ],
+      "stop_reason": "context_overflow",
+      "final_ob": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": ""
+      }
+    },
+    "terminal_at_budget": {
+      "sampled": [
+        {
+          "prompt": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "stop": [
+            1
+          ]
+        }
+      ],
+      "queries": [],
+      "transitions": [
+        {
+          "ob": {
+            "count": 42,
+            "sha256": "5e0123a58f29e0cd0f23a587f0d6c424fbbcadf6cc180985d14cff4b566ab194",
+            "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+          },
+          "ac": {
+            "tokens": [
+              1065,
+              1110,
+              1115,
+              1119,
+              1101,
+              1114,
+              1058,
+              1032,
+              1087,
+              1105,
+              1108,
+              1108,
+              1105,
+              1097,
+              1109,
+              1032,
+              1083,
+              1104,
+              1097,
+              1107,
+              1101,
+              1115,
+              1112,
+              1101,
+              1097,
+              1114,
+              1101,
+              1
+            ],
+            "maybe_logprobs": [
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25,
+              -0.25
+            ],
+            "stop_reason": "stop",
+            "sequence_id": null,
+            "prompt_cache_hit_tokens": 0
+          },
+          "reward": 0.9,
+          "done": true,
+          "metrics": {
+            "stop/completed": 1.0,
+            "format": 1.0,
+            "correct": 1.0,
+            "f1": 1.0,
+            "searched": 0.0
+          },
+          "logs": {
+            "assistant_content": "Answer: William Shakespeare"
+          }
+        }
+      ],
+      "history": [
+        {
+          "role": "user",
+          "content": "Who wrote Hamlet?"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer: William Shakespeare"
+        }
+      ],
+      "stop_reason": "completed",
+      "final_ob": {
+        "count": 88,
+        "sha256": "321fbf586bd0fad7bf08bf230480590fcc45378d4706faf05e192c02474a95c3",
+        "text": "<|im_start|>user\nWho wrote Hamlet?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nAnswer: William Shakespeare<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    }
+  }
+}

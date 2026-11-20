@@ -31,7 +31,9 @@ def get_tokenizer(model_name: str) -> Tokenizer:
     model_name = model_name.split(":")[0]
     kwargs = {}
     if os.path.isdir(model_name) or os.environ.get("HF_TRUST_REMOTE_CODE", "").lower() in (
-        "1", "true", "yes"
+        "1",
+        "true",
+        "yes",
     ):
         kwargs["trust_remote_code"] = True
     return AutoTokenizer.from_pretrained(model_name, **kwargs)

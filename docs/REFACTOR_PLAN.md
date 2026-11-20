@@ -1,6 +1,6 @@
 # Search-R1 自包含重构方案
 
-创建：2026-11-20。本文与 `REFACTOR_STATUS.md` 是可被后续 session 直接接续的正式记录；不依赖已删除的本地 handoff 或未跟踪的 runs/local_docs。
+创建：2026-11-20。本文保存原完整方案；执行进度、验收和接续信息统一维护在 `REFACTOR_STATUS.md`，不另建说明文档。不依赖已删除的本地 handoff 或未跟踪的 runs/local_docs。
 
 ## 目标与最新授权
 
@@ -10,7 +10,7 @@
 
 本次授权先完成阶段 1–3，后续阶段另行继续。全程在 `codex/self-contained-refactor` 上工作，保持原 `main`、`codex/stage3-dapo`、`claude/r75-cap030` 指针不变。最终全部验收后再将 refactor 成果替换本地 main；本轮不操作 main、不推送、不删除分支/工作树、不触碰用户的 `.codex-attachments/`。
 
-**最新调度（2026-11-20）：用户在第三步进行中要求“不要继续第三步，完成当前就暂停”。已完成阶段 1–2；第三步仅保存中间态，尚未验收，等待继续指令。具体断点见 REFACTOR_STATUS.md。**
+**执行范围和最新调度只以 REFACTOR_STATUS.md 为准；本文不重复记录进度。**
 
 ## 起始历史与工作方式
 
@@ -67,8 +67,6 @@ tests/
 docs/
   REFACTOR_PLAN.md
   REFACTOR_STATUS.md
-  training.md
-  migration_validation.md
 third_party/tinker_cookbook/
   LICENSE
   UPSTREAM.md                  # 提交、源文件映射、修改记录

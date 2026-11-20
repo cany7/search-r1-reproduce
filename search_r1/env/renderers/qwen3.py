@@ -16,7 +16,6 @@ from search_r1.env.tokenizer import Tokenizer
 
 from .base import (
     ContentPart,
-    ImagePart,
     Message,
     ParseTermination,
     RenderContext,
@@ -64,13 +63,13 @@ def _unframe_thinking(parts: list[ContentPart]) -> list[ContentPart]:
 
 
 def _merge_consecutive_text_parts(
-    chunks: list[ImagePart | TextPart],
-) -> list[ImagePart | TextPart]:
+    chunks: list[TextPart],
+) -> list[TextPart]:
     """Merge consecutive TextParts into single parts."""
     if not chunks:
         return chunks
 
-    merged: list[ImagePart | TextPart] = [chunks[0]]
+    merged: list[TextPart] = [chunks[0]]
     for chunk in chunks[1:]:
         if chunk["type"] == "text" and merged[-1]["type"] == "text":
             merged[-1] = TextPart(type="text", text=merged[-1]["text"] + chunk["text"])
@@ -106,7 +105,7 @@ class Qwen3Renderer(Renderer):
         return ctx.is_last or not self.strip_thinking_from_history
 
     def __init__(self, tokenizer: Tokenizer, strip_thinking_from_history: bool = True):
-        """Args:"""
+        """Use a private content tokenizer; preserve the shared tokenizer settings."""
         super().__init__(tokenizer)
         self.strip_thinking_from_history = strip_thinking_from_history
         self._content_tokenizer = _content_tokenizer(tokenizer)
@@ -165,6 +164,8 @@ class Qwen3Renderer(Renderer):
                     # written the padding, so content must not add its own.
                     rendered_parts.append(p["text"].lstrip("\n") if after_block else p["text"])
                     after_block = False
+                else:
+                    raise RendererError("Search-R1 renderers accept text only")
             output_content = "".join(rendered_parts)
         elif frames and "</think>" in content:
             # An inline block in string content is normalized the way the template
@@ -275,9 +276,6 @@ class Qwen3Renderer(Renderer):
                 dangling,
             ]
 
-
-
-
     def create_conversation_prefix_with_tools(
         self, tools: list[ToolSpec], system_prompt: str = ""
     ) -> list[Message]:
@@ -346,7 +344,7 @@ class Qwen3DisableThinkingRenderer(Qwen3Renderer):
 
 
 class Qwen3InstructRenderer(Qwen3Renderer):
-    """Renderer for Qwen3 instruct 2507 models. Unlike the earlier Qwen3 models, these models do not"""
+    """Qwen3 Instruct 2507 formatting without thinking blocks."""
 
     frames_thinking = False
 
@@ -360,10 +358,8 @@ class Qwen3InstructRenderer(Qwen3Renderer):
         return True
 
 
-class Qwen3VLRenderer(Qwen3Renderer):
-    """Vision-language renderer for Qwen3-VL models with thinking support."""
-
-    image_processor: object | None
+class Qwen3ToolRenderer(Qwen3Renderer):
+    """Text/tool subset of upstream Qwen3VLRenderer, shared by Qwen3.5."""
 
     # Qwen3.5-family templates keep one <|im_start|>user block open around a run of
     # consecutive tool responses (gated on loop.previtem/nextitem); Qwen3/Qwen3-VL
@@ -377,10 +373,11 @@ class Qwen3VLRenderer(Qwen3Renderer):
         strip_thinking_from_history: bool = True,
         merge_text_chunks: bool = True,
     ):
-        """Initialize the Qwen3 vision-language renderer."""
+        """Keep the optional second argument for the temporary training registry."""
+        if image_processor is not None:
+            raise RendererError("Search-R1 renderers accept text only")
         self.tokenizer = tokenizer
         self._content_tokenizer = _content_tokenizer(tokenizer)
-        self.image_processor = image_processor
         self.strip_thinking_from_history = strip_thinking_from_history
         self.merge_text_chunks = merge_text_chunks
 
@@ -394,46 +391,29 @@ class Qwen3VLRenderer(Qwen3Renderer):
 
     def _preprocess_message_parts(
         self, message: Message, *, strip_thinking: bool = False
-    ) -> list[ImagePart | TextPart]:
-        """Convert message content to list form for VL rendering."""
+    ) -> list[TextPart]:
+        """Normalize text and optional thinking blocks before rendering."""
         content = message["content"]
         if isinstance(content, str):
-            base_parts: list[ImagePart | TextPart] = [TextPart(type="text", text=content)]
+            base_parts: list[TextPart] = [TextPart(type="text", text=content)]
         else:
-            # Convert structured content to ImagePart/TextPart list
-            base_parts: list[ImagePart | TextPart] = []
+            # Convert structured text and thinking parts.
+            base_parts: list[TextPart] = []
             for p in content:
                 if p["type"] == "text":
                     base_parts.append(cast(TextPart, p))
-                elif p["type"] == "image":
-                    base_parts.append(cast(ImagePart, p))
                 elif p["type"] == "thinking" and not strip_thinking:
                     # Render thinking as <think>...</think> text
                     base_parts.append(
                         TextPart(type="text", text=self._format_thinking_text(p["thinking"]))
                     )
-                    # else: strip thinking by not appending
+                elif p["type"] != "thinking":
+                    raise RendererError("Search-R1 renderers accept text only")
 
-        return self._wrap_image_parts(base_parts)
+        return base_parts
 
-    def _wrap_image_parts(self, parts: list[ImagePart | TextPart]) -> list[ImagePart | TextPart]:
-        """Wrap each image with ``<|vision_start|>`` and ``<|vision_end|>``."""
-        chunks: list[ImagePart | TextPart] = []
-        for content_chunk in parts:
-            if content_chunk["type"] == "image":
-                chunks.append(TextPart(type="text", text="<|vision_start|>"))
-
-            chunks.append(content_chunk)
-
-            if content_chunk["type"] == "image":
-                chunks.append(TextPart(type="text", text="<|vision_end|>"))
-
-        return chunks
-
-    def _wrap_qwen_tool_response_chunks(
-        self, chunks: list[ImagePart | TextPart]
-    ) -> list[ImagePart | TextPart]:
-        """Wrap content chunks in Qwen's <tool_response> tags for multimodal messages."""
+    def _wrap_qwen_tool_response_chunks(self, chunks: list[TextPart]) -> list[TextPart]:
+        """Wrap content chunks in Qwen's <tool_response> tags for text messages."""
         return (
             [TextPart(type="text", text="<tool_response>\n")]
             + chunks
@@ -450,7 +430,7 @@ class Qwen3VLRenderer(Qwen3Renderer):
             self.strip_thinking_from_history and message["role"] == "assistant" and not ctx.is_last
         )
 
-    def _format_tool_calls_chunks(self, message: Message) -> list[ImagePart | TextPart]:
+    def _format_tool_calls_chunks(self, message: Message) -> list[TextPart]:
         """Format tool_calls as output chunks. Override in subclasses for different formats."""
         # Add leading newline to match HF template behavior
         assert "tool_calls" in message, "tool_calls are required to format tool calls"
@@ -468,7 +448,7 @@ class Qwen3VLRenderer(Qwen3Renderer):
         ]
 
     def render_message(self, message: Message, ctx: RenderContext) -> RenderedMessage:
-        """Render a message with interleaved text and image content for vision-language models."""
+        """Render text, tool calls and grouped tool responses."""
         maybe_newline = "\n" if ctx.idx > 0 else ""
 
         role = self._get_qwen_role_for_message(message)
@@ -508,15 +488,12 @@ class Qwen3VLRenderer(Qwen3Renderer):
             output_chunks = _merge_consecutive_text_parts(output_chunks)
 
         output_chunks_encoded: list[tinker.ModelInputChunk] = []
-        for x in output_chunks:
-            if x["type"] == "image":
-                raise ValueError("Search-R1 renderers accept text only")
-            else:
-                output_chunks_encoded.append(
-                    tinker.EncodedTextChunk(
-                        tokens=self.tokenizer.encode(x["text"], add_special_tokens=False)
-                    )
+        for part in output_chunks:
+            output_chunks_encoded.append(
+                tinker.EncodedTextChunk(
+                    tokens=self.tokenizer.encode(part["text"], add_special_tokens=False)
                 )
+            )
 
         prefix_str = self._generation_suffix_in_header(message, ctx)
         if prefix_str and header_str.startswith(prefix_str):

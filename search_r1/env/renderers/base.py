@@ -15,13 +15,13 @@ from typing import Literal, NotRequired, TypedDict
 
 import pydantic
 import tinker
-from PIL import Image
 
 from search_r1.env.tokenizer import Tokenizer, encode_without_special_tokens
 
 
 class RendererError(ValueError):
     """The response or message cannot be rendered consistently."""
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,23 +96,6 @@ class TextPart(TypedDict):
     text: str
 
 
-class ImagePart(TypedDict):
-    """A chunk of image content in a message."""
-
-    type: Literal["image"]
-    image: str | Image.Image
-
-
-class AudioPart(TypedDict):
-    """A chunk of input audio in a message."""
-
-    type: Literal["audio"]
-    audio: str | bytes
-    format: NotRequired[Literal["wav", "mp3", "flac"]]
-    num_frames: NotRequired[int]
-    sample_rate: NotRequired[int]
-
-
 class ThinkingPart(TypedDict):
     """Model's internal reasoning (chain-of-thought) as a content part."""
 
@@ -120,18 +103,7 @@ class ThinkingPart(TypedDict):
     thinking: str  # The thinking/reasoning content
 
 
-ContentPart = TextPart | ImagePart | AudioPart | ThinkingPart
-
-
-
-
-_REPLACEMENT_CHAR = "\ufffd"
-
-
-_THINK_OPEN_TAG = "<think>"
-
-
-_THINK_CLOSE_TAG = "</think>"
+ContentPart = TextPart | ThinkingPart
 
 
 Role = str
@@ -234,12 +206,6 @@ def format_content_as_string(content: Content, separator: str = "\n") -> str:
             parts.append(f"<think>{p['thinking']}</think>")
         elif p["type"] == "text":
             parts.append(p["text"])
-        elif p["type"] == "image":
-            img = p["image"]
-            if isinstance(img, str):
-                parts.append(f"<image>{img}</image>")
-            else:
-                parts.append(f"<image>Image({img.size[0]}x{img.size[1]}, {img.mode})</image>")
         else:
             raise RendererError(f"Unknown content part type: {p['type']}")
     return separator.join(parts)
@@ -426,15 +392,8 @@ class Renderer(ABC):
     disables_thinking: bool = False
     """Whether this renderer's generation prompt closes the think block."""
 
-    # Pickle metadata — set by get_renderer() via _stamp_pickle_metadata().
-    # Class-level defaults ensure these exist even when subclasses bypass super().__init__().
-    _renderer_name: str | None = None
-    _model_name: str | None = None
-    _has_image_processor: bool = False
-
     def __init__(self, tokenizer: Tokenizer):
         self.tokenizer = tokenizer
-
 
     @property
     def has_extension_property(self) -> bool:
@@ -470,12 +429,7 @@ class Renderer(ABC):
     @property
     def _end_message_token(self) -> int:
         """The token ID that marks the end of a message."""
-        raise NotImplementedError(
-            f"{type(self).__name__} must define _end_message_token to support streaming"
-        )
-
-
-
+        raise NotImplementedError(f"{type(self).__name__} must define its message stop token")
 
     def create_conversation_prefix_with_tools(
         self, tools: list[ToolSpec], system_prompt: str = ""
@@ -549,14 +503,9 @@ class Renderer(ABC):
             )
         return tinker.ModelInput(chunks=chunks)
 
-
-
-
-
     def _last_assistant_turn_start_index(self, messages: list[Message]) -> int:
         """Index of the first message in the turn the model is being asked to produce."""
         return max((idx for idx, m in enumerate(messages) if m["role"] == "user"), default=-1) + 1
-
 
 
 def parse_response_for_stop_token(

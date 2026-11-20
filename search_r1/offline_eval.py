@@ -1,3 +1,7 @@
+# Adapted from tinker-cookbook/recipes/search_tool/offline_eval.py at 1991897cba59ea9d9b0030d183d1867b28eba9d9.
+# Modified for Search-R1: local components, BM25 search and project evaluation/training rules.
+# SPDX-License-Identifier: Apache-2.0
+# License and source mapping: third_party/tinker_cookbook/.
 """Offline evaluation for the search agent.
 
 Extends the recipe's ``offline_eval.py``:
@@ -15,10 +19,12 @@ and ``summary.json``.
 import asyncio
 import dataclasses
 import json
+import logging
 import os
 import random
 import time
 from collections import Counter, defaultdict
+from contextlib import aclosing, asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -28,9 +34,13 @@ import tinker
 from dotenv import load_dotenv
 
 from search_r1.backends import tinker_backend as checkpoint_utils
-from search_r1.backends.completers import TinkerTokenCompleter, TokenCompleter
+from search_r1.backends.completers import TokenCompleter
 from search_r1.backends.local_completer import OpenAICompletionsTokenCompleter
-from search_r1.backends.tinker_backend import load_training_client
+from search_r1.backends.tinker_backend import (
+    TinkerEvaluationPolicy,
+    close_service,
+    load_training_client,
+)
 from search_r1.env import tokenizer as tokenizer_utils
 from search_r1.env.renderers import DEFAULT_RENDERER_NAME, Renderer, get_renderer, get_text_content
 from search_r1.env.renderers.base import Message
@@ -55,6 +65,8 @@ from search_r1.env.tools import (
 )
 from search_r1.env.types import StopReason, Trajectory
 from search_r1.eval_config import eval_settings_from_training_config
+
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -322,7 +334,9 @@ async def evaluate_single_item(
     config: CLIConfig,
     semaphore: asyncio.Semaphore,
 ) -> dict[str, Any]:
-    initial_messages = search_initial_messages(item, renderer, config.prompt_name, config.limit_search)
+    initial_messages = search_initial_messages(
+        item, renderer, config.prompt_name, config.limit_search
+    )
     reward_fn = TextAnswerReward(
         gold_answers=item["answer"],
         format_coef=config.format_coef,
@@ -375,41 +389,74 @@ async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
         )
         return policy, config.renderer_name
 
+    if config.tinker_state_url is not None and config.tinker_checkpoint_url is not None:
+        raise ValueError("Pass only one of tinker_state_url and tinker_checkpoint_url")
     service_client = tinker.ServiceClient(
         user_metadata={"recipe_name": "eval_search_tool_offline"},
         base_url=config.tinker_base_url,
     )
-    renderer_name = None
-    training_client = None
-    if config.tinker_state_url is not None and config.tinker_checkpoint_url is not None:
-        raise ValueError("Pass only one of tinker_state_url and tinker_checkpoint_url")
-    if config.tinker_state_url is not None:
-        # SkyRL serves only the weights of a model loaded in the running server, so a
-        # checkpoint is evaluated by loading its full state and syncing it to the sampler.
-        training_client = await load_training_client(
-            service_client, config.tinker_state_url, config.base_model, config.lora_rank
+    try:
+        renderer_name = None
+        training_client = None
+        if config.tinker_state_url is not None:
+            # Explicit create/load supports the older SkyRL protocol without patching SDK classes.
+            training_client = await load_training_client(
+                service_client, config.tinker_state_url, config.base_model, config.lora_rank
+            )
+            sampling_client = await training_client.save_weights_and_get_sampling_client()
+            renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
+                service_client, config.tinker_state_url
+            )
+        elif config.tinker_checkpoint_url is not None:
+            sampling_client = await service_client.create_sampling_client(
+                model_path=config.tinker_checkpoint_url
+            )
+            renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
+                service_client, config.tinker_checkpoint_url
+            )
+        else:
+            sampling_client = await service_client.create_sampling_client(
+                base_model=config.base_model
+            )
+        policy = TinkerEvaluationPolicy(
+            sampling_client,
+            max_tokens=config.max_tokens,
+            temperature=config.temperature,
+            service_client=service_client,
+            training_client=training_client,
         )
-        sampling_client = await training_client.save_weights_and_get_sampling_client()
-        renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
-            service_client, config.tinker_state_url
+        return policy, renderer_name or config.renderer_name
+    except BaseException as error:
+        status = (
+            "interrupted"
+            if isinstance(error, (asyncio.CancelledError, KeyboardInterrupt))
+            else "errored"
         )
-    elif config.tinker_checkpoint_url is not None:
-        sampling_client = service_client.create_sampling_client(
-            model_path=config.tinker_checkpoint_url
-        ).result()
-        renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
-            service_client, config.tinker_checkpoint_url
-        )
-    else:
-        sampling_client = service_client.create_sampling_client(
-            base_model=config.base_model
-        ).result()
-    policy = TinkerTokenCompleter(
-        sampling_client, max_tokens=config.max_tokens, temperature=config.temperature
-    )
-    policy.service_client = service_client
-    policy.training_client = training_client
-    return policy, renderer_name or config.renderer_name
+        await close_service(service_client, status)
+        raise
+
+
+@asynccontextmanager
+async def policy_session(config: CLIConfig):
+    """Close clients after all rollouts, also on setup failure or cancellation."""
+    policy, renderer_name = await build_policy(config)
+    status = "success"
+    try:
+        yield policy, renderer_name
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        status = "interrupted"
+        raise
+    except BaseException:
+        status = "errored"
+        raise
+    finally:
+        if isinstance(policy, TinkerEvaluationPolicy):
+            await policy.aclose(status)
+        elif isinstance(policy, OpenAICompletionsTokenCompleter):
+            try:
+                await policy.aclose()
+            except Exception:
+                logger.warning("Could not close local evaluation client", exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -479,7 +526,11 @@ async def cli_main(config: CLIConfig) -> None:
         config = chz.replace(config, **eval_settings_from_training_config(training_config))
     items = load_eval_items(config)
 
-    policy, renderer_name = await build_policy(config)
+    async with policy_session(config) as (policy, renderer_name):
+        await _evaluate_with_policy(config, items, training_config, policy, renderer_name)
+
+
+async def _evaluate_with_policy(config, items, training_config, policy, renderer_name):
     tokenizer = tokenizer_utils.get_tokenizer(config.base_model)
     renderer = get_renderer(renderer_name, tokenizer)
     print(f"Using renderer: {renderer_name}")
@@ -490,80 +541,85 @@ async def cli_main(config: CLIConfig) -> None:
         retrieval_config=RetrievalConfig(n_results=config.n_results),
     )
 
-    model_tag = (config.omlx_model or config.base_model).replace("/", "-")
-    run_name = config.run_name or f"{model_tag}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    output_dir = PROJECT_ROOT / "runs" / "eval" / run_name
-    output_dir.mkdir(parents=True, exist_ok=True)
-    with open(output_dir / "config.json", "w") as f:
-        json.dump(
-            {
-                **chz.asdict(config),
-                # Snapshot the source before the next training segment rewrites config.json.
-                "training_config": training_config,
-                "resolved_renderer_name": renderer_name,
-                "retrieval_url": retrieval_url,
-                "system_prompt": get_task_instructions(config.prompt_name),
-                "tools": [search_tool_spec(config.limit_search)],
-                "num_items": len(items),
-            },
-            f,
-            ensure_ascii=False,
-            indent=2,
-        )
+    async with aclosing(search_tool):
+        model_tag = (config.omlx_model or config.base_model).replace("/", "-")
+        run_name = config.run_name or f"{model_tag}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        output_dir = PROJECT_ROOT / "runs" / "eval" / run_name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        with open(output_dir / "config.json", "w") as f:
+            json.dump(
+                {
+                    **chz.asdict(config),
+                    # Snapshot the source before the next training segment rewrites config.json.
+                    "training_config": training_config,
+                    "resolved_renderer_name": renderer_name,
+                    "retrieval_url": retrieval_url,
+                    "system_prompt": get_task_instructions(config.prompt_name),
+                    "tools": [search_tool_spec(config.limit_search)],
+                    "num_items": len(items),
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
 
-    print(f"Evaluating {len(items)} items (concurrency {config.concurrency})")
-    semaphore = asyncio.Semaphore(config.concurrency)
-    start = time.monotonic()
-    records: list[dict[str, Any]] = []
-    tasks = [
-        asyncio.create_task(
-            evaluate_single_item(item, search_tool, policy, renderer, tokenizer, config, semaphore)
-        )
-        for item in items
-    ]
-    with open(output_dir / "trajectories.jsonl", "w") as f:
-        for done_count, task in enumerate(asyncio.as_completed(tasks), start=1):
-            record = await task
-            records.append(record)
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-            f.flush()
-            if done_count % 10 == 0 or done_count == len(tasks):
-                print(f"  {done_count}/{len(tasks)} done ({time.monotonic() - start:.0f}s)")
-    elapsed = time.monotonic() - start
+        print(f"Evaluating {len(items)} items (concurrency {config.concurrency})")
+        semaphore = asyncio.Semaphore(config.concurrency)
+        start = time.monotonic()
+        records: list[dict[str, Any]] = []
+        tasks = [
+            asyncio.create_task(
+                evaluate_single_item(
+                    item, search_tool, policy, renderer, tokenizer, config, semaphore
+                )
+            )
+            for item in items
+        ]
+        try:
+            with open(output_dir / "trajectories.jsonl", "w") as f:
+                for done_count, task in enumerate(asyncio.as_completed(tasks), start=1):
+                    record = await task
+                    records.append(record)
+                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    f.flush()
+                    if done_count % 10 == 0 or done_count == len(tasks):
+                        print(f"  {done_count}/{len(tasks)} done ({time.monotonic() - start:.0f}s)")
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+        elapsed = time.monotonic() - start
 
-    await search_tool.aclose()
-    if isinstance(policy, OpenAICompletionsTokenCompleter):
-        await policy.aclose()
+        errors = [r for r in records if "error" in r]
+        ok = [r for r in records if "error" not in r]
+        summary_by_source = {
+            source: summarize([r for r in ok if r["data_source"] == source])
+            for source in sorted({r["data_source"] for r in ok})
+        }
+        summary_by_source["OVERALL"] = summarize(ok)
 
-    errors = [r for r in records if "error" in r]
-    ok = [r for r in records if "error" not in r]
-    summary_by_source = {
-        source: summarize([r for r in ok if r["data_source"] == source])
-        for source in sorted({r["data_source"] for r in ok})
-    }
-    summary_by_source["OVERALL"] = summarize(ok)
+        total_sampled = sum(r["sampled_tokens"] for r in ok)
+        run_stats: dict[str, Any] = {
+            "elapsed_seconds": elapsed,
+            "num_errors": len(errors),
+            "total_sampled_tokens": total_sampled,
+            "sampled_tokens_per_second": total_sampled / elapsed if elapsed > 0 else None,
+        }
+        if isinstance(policy, OpenAICompletionsTokenCompleter):
+            run_stats["sampling_calls"] = policy.num_calls
+            run_stats["token_count_mismatches"] = policy.token_count_mismatches
+        with open(output_dir / "summary.json", "w") as f:
+            json.dump(
+                {"by_source": summary_by_source, "run": run_stats}, f, ensure_ascii=False, indent=2
+            )
 
-    total_sampled = sum(r["sampled_tokens"] for r in ok)
-    run_stats: dict[str, Any] = {
-        "elapsed_seconds": elapsed,
-        "num_errors": len(errors),
-        "total_sampled_tokens": total_sampled,
-        "sampled_tokens_per_second": total_sampled / elapsed if elapsed > 0 else None,
-    }
-    if isinstance(policy, OpenAICompletionsTokenCompleter):
-        run_stats["sampling_calls"] = policy.num_calls
-        run_stats["token_count_mismatches"] = policy.token_count_mismatches
-    with open(output_dir / "summary.json", "w") as f:
-        json.dump(
-            {"by_source": summary_by_source, "run": run_stats}, f, ensure_ascii=False, indent=2
-        )
-
-    if ok:
-        print_summary(summary_by_source)
-    print(f"Run: {run_stats}")
-    if errors:
-        print(f"WARNING: {len(errors)} rollouts raised an error; first: {errors[0]['error']}")
-    print(f"Output: {output_dir}")
+        if ok:
+            print_summary(summary_by_source)
+        print(f"Run: {run_stats}")
+        if errors:
+            print(f"WARNING: {len(errors)} rollouts raised an error; first: {errors[0]['error']}")
+        print(f"Output: {output_dir}")
 
 
 if __name__ == "__main__":

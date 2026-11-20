@@ -1,3 +1,7 @@
+# Adapted from tinker-cookbook/recipes/search_tool/search_env.py at 1991897cba59ea9d9b0030d183d1867b28eba9d9.
+# Modified for Search-R1: local components, BM25 search and project evaluation/training rules.
+# SPDX-License-Identifier: Apache-2.0
+# License and source mapping: third_party/tinker_cookbook/.
 from __future__ import annotations
 
 import os

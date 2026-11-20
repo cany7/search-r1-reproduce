@@ -20,7 +20,7 @@ from search_r1.env.types import (
 def stop_reason_from_metrics(metrics) -> str | None:
     for key, value in metrics.items():
         if key.startswith(STOP_METRIC_PREFIX) and value:
-            return key[len(STOP_METRIC_PREFIX):]
+            return key[len(STOP_METRIC_PREFIX) :]
     return None
 
 
@@ -28,7 +28,9 @@ async def do_single_rollout(policy: TokenCompleter, env: Env) -> Trajectory:
     # This runner deliberately has no hidden model presets or runner-side budgets.
     # Refuse unsupported configuration instead of silently ignoring its limits.
     if getattr(env, "rollout_limits", None) is not None:
-        raise ValueError("Search-R1 rollout uses environment limits; runner rollout_limits are unsupported")
+        raise ValueError(
+            "Search-R1 rollout uses environment limits; runner rollout_limits are unsupported"
+        )
     initial = await env.initial_observation()
     if isinstance(initial, InitialObservationOverflow):
         empty = tinker.ModelInput.empty()
@@ -47,14 +49,16 @@ async def do_single_rollout(policy: TokenCompleter, env: Env) -> Trajectory:
     while True:
         action = await policy(observation, stop)
         result = await env.step(action.tokens, extra={"stop_reason": action.stop_reason})
-        transitions.append(Transition(
-            ob=observation,
-            ac=action,
-            reward=result.reward,
-            episode_done=result.episode_done,
-            metrics=result.metrics,
-            logs=result.logs,
-        ))
+        transitions.append(
+            Transition(
+                ob=observation,
+                ac=action,
+                reward=result.reward,
+                episode_done=result.episode_done,
+                metrics=result.metrics,
+                logs=result.logs,
+            )
+        )
         observation, stop = result.next_observation, result.next_stop_condition
         if result.episode_done:
             return Trajectory(transitions, observation, stop_reason_from_metrics(result.metrics))

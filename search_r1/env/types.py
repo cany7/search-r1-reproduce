@@ -62,7 +62,7 @@ PARSE_ERROR_MASKED_METRIC_KEY = "parse_error_masked"
 
 @dataclass(frozen=True)
 class InitialObservationOverflow:
-    """Sentinel returned by :meth:`Env.initial_observation` instead of an"""
+    """Terminal result when the initial prompt already exceeds the context budget."""
 
     reward: float
     metrics: Metrics = field(default_factory=dict)
@@ -186,7 +186,9 @@ class TrajectoryGroup:
         """Get the total reward (return) for each trajectory in the group."""
         return [
             sum(transition.reward for transition in trajectory.transitions) + final_reward
-            for trajectory, final_reward in zip(self.trajectories_G, self.final_rewards_G, strict=True)
+            for trajectory, final_reward in zip(
+                self.trajectories_G, self.final_rewards_G, strict=True
+            )
         ]
 
 

@@ -34,7 +34,9 @@ def get_renderer(name, tokenizer):
     try:
         factory = _RENDERERS[name]
     except KeyError:
-        raise ValueError(f"Unsupported Search-R1 renderer {name!r}; choose from {list(_RENDERERS)}") from None
+        raise ValueError(
+            f"Unsupported Search-R1 renderer {name!r}; choose from {list(_RENDERERS)}"
+        ) from None
     return factory(tokenizer)
 
 
