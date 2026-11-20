@@ -12,14 +12,14 @@ import string
 from collections import Counter
 from dataclasses import dataclass
 from functools import reduce
-from typing import Annotated, Literal
+from typing import Literal
 
 import aiohttp
 import chz
 
 from search_r1.env.renderers import get_text_content
 from search_r1.env.renderers.base import Message, ToolCall
-from search_r1.env.tool_dispatch import simple_tool_result, tool
+from search_r1.env.tool_dispatch import simple_tool_result
 from search_r1.env.tool_types import ToolResult
 
 
@@ -54,12 +54,17 @@ class RetrievalConfig:
     n_results: int = 3
 
 
+class RetrievalUnavailable(RuntimeError):
+    """The retrieval server still failed after every retry."""
+
+
 class BM25Tool:
-    """Search tool backed by Search-R1's BM25 retrieval server (``retrieval/retrieval_server.py``).
+    """Client for Search-R1's BM25 retrieval server (``retrieval/retrieval_server.py``).
 
     Replaces the recipe's ``ChromaTool``. The text returned to the model keeps the
     recipe's format (``Query: ...`` followed by ``Document i:`` blocks); only the
-    retrieval backend differs.
+    retrieval backend differs. The ``search`` tool itself is defined by the search
+    environments in ``search_tool_env.py``.
 
     Pickle support: the aiohttp session is not pickleable, so ``__getstate__``
     drops it and it is re-created lazily on first use.
@@ -98,6 +103,8 @@ class BM25Tool:
         ``return_scores`` is always sent as True: with False the upstream server
         unpacks a single return value into two and fails (or, for exactly two
         queries, silently returns the wrong shape).
+
+        Raises ``RetrievalUnavailable`` once every attempt has failed.
         """
         payload = {
             "queries": query_list,
@@ -121,20 +128,11 @@ class BM25Tool:
                     )
                     await asyncio.sleep(wait_time)
                     continue
-                raise e
+                raise RetrievalUnavailable(
+                    f"Retrieval failed after {self._max_retries} attempts: {e}"
+                ) from e
 
-        raise RuntimeError("All retrieval attempts failed")
-
-    @tool
-    async def search(
-        self,
-        query_list: Annotated[
-            list[str],
-            "A list of fully-formed semantic queries. The tool will return search results for each query.",
-        ],
-    ) -> ToolResult:
-        """Search Wikipedia for relevant information based on the given query."""
-        return await self.retrieve(query_list)
+        raise RetrievalUnavailable("Retrieval is configured with no attempts")
 
     async def retrieve(self, query_list: list[str]) -> ToolResult:
         """Retrieve these queries in order and format their passages for the model."""

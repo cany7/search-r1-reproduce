@@ -10,8 +10,14 @@ from search_r1 import offline_eval, train
 from search_r1.backends.completers import TokensWithLogprobs
 from search_r1.env import search_env
 from search_r1.env.renderers.base import Message, ParseTermination, ToolCall
+from search_r1.env.rollout import do_single_rollout
 from search_r1.env.search_tool_env import build_search_env, search_tool_spec
-from search_r1.env.tools import BM25Tool, TextAnswerReward, count_tool_errors
+from search_r1.env.tools import (
+    BM25Tool,
+    RetrievalUnavailable,
+    TextAnswerReward,
+    count_tool_errors,
+)
 from search_r1.eval_config import eval_settings_from_training_config
 
 
@@ -131,7 +137,7 @@ def test_phase_one_executes_all_queries_and_schema_only_loses_one_sentence(backe
     asyncio.run(env.step(search(["a", "b", "c", "d"], ["e"])))
     fetch.assert_has_awaits([call(["a", "b", "c", "d"]), call(["e"])])
     old_spec = search_tool_spec(False)
-    assert old_spec == retriever.search.to_spec()
+    assert old_spec == env._tool_dict["search"].to_spec()
     param = old_spec["parameters"]["properties"]["query_list"]
     assert param["description"] == (
         "A list of fully-formed semantic queries. The tool will return search results for each query."
@@ -207,3 +213,99 @@ def test_training_entrypoint_and_saved_eval_settings(tmp_path, monkeypatch):
     assert eval_settings_from_training_config(snapshot)["limit_search"] is True
     del snapshot["dataset_builder"]["limit_search"]
     assert eval_settings_from_training_config(snapshot)["limit_search"] is False
+
+
+class FailingSession:
+    def __init__(self):
+        self.calls = 0
+        self.closed = False
+
+    def post(self, *args, **kwargs):
+        self.calls += 1
+        raise OSError("Too many open files")
+
+
+def test_exhausted_retries_raise_retrieval_unavailable():
+    retriever = BM25Tool("http://unused", max_retries=3, initial_retry_delay=0)
+    session = FailingSession()
+    retriever._session = session
+    with pytest.raises(RetrievalUnavailable, match="after 3 attempts") as caught:
+        asyncio.run(retriever.retrieve(["q"]))
+    assert session.calls == 3
+    assert isinstance(caught.value.__cause__, OSError)
+
+
+def outage(retriever, monkeypatch):
+    fetch = AsyncMock(side_effect=RetrievalUnavailable("Retrieval failed after 10 attempts"))
+    monkeypatch.setattr(retriever, "_retrieve_with_retry", fetch)
+    return fetch
+
+
+@pytest.mark.parametrize("limit_search", [False, True])
+def test_retrieval_outage_raises_from_step(monkeypatch, limit_search):
+    retriever = BM25Tool("http://unused")
+    fetch = outage(retriever, monkeypatch)
+    env = make_env(retriever, limit_search=limit_search)
+    with pytest.raises(RetrievalUnavailable):
+        asyncio.run(env.step(search(["a"])))
+    fetch.assert_awaited_once_with(["a"])
+
+
+def test_invalid_arguments_still_reach_the_model_as_a_tool_error(monkeypatch):
+    retriever = BM25Tool("http://unused")
+    fetch = outage(retriever, monkeypatch)
+    env = make_env(retriever, limit_search=False)
+    result = asyncio.run(env.step(search("not a list")))
+    fetch.assert_not_awaited()
+    assert not result.episode_done
+    assert count_tool_errors(env.history) == 1
+
+
+def test_training_rollout_fails_on_retrieval_outage(monkeypatch):
+    retriever = BM25Tool("http://unused")
+    outage(retriever, monkeypatch)
+    renderer = Mock()
+    renderer.get_stop_sequences.return_value = [2]
+    renderer.build_generation_prompt.return_value = tinker.ModelInput.from_ints([1])
+    renderer.parse_response.return_value = (search(["a"]), ParseTermination.STOP_SEQUENCE)
+    env = build_search_env(
+        renderer=renderer,
+        search_tool=retriever,
+        initial_messages=[{"role": "user", "content": "question"}],
+        reward_fn=TextAnswerReward(["yes"]),
+        max_turns=5,
+        max_trajectory_tokens=32768,
+        max_generation_tokens=None,
+        context_overflow_reward=-0.1,
+        limit_search=True,
+        example_id="q",
+    )
+    policy = AsyncMock(return_value=TokensWithLogprobs([2], [0.0]))
+    with pytest.raises(RetrievalUnavailable):
+        asyncio.run(do_single_rollout(policy, env))
+    # No further turn is sampled on the failed search.
+    policy.assert_awaited_once()
+
+
+def test_eval_records_a_retrieval_outage_as_an_error(monkeypatch):
+    retriever = BM25Tool("http://unused")
+    outage(retriever, monkeypatch)
+    item = {"id": "q", "question": "Who?", "answer": ["yes"], "data_source": "nq"}
+    renderer = Mock()
+    renderer.get_stop_sequences.return_value = [2]
+    renderer.create_conversation_prefix_with_tools.return_value = []
+    renderer.build_generation_prompt.return_value = tinker.ModelInput.from_ints([1])
+    renderer.parse_response.return_value = (search(["a"]), ParseTermination.STOP_SEQUENCE)
+    record = asyncio.run(
+        offline_eval.evaluate_single_item(
+            item,
+            retriever,
+            AsyncMock(return_value=TokensWithLogprobs([2], [0.0])),
+            renderer,
+            Mock(),
+            offline_eval.CLIConfig(limit_search=False),
+            asyncio.Semaphore(1),
+        )
+    )
+    assert record["id"] == "q" and "RetrievalUnavailable" in record["error"]
+    assert "reward" not in record

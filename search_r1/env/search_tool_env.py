@@ -1,4 +1,4 @@
-"""Per-turn search limits for the second training phase."""
+"""Search environments: unlimited search and per-turn limits for the second training phase."""
 
 from __future__ import annotations
 
@@ -11,7 +11,12 @@ from search_r1.env.message_env import EnvFromMessageEnv, MessageStepResult
 from search_r1.env.renderers.base import Message, Renderer, ToolCall, ToolSpec
 from search_r1.env.tool_dispatch import tool
 from search_r1.env.tool_types import ToolResult
-from search_r1.env.tools import BM25Tool, TextAnswerReward, requested_query_list
+from search_r1.env.tools import (
+    BM25Tool,
+    RetrievalUnavailable,
+    TextAnswerReward,
+    requested_query_list,
+)
 
 # Transition log key set on the terminal step whose reward was replaced. Its value is the
 # reward the shared scorer gave, so rollouts keep both the original and the training reward.
@@ -33,7 +38,51 @@ def is_max_turns_unanswered(result: MessageStepResult) -> bool:
     )
 
 
-class LimitedSearchMessageEnv(AgentToolMessageEnv):
+class SearchMessageEnv(AgentToolMessageEnv):
+    """Every search call runs all of its queries.
+
+    The tool dispatcher answers any tool exception with an error message to the model.
+    A retrieval server that is still down after its retries is not a model error, so
+    ``step`` raises it and the rollout fails instead of continuing on that message.
+    """
+
+    def __init__(
+        self,
+        retriever: BM25Tool,
+        initial_messages: list[Message],
+        reward_fn: TextAnswerReward,
+        max_turns: int,
+    ):
+        self.retriever = retriever
+        self._retrieval_failure: RetrievalUnavailable | None = None
+        super().__init__([self.search], initial_messages, max_turns, reward_fn)
+
+    @tool
+    async def search(
+        self,
+        query_list: Annotated[
+            list[str],
+            "A list of fully-formed semantic queries. The tool will return search results for each query.",
+        ],
+    ) -> ToolResult:
+        """Search Wikipedia for relevant information based on the given query."""
+        return await self.retrieve(query_list)
+
+    async def retrieve(self, query_list: list[str]) -> ToolResult:
+        try:
+            return await self.retriever.retrieve(query_list)
+        except RetrievalUnavailable as failure:
+            self._retrieval_failure = failure
+            raise
+
+    async def step(self, message: Message) -> MessageStepResult:
+        result = await super().step(message)
+        if self._retrieval_failure is not None:
+            raise self._retrieval_failure
+        return result
+
+
+class LimitedSearchMessageEnv(SearchMessageEnv):
     """One search per assistant message, with a fresh budget on the next turn."""
 
     def __init__(
@@ -45,12 +94,11 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
         example_id: str,
         max_turns_unanswered_reward: float | None = None,
     ):
-        self.retriever = retriever
         self.example_id = example_id
         # Training only: terminal reward for episodes that hit max_turns without an answer.
         self.max_turns_unanswered_reward = max_turns_unanswered_reward
         self._executed_queries: list[str] | None = None
-        super().__init__([self.search], initial_messages, max_turns, reward_fn)
+        super().__init__(retriever, initial_messages, reward_fn, max_turns)
 
     @tool
     async def search(
@@ -59,7 +107,7 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
         """Search Wikipedia for relevant information based on the given query."""
         # The tool dispatcher validates the entire argument before invoking this method.
         self._executed_queries = query_list[:3]
-        return await self.retriever.retrieve(self._executed_queries)
+        return await self.retrieve(self._executed_queries)
 
     async def _handle_tool_calls(self, tool_calls: list[ToolCall]) -> list[Message]:
         # Keep the sampled action intact in history. Filter only the dispatch list.
@@ -88,7 +136,7 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
             elif self._executed_queries is None:
                 status = "invalid_arguments"
             else:
-                # The queries reached the retriever. Its tool result records any I/O error.
+                # The retriever returned results: an outage has already raised in step().
                 status = "dispatched"
             records.append(
                 {
@@ -116,7 +164,7 @@ class LimitedSearchMessageEnv(AgentToolMessageEnv):
 
 
 def search_tool_spec(limit_search: bool) -> ToolSpec:
-    search = LimitedSearchMessageEnv.search if limit_search else BM25Tool.search
+    search = LimitedSearchMessageEnv.search if limit_search else SearchMessageEnv.search
     return search.to_spec()
 
 
@@ -146,12 +194,7 @@ def build_search_env(
     else:
         if max_turns_unanswered_reward is not None:
             raise ValueError("max_turns_unanswered_reward requires limit_search=True")
-        message_env = AgentToolMessageEnv(
-            tools=[search_tool.search],
-            initial_messages=initial_messages,
-            reward_fn=reward_fn,
-            max_turns=max_turns,
-        )
+        message_env = SearchMessageEnv(search_tool, initial_messages, reward_fn, max_turns)
     return EnvFromMessageEnv(
         renderer=renderer,
         message_env=message_env,
