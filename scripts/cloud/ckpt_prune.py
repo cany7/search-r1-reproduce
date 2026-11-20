@@ -4,6 +4,12 @@ Kept:
 - the full state at every eval step (needed later to evaluate the chosen checkpoint on the
   test set, or to resume from it);
 - the latest full state (needed to resume).
+- every parent-owned archive, including aliases/duplicate index entries.
+
+New full-state records must declare owner="child" or owner="parent". If any
+full-state record has unknown ownership, skip pruning the entire index. Legacy
+forks copied parent records without attribution, so their ownership cannot be
+inferred safely from batch numbers or model IDs. Sampler-only records are ignored.
 
 Deleted:
 - other full states (the periodic saves between eval steps, kept only as crash insurance);
@@ -21,11 +27,16 @@ from pathlib import Path
 
 def state_file(ckpt_base: Path, state_path: str) -> Path:
     """tinker://<model>/weights/<name> -> <ckpt_base>/<model>/<name>.tar.gz"""
+    if not state_path.startswith("tinker://"):
+        raise ValueError(f"unexpected state path: {state_path}")
     rest = state_path.removeprefix("tinker://")
     model, _, name = rest.partition("/weights/")
-    if not model or not name or "/" in name:
+    if any(not part or part in (".", "..") or "/" in part or "\\" in part for part in (model, name)):
         raise ValueError(f"unexpected state path: {state_path}")
-    return ckpt_base / model / f"{name}.tar.gz"
+    result = (ckpt_base / model / f"{name}.tar.gz").resolve()
+    if not result.is_relative_to(ckpt_base.resolve()):
+        raise ValueError(f"state archive is outside checkpoint root: {state_path}")
+    return result
 
 
 def plan(records: list[dict], eval_steps: set[int]) -> tuple[list[dict], list[dict]]:
@@ -33,12 +44,20 @@ def plan(records: list[dict], eval_steps: set[int]) -> tuple[list[dict], list[di
     records = [r for r in records if r.get("state_path")]
     if not records:
         return [], []
+    if any(r.get("owner") not in ("parent", "child") for r in records):
+        return records, []
+    children = [r for r in records if r["owner"] == "child"]
+    if not children:
+        return records, []
     canonical: dict[int, dict] = {}
-    for r in records:  # later records win, matching how the cookbook picks the last one
+    for r in children:  # Last complete record at a step wins.
         canonical[r["batch"]] = r
-    latest_batch = records[-1]["batch"]
+    latest_batch = children[-1]["batch"]
     keep, delete = [], []
     for r in records:
+        if r["owner"] == "parent":
+            keep.append(r)
+            continue
         is_canonical = canonical[r["batch"]] is r
         if is_canonical and (r["batch"] in eval_steps or r["batch"] == latest_batch):
             keep.append(r)
@@ -57,13 +76,17 @@ def main() -> int:
 
     eval_steps = {int(s) for s in args.eval_steps.split(",") if s}
     records = [json.loads(line) for line in args.checkpoints_jsonl.open() if line.strip()]
+    if any(r.get("state_path") and r.get("owner") not in ("parent", "child") for r in records):
+        print("skip automatic pruning: full-state ownership is unknown (legacy index)")
+        return 0
     keep, delete = plan(records, eval_steps)
     keep_files = {state_file(args.ckpt_base, r["state_path"]) for r in keep}
+    # Resolve and validate the entire plan before deleting any file.
+    delete_files = [(r, state_file(args.ckpt_base, r["state_path"])) for r in delete]
 
     for r in keep:
         print(f"keep   step {r['batch']:>4} {r['name']:<8} {r['state_path']}")
-    for r in delete:
-        f = state_file(args.ckpt_base, r["state_path"])
+    for r, f in delete_files:
         if f in keep_files:  # never delete a file a kept record points to
             continue
         action = "would delete" if args.dry_run else "delete"
