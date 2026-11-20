@@ -11,9 +11,9 @@ from scripts.cloud import log_monitor_metrics as monitor
 from scripts.cloud import stage3_ops as ops
 from search_r1 import train_dapo as dapo
 from search_r1.backends.completers import TokensWithLogprobs
-from search_r1.env.search_env import SearchRLDataset
+from search_r1.env.search_env import SearchR1DatasetBuilder, SearchRLDataset
 from search_r1.env.types import TrajectoryGroup
-from search_r1.training import sampling
+from search_r1.training import runtime, sampling
 
 ROOT = Path(__file__).resolve().parents[1]
 PARENT_URI = "tinker://model_parent/weights/final"
@@ -30,7 +30,9 @@ def parent_run(tmp_path):
     config = json.loads(source.read_text())
     config["dataset_builder"]["limit_search"] = True
     config["wandb_project"] = None
-    config["sampling_mode"] = "ordinary"  # New ordinary snapshots must still fork into dynamic mode.
+    config["sampling_mode"] = (
+        "ordinary"  # New ordinary snapshots must still fork into dynamic mode.
+    )
     (parent / "config.json").write_text(json.dumps(config))
     write_jsonl(
         parent / "checkpoints.jsonl", [{"batch": 100, "name": "final", "state_path": PARENT_URI}]
@@ -102,6 +104,10 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
         def __init__(self, step, name):
             self.step, self.name = step, name
 
+        async def load_state_with_optimizer(self, uri):
+            loaded.append(uri)
+            self.step = archives[uri]
+
         async def forward_backward(self, data, loss_fn, loss_fn_config):
             assert len(data) == 64 * 8
             assert loss_fn == "importance_sampling"
@@ -137,24 +143,24 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
         def __exit__(self, *args):
             pass
 
-        async def create_training_client_from_state_with_optimizer(self, uri, **kwargs):
-            loaded.append(uri)
-            return Client(archives[uri], f"model_{len(loaded)}")
+        async def create_lora_training_client(self, model, **kwargs):
+            return Client(0, f"model_{len(loaded) + 1}")
 
-    monkeypatch.setattr(dapo, "patch_create_from_state", lambda *args: None)
-    monkeypatch.setattr(dapo.tinker, "ServiceClient", Service)
+    monkeypatch.setattr(runtime.tinker, "ServiceClient", Service)
     monkeypatch.setattr(
-        dapo.checkpoint_utils, "check_renderer_name_for_checkpoint_async", AsyncMock()
+        runtime.tinker_backend,
+        "get_renderer_name_from_checkpoint_async",
+        AsyncMock(return_value=None),
     )
-    monkeypatch.setattr(dapo, "fetch_model_pricing", lambda model: None)
-    monkeypatch.setattr(dapo.SearchR1DatasetBuilder, "__call__", make_dataset)
+    monkeypatch.setattr(runtime, "fetch_model_pricing", lambda model: None)
+    monkeypatch.setattr(SearchR1DatasetBuilder, "__call__", make_dataset)
     monkeypatch.setattr(sampling, "sample_group", rollout)
 
     smoke = tmp_path / "s3-smoke"
     formal = tmp_path / "s3"
     for child, target in [(smoke, 102), (smoke, 103), (formal, 101)]:
-        config, resume, offset = dapo.load_run(parent, child, target, 1, 8)
-        asyncio.run(dapo.run(config, resume, offset))
+        config = dapo.build_config(parent, child, target, 1, 8, 100)
+        asyncio.run(runtime.main(config))
         ops.verify(parent, child, target)
 
     assert loaded == [PARENT_URI, "tinker://model_1/weights/final", PARENT_URI]
@@ -207,7 +213,9 @@ def test_foreign_child_index_rejected(tmp_path):
     with pytest.raises(ValueError):
         ops.own_records(child, PARENT_URI)
     with pytest.raises(ValueError):
-        dapo.load_run(parent, child, 112, 5, 8)
+        from search_r1.training.checkpoints import prepare_run
+
+        prepare_run(dapo.build_config(parent, child, 112, 5, 8, 100), SearchRLDataset([], 64))
 
 
 def test_disk_plan_uses_real_free_space_and_existing_saves(tmp_path, monkeypatch):

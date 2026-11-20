@@ -4,13 +4,14 @@
 # See third_party/tinker_cookbook/ for license and source mapping.
 """Shared synchronous loop: collect → prepare/update → publish → log/save.
 
-Checkpoint and logger objects are supplied by the temporary runtime adapter.
+Checkpoint and logger objects are supplied by the run that owns the output directory.
 This module and all computation it invokes are independent of cookbook.
 """
 
 import asyncio
 import json
 import math
+import os
 from contextlib import aclosing
 from dataclasses import asdict
 from pathlib import Path
@@ -70,7 +71,7 @@ async def run_updates(
         )
         state.update(checkpoint_fields or {})
         # All iteration trajectories/datums leave scope before the next collection.
-        # Full state follows published records; stage 5 adds ownership/fork validation.
+        # The full index record is the commit point for this iteration.
         if step + 1 == end_step:
             await manager.save_final_async(loop_state=state)
         elif config.save_every and (step + 1) % config.save_every == 0:
@@ -135,10 +136,12 @@ async def _run_iteration(config, dataset, step, end_step, offset, sampler, clien
             batch_metrics = batch.metrics()
             result = await update_groups(client, config, selected_groups)
         else:
-            builders = list(dataset.get_batch(step % len(dataset)))
+            if offset == len(dataset) * dataset.batch_size:
+                offset = 0
+            builders = list(dataset.get_batch(offset // dataset.batch_size))
             if len(builders) != dataset.batch_size:
                 raise ValueError("Ordinary sampling requires a complete fixed batch")
-            next_offset = ((step % len(dataset)) + 1) * dataset.batch_size
+            next_offset = offset + dataset.batch_size
             if config.stream_minibatch_config is None:
                 groups = await wave(builders)
                 kept = (
@@ -187,6 +190,9 @@ async def _run_iteration(config, dataset, step, end_step, offset, sampler, clien
 
                 async with aclosing(minibatches()) as stream:
                     result = await update_stream(client, config, stream)
+        if config.rollout_json_export:
+            output.flush()
+            os.fsync(output.fileno())
     if result.sampler is not None:
         sampler = result.sampler
     offset = next_offset
@@ -195,6 +201,7 @@ async def _run_iteration(config, dataset, step, end_step, offset, sampler, clien
     )
     metrics.update(result.metrics)
     metrics.update(costs.record_step(rollout_usage(selected_groups) + training_usage(result.data)))
+    metrics.update(costs.cumulative_metrics())
     metrics.update(batch_metrics)
     discarded_tokens = costs.discarded.sampled - discarded_before
     metrics.update(

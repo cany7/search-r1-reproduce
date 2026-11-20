@@ -192,7 +192,7 @@ def test_unlimited_search_rejects_the_option(retriever):
 
 def test_config_records_the_value_and_eval_keeps_the_original_score(tmp_path, monkeypatch, retriever):
     run_training = AsyncMock()
-    monkeypatch.setattr("search_r1.training.legacy_runtime.main", run_training)
+    monkeypatch.setattr("search_r1.training.runtime.main", run_training)
     monkeypatch.setattr(
         search_env,
         "download_search_r1_dataset",

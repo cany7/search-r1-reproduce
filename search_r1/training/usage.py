@@ -4,7 +4,11 @@
 # See third_party/tinker_cookbook/ for license and source mapping.
 from __future__ import annotations
 
+import json
+import logging
+import urllib.request
 from dataclasses import asdict, dataclass
+from functools import cache
 
 TOKENS_PER_MILLION = 1_000_000
 
@@ -48,6 +52,27 @@ class TokenCostRates:
             + usage.sampled * self.sample_usd_per_million
             + usage.trained * self.train_usd_per_million
         ) / TOKENS_PER_MILLION
+
+
+@cache
+def fetch_model_pricing(model_name: str) -> TokenCostRates | None:
+    """Best-effort hosted pricing. Unlisted models still report all token counts."""
+    url = "https://tinker-docs.thinkingmachines.ai/tinker/models.json"
+    request = urllib.request.Request(url, headers={"User-Agent": "search-r1"})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            rows = json.load(response)
+        for row in rows:
+            if row.get("tinker_id") == model_name:
+                return TokenCostRates(
+                    *(
+                        float(str(row[k]).strip().lstrip("$").replace(",", ""))
+                        for k in ("prefill", "cached_prefill", "sample", "train")
+                    )
+                )
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+        logging.getLogger(__name__).warning("Could not read model pricing: %s", exc)
+    return None
 
 
 class CostTracker:

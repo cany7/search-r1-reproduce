@@ -65,8 +65,12 @@ class CLIConfig:
 
     behavior_if_log_dir_exists: Literal["ask", "delete", "resume", "raise"] = "ask"
 
+    parent_run: str | None = None
+    parent_step: int | None = None
     max_steps: int | None = None
 
+    load_checkpoint_path: str | None = None  # Initialize weights only, with a fresh optimizer.
+
     # Resume via create-LoRA-client + load_state, which the self-hosted SkyRL server
-    # (tinker 0.27 protocol) accepts. See search_r1/skyrl_compat.py.
+    # (tinker 0.27 protocol) accepts. See backends/tinker_backend.py.
     skyrl_compat: bool = True

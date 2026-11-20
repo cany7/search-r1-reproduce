@@ -1,4 +1,4 @@
-"""Explicit SDK operations used by evaluation; no cookbook or global SDK patches."""
+"""Explicit SDK operations used by evaluation and training; no cookbook or global SDK patches."""
 
 import logging
 from dataclasses import dataclass, field
@@ -36,9 +36,26 @@ class TinkerEvaluationPolicy(TinkerTokenCompleter):
         await close_service(self.service_client, status)
 
 
-async def load_training_client(service, state_path, model_name, lora_rank, *, with_optimizer=False):
+async def load_training_client(
+    service,
+    state_path,
+    model_name,
+    lora_rank,
+    *,
+    with_optimizer=False,
+    skyrl_compat=True,
+    user_metadata=None,
+):
     """SkyRL accepts create-client then load-state, including its older Tinker protocol."""
-    client = await service.create_lora_training_client(model_name, rank=lora_rank)
+    metadata = {"user_metadata": user_metadata} if user_metadata is not None else {}
+    if not skyrl_compat:
+        create = (
+            service.create_training_client_from_state_with_optimizer
+            if with_optimizer
+            else service.create_training_client_from_state
+        )
+        return await create(state_path, **metadata)
+    client = await service.create_lora_training_client(model_name, rank=lora_rank, **metadata)
     if with_optimizer:
         await client.load_state_with_optimizer(state_path)
     else:

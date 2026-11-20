@@ -1,4 +1,4 @@
-# Cookbook source provenance — stages 3–4
+# Cookbook source provenance — stages 3–5
 
 Source repository: https://github.com/thinking-machines-lab/tinker-cookbook
 
@@ -37,7 +37,15 @@ Stage 4 also verified the installed bytes against the same pinned checkout for `
 | training/sampling.py | rl/rollouts.py; existing project train_dapo.py | Local fail-fast group creation/grading/cleanup and task draining; preserve project dynamic refill selection/cursor |
 | training/metrics.py | rl/metric_util.py; rl/metrics.py; rl/train.py | Extract trajectory metrics, sample/train KL and usage counts; omit evaluators and reference/post-KL requests |
 | training/records.py | rl/rollout_logging.py | Retain JSON-safe rollout serialization and historical schema; local types; omit store/deprecated write wrappers |
-| training/usage.py | utils/cost_estimation.py | Retain token/rate value types and accounting; omit pricing network helper from local computation modules |
+| training/usage.py | utils/cost_estimation.py | Token/rate value types, accounting and a best-effort cached pricing lookup |
 | training/utils.py | utils/misc_utils.py | Retain strict zip, equality, means and linspace split; omit unrelated helpers |
 
-No complete cookbook package is vendored. Evaluation and training computation now use local implementations. A temporary startup/checkpoint/logging adapter still imports cookbook auxiliary modules; complete dependency removal is deferred. See [REFACTOR_STATUS.md](../../docs/REFACTOR_STATUS.md) for the tested scope, deliberate behavior differences and remaining work.
+Stage 5 verified the installed bytes of `checkpoint_utils.py`, `cli_utils.py`, `utils/ml_log.py` and `utils/cost_estimation.py` against the same pinned Git objects.
+
+| Local file under search_r1/ | Upstream source | Local changes |
+|---|---|---|
+| training/checkpoints.py | checkpoint_utils.py, cli_utils.py | Preserve full-state and sampler save names, TTLs and directory options. Add a shared lock, immutable fork source, cursor validation and atomic local records. |
+| training/logging.py | utils/ml_log.py | Preserve the online W&B identity file and event-step convention. Use run-scoped calls, a separate identity for forks and local JSONL replay. |
+| training/usage.py | utils/cost_estimation.py | Read the four published price fields with a cached best-effort lookup at training startup. |
+
+Both training entry points and evaluation use local implementations. The installation dependency and clean-environment checks are scheduled for stage 7. See [REFACTOR_STATUS.md](../../docs/REFACTOR_STATUS.md).

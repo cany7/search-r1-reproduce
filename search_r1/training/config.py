@@ -7,6 +7,8 @@ from typing import Any, Literal
 
 import chz
 
+from search_r1.env.search_env import SearchR1DatasetBuilder
+from search_r1.env.tools import RetrievalConfig
 from search_r1.env.types import RLDatasetBuilder
 
 
@@ -55,12 +57,28 @@ class Config:
     num_groups_to_log: int = 4
     rollout_json_export: bool = True
     num_epochs: int = 1
+    parent_run: str | None = None
+    parent_step: int | None = None
     max_steps: int | None = None
     sampling_mode: Literal["ordinary", "dynamic"] = "ordinary"
     max_sampling_rounds: int = 8
 
+    skyrl_compat: bool = True
+
     def validate(self):
         """Reject unsupported framework options before any resource is created."""
+        if (self.parent_run is None) != (self.parent_step is None):
+            raise ValueError("Specify parent_run and parent_step together")
+        if self.parent_run is not None and not self.parent_run.strip():
+            raise ValueError("parent_run must name a directory")
+        if self.load_checkpoint_path is not None and not self.load_checkpoint_path.strip():
+            raise ValueError("load_checkpoint_path must name a weights checkpoint")
+        if self.parent_step is not None and (
+            type(self.parent_step) is not int or self.parent_step < 0 or self.load_checkpoint_path
+        ):
+            raise ValueError(
+                "A fork needs a nonnegative parent_step and no weights-only initializer"
+            )
         if self.async_config is not None:
             raise ValueError("async_config is unsupported; use synchronous sampling")
         for name in (
@@ -104,3 +122,18 @@ class Config:
                 )
             if size % (self.num_substeps * stream.num_minibatches):
                 raise ValueError("batch_size must be divisible by substeps * num_minibatches")
+
+
+def from_snapshot(snapshot):
+    """Rebuild the saved recipe with historical defaults, ignoring run metadata."""
+    builder = dict(snapshot["dataset_builder"])
+    builder["retrieval_config"] = RetrievalConfig(**builder.get("retrieval_config", {}))
+    values = {k: v for k, v in snapshot.items() if k in chz.chz_fields(Config)}
+    values["dataset_builder"] = SearchR1DatasetBuilder(**builder)
+    if values.get("stream_minibatch_config") is not None:
+        values["stream_minibatch_config"] = StreamMinibatchConfig(
+            **values["stream_minibatch_config"]
+        )
+    if "sampling_mode" not in values and snapshot.get("parent_state_path"):
+        values["sampling_mode"] = "dynamic"
+    return Config(**values)

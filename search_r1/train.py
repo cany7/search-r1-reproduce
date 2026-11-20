@@ -12,7 +12,7 @@ from search_r1.config import CLIConfig
 from search_r1.env import renderers as model_info
 from search_r1.env.search_env import SearchR1DatasetBuilder
 from search_r1.env.tools import RetrievalConfig
-from search_r1.skyrl_compat import patch_create_from_state
+from search_r1.training import runtime
 from search_r1.training.config import Config as TrainingConfig
 from search_r1.training.config import StreamMinibatchConfig
 
@@ -58,9 +58,9 @@ def build_config(cli_config: CLIConfig) -> TrainingConfig:
 
     # Build run name
     model_name_short = cli_config.model_name.lower().replace("/", "-")
-    date_and_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    date_and_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     run_name = (
-        f"search_r1_{model_name_short}_{bs_str}_gs{cli_config.group_size}_"
+        f"search_r1_{cli_config.sampling_mode}_{model_name_short}_{bs_str}_gs{cli_config.group_size}_"
         f"seed{cli_config.seed}_lr{cli_config.learning_rate}_"
         f"rank{cli_config.lora_rank}_{date_and_time}"
     )
@@ -97,6 +97,10 @@ def build_config(cli_config: CLIConfig) -> TrainingConfig:
         lora_rank=cli_config.lora_rank,
         stream_minibatch_config=stream_minibatch_config,
         max_steps=cli_config.max_steps,
+        parent_run=cli_config.parent_run,
+        parent_step=cli_config.parent_step,
+        load_checkpoint_path=cli_config.load_checkpoint_path,
+        skyrl_compat=cli_config.skyrl_compat,
         num_substeps=cli_config.num_substeps,
         sampling_mode=cli_config.sampling_mode,
         max_sampling_rounds=cli_config.max_sampling_rounds,
@@ -110,17 +114,7 @@ def build_config(cli_config: CLIConfig) -> TrainingConfig:
 async def cli_main(cli_config: CLIConfig) -> None:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
     config = build_config(cli_config)
-    # Only legacy startup/log-dir behavior remains upstream until stage 5.
-    from tinker_cookbook import cli_utils
-
-    from search_r1.training.legacy_runtime import main
-
-    cli_utils.check_log_dir(
-        config.log_path, behavior_if_exists=cli_config.behavior_if_log_dir_exists
-    )
-    if cli_config.skyrl_compat:
-        patch_create_from_state(cli_config.model_name, cli_config.lora_rank)
-    await main(config)
+    await runtime.main(config, behavior=cli_config.behavior_if_log_dir_exists)
 
 
 if __name__ == "__main__":

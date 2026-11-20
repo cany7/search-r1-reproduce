@@ -173,7 +173,7 @@ def test_eval_records_requested_and_dispatched_calls_without_changing_the_score(
 
 def test_training_entrypoint_and_saved_eval_settings(tmp_path, monkeypatch):
     run_training = AsyncMock()
-    monkeypatch.setattr("search_r1.training.legacy_runtime.main", run_training)
+    monkeypatch.setattr("search_r1.training.runtime.main", run_training)
     monkeypatch.setattr(
         search_env,
         "download_search_r1_dataset",
