@@ -7,14 +7,15 @@ from unittest.mock import AsyncMock, Mock
 import chz
 import pytest
 import tinker
-from tinker_cookbook.completers import TokensWithLogprobs
-from tinker_cookbook.renderers.base import Message, ParseTermination, ToolCall, UnparsedToolCall
-from tinker_cookbook.rl.types import Trajectory, Transition
 
-from search_r1 import offline_eval, search_env, train
+from search_r1 import offline_eval, train
+from search_r1.backends.completers import TokensWithLogprobs
+from search_r1.env import search_env
+from search_r1.env.renderers.base import Message, ParseTermination, ToolCall, UnparsedToolCall
+from search_r1.env.search_tool_env import MAX_TURNS_UNANSWERED_LOG, build_search_env
+from search_r1.env.tools import BM25Tool, TextAnswerReward
+from search_r1.env.types import Trajectory, Transition
 from search_r1.eval_config import eval_settings_from_training_config
-from search_r1.search_tool_env import MAX_TURNS_UNANSWERED_LOG, build_search_env
-from search_r1.tools import BM25Tool, TextAnswerReward
 
 CAP = -0.3
 

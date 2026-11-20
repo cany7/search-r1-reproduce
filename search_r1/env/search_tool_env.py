@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 from typing import Annotated
 
-from tinker_cookbook.renderers.base import Message, Renderer, ToolCall, ToolSpec
-from tinker_cookbook.rl import types
-from tinker_cookbook.rl.message_env import EnvFromMessageEnv, MessageStepResult
-from tinker_cookbook.tool_use import AgentToolMessageEnv, ToolResult, tool
-
-from search_r1.tools import BM25Tool, TextAnswerReward, requested_query_list
+from search_r1.env import types
+from search_r1.env.agent_tool_env import AgentToolMessageEnv
+from search_r1.env.message_env import EnvFromMessageEnv, MessageStepResult
+from search_r1.env.renderers.base import Message, Renderer, ToolCall, ToolSpec
+from search_r1.env.tool_dispatch import tool
+from search_r1.env.tool_types import ToolResult
+from search_r1.env.tools import BM25Tool, TextAnswerReward, requested_query_list
 
 # Transition log key set on the terminal step whose reward was replaced. Its value is the
 # reward the shared scorer gave, so rollouts keep both the original and the training reward.

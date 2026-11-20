@@ -5,13 +5,14 @@ from unittest.mock import AsyncMock, Mock, call
 import chz
 import pytest
 import tinker
-from tinker_cookbook.completers import TokensWithLogprobs
-from tinker_cookbook.renderers.base import Message, ParseTermination, ToolCall
 
-from search_r1 import offline_eval, search_env, train
+from search_r1 import offline_eval, train
+from search_r1.backends.completers import TokensWithLogprobs
+from search_r1.env import search_env
+from search_r1.env.renderers.base import Message, ParseTermination, ToolCall
+from search_r1.env.search_tool_env import build_search_env, search_tool_spec
+from search_r1.env.tools import BM25Tool, TextAnswerReward, count_tool_errors
 from search_r1.eval_config import eval_settings_from_training_config
-from search_r1.search_tool_env import build_search_env, search_tool_spec
-from search_r1.tools import BM25Tool, TextAnswerReward, count_tool_errors
 
 
 def search(*lists: object) -> Message:

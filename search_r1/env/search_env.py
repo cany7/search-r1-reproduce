@@ -9,9 +9,18 @@ from typing import Literal, TypedDict, cast
 import chz
 import pandas as pd
 from huggingface_hub import hf_hub_download
-from tinker_cookbook import model_info, tokenizer_utils
-from tinker_cookbook.renderers.base import Message, Renderer
-from tinker_cookbook.rl.types import (
+
+from search_r1.env import renderers as model_info
+from search_r1.env import tokenizer as tokenizer_utils
+from search_r1.env.renderers import get_renderer
+from search_r1.env.renderers.base import Message, Renderer
+from search_r1.env.search_tool_env import (
+    MAX_TURNS_UNANSWERED_LOG,
+    build_search_env,
+    search_tool_spec,
+)
+from search_r1.env.tools import BM25Tool, RetrievalConfig, TextAnswerReward
+from search_r1.env.types import (
     Env,
     EnvGroupBuilder,
     Metrics,
@@ -20,17 +29,9 @@ from tinker_cookbook.rl.types import (
     Trajectory,
 )
 
-from search_r1.renderers import get_renderer
-from search_r1.search_tool_env import (
-    MAX_TURNS_UNANSWERED_LOG,
-    build_search_env,
-    search_tool_spec,
-)
-from search_r1.tools import BM25Tool, RetrievalConfig, TextAnswerReward
-
 # Project data directory (datasets, index, corpus). Override with SEARCH_R1_DATA_DIR.
 DATA_DIR = Path(
-    os.environ.get("SEARCH_R1_DATA_DIR", Path(__file__).resolve().parent.parent / "data")
+    os.environ.get("SEARCH_R1_DATA_DIR", Path(__file__).resolve().parents[2] / "data")
 )
 DEFAULT_RETRIEVAL_URL = "http://127.0.0.1:8001"
 

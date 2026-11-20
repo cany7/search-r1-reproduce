@@ -19,7 +19,7 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from search_r1.tools import normalize_answer
+from search_r1.env.tools import normalize_answer
 
 
 def gold_in_question(record: dict) -> bool:

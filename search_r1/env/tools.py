@@ -12,9 +12,11 @@ from typing import Annotated, Literal
 
 import aiohttp
 import chz
-from tinker_cookbook.renderers import get_text_content
-from tinker_cookbook.renderers.base import Message, ToolCall
-from tinker_cookbook.tool_use import ToolResult, simple_tool_result, tool
+
+from search_r1.env.renderers import get_text_content
+from search_r1.env.renderers.base import Message, ToolCall
+from search_r1.env.tool_dispatch import simple_tool_result, tool
+from search_r1.env.tool_types import ToolResult
 
 
 def normalize_answer(s: str) -> str:

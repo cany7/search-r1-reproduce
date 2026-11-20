@@ -5,9 +5,11 @@ Run `uv run python scripts/check_render.py` without starting inference or retrie
 
 from typing import Annotated
 
-from tinker_cookbook import model_info, tokenizer_utils
-from tinker_cookbook.renderers import get_renderer
-from tinker_cookbook.tool_use import ToolResult, simple_tool_result, tool
+from search_r1.env import renderers as model_info
+from search_r1.env import tokenizer as tokenizer_utils
+from search_r1.env.renderers import get_renderer
+from search_r1.env.tool_dispatch import simple_tool_result, tool
+from search_r1.env.tool_types import ToolResult
 
 CONFIGS = [
     ("Qwen/Qwen3.5-4B", "qwen3_5_disable_thinking"),

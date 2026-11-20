@@ -18,8 +18,8 @@ from pathlib import Path
 
 import chz
 
-from search_r1.search_env import SearchR1Datum, download_search_r1_dataset
-from search_r1.tools import normalize_answer
+from search_r1.env.search_env import SearchR1Datum, download_search_r1_dataset
+from search_r1.env.tools import normalize_answer
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 

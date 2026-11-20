@@ -6,12 +6,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 import tinker
-from tinker_cookbook.completers import TokensWithLogprobs
-from tinker_cookbook.rl.types import TrajectoryGroup
 
 from scripts.cloud import log_monitor_metrics as monitor
 from scripts.cloud import stage3_ops as ops
 from search_r1 import train_dapo as dapo
+from search_r1.backends.completers import TokensWithLogprobs
+from search_r1.env.types import TrajectoryGroup
 
 ROOT = Path(__file__).resolve().parents[1]
 PARENT_URI = "tinker://model_parent/weights/final"

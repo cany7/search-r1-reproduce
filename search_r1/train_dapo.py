@@ -19,9 +19,10 @@ from tinker_cookbook.utils import ml_log, trace
 from tinker_cookbook.utils.cost_estimation import CostTracker, TokenUsage, fetch_model_pricing
 from tinker_cookbook.utils.misc_utils import all_same
 
-from search_r1.search_env import SearchR1DatasetBuilder, SearchRLDataset
+from search_r1.env.search_env import SearchRLDataset
+from search_r1.env.tools import RetrievalConfig
 from search_r1.skyrl_compat import patch_create_from_state
-from search_r1.tools import RetrievalConfig
+from search_r1.training.cookbook_bridge import SearchR1DatasetBuilder
 from search_r1.wandb_compat import persistent_wandb_run
 
 START_STEP = 100

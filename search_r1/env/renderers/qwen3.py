@@ -1,0 +1,540 @@
+# Derived from tinker-cookbook/renderers/qwen3.py at 1991897cba59ea9d9b0030d183d1867b28eba9d9.
+# Modified for Search-R1: local imports and a focused text-search API.
+# SPDX-License-Identifier: Apache-2.0
+# License and source mapping: third_party/tinker_cookbook/.
+
+from __future__ import annotations
+
+import copy
+import json
+from typing import cast
+
+import tinker
+from tokenizers import Tokenizer as BackendTokenizer
+
+from search_r1.env.tokenizer import Tokenizer
+
+from .base import (
+    ContentPart,
+    ImagePart,
+    Message,
+    ParseTermination,
+    RenderContext,
+    RenderedMessage,
+    Renderer,
+    RendererError,
+    TextPart,
+    ToolCall,
+    ToolSpec,
+    UnparsedToolCall,
+    _tool_call_payload,
+    detect_unterminated_tool_block,
+    has_thinking,
+    parse_content_blocks,
+    parse_response_for_stop_token,
+    remove_thinking,
+)
+
+
+def _frame_thinking(reasoning: str) -> str:
+    """Frame reasoning the way Qwen3's chat template does."""
+    return "<think>\n" + reasoning.strip("\n") + "\n</think>\n\n"
+
+
+def _unframe_thinking(parts: list[ContentPart]) -> list[ContentPart]:
+    """Reverse `_frame_thinking`, so render -> parse is the identity."""
+    out: list[ContentPart] = []
+    after_block = False
+    for p in parts:
+        if p["type"] == "thinking":
+            reasoning = p["thinking"].strip("\n")
+            if reasoning:
+                out.append({"type": "thinking", "thinking": reasoning})
+            # An empty block is dropped, but the content after it was still lstripped.
+            after_block = True
+        elif p["type"] == "text":
+            out.append(
+                {"type": "text", "text": p["text"].lstrip("\n") if after_block else p["text"]}
+            )
+            after_block = False
+        else:
+            out.append(p)
+            after_block = False
+    return out
+
+
+def _merge_consecutive_text_parts(
+    chunks: list[ImagePart | TextPart],
+) -> list[ImagePart | TextPart]:
+    """Merge consecutive TextParts into single parts."""
+    if not chunks:
+        return chunks
+
+    merged: list[ImagePart | TextPart] = [chunks[0]]
+    for chunk in chunks[1:]:
+        if chunk["type"] == "text" and merged[-1]["type"] == "text":
+            merged[-1] = TextPart(type="text", text=merged[-1]["text"] + chunk["text"])
+        else:
+            merged.append(chunk)
+    return merged
+
+
+def _content_tokenizer(tokenizer: Tokenizer) -> BackendTokenizer:
+    """A private backend tokenizer that encodes special-token text in content literally."""
+    content = cast(BackendTokenizer, copy.deepcopy(tokenizer.backend_tokenizer))
+    content.encode_special_tokens = True
+    return content
+
+
+class Qwen3Renderer(Renderer):
+    """Renderer for Qwen3 models with thinking enabled."""
+
+    supports_streaming = False
+    # The 2507-Instruct variants below do not use the `<think>` tag at all, so they must
+    # not be given the block the template writes around a produced turn.
+    frames_thinking = True
+
+    def _frames_produced_turn(self, message: Message, ctx: RenderContext) -> bool:
+        """Whether to frame this message the way the template frames a produced turn."""
+        if not self.frames_thinking or message["role"] != "assistant":
+            return False
+        if ctx.last_user_index < 0:
+            # The template gates on `loop.index0 > ns.last_query_index`, and that defaults to
+            # the final index when no user message exists -- so a conversation without one is
+            # never framed, however it ends.
+            return False
+        return ctx.is_last or not self.strip_thinking_from_history
+
+    def __init__(self, tokenizer: Tokenizer, strip_thinking_from_history: bool = True):
+        """Args:"""
+        super().__init__(tokenizer)
+        self.strip_thinking_from_history = strip_thinking_from_history
+        self._content_tokenizer = _content_tokenizer(tokenizer)
+
+    @property
+    def has_extension_property(self) -> bool:
+        """Extension property depends on strip_thinking_from_history setting."""
+        return not self.strip_thinking_from_history
+
+    def _get_qwen_role_for_message(self, message: Message) -> str:
+        """Get the role to use for rendering a message in Qwen format."""
+        role = message["role"]
+        if role == "tool":
+            return "user"
+        return role
+
+    def _wrap_qwen_tool_response(self, content: str) -> str:
+        """Wrap tool response content in Qwen's <tool_response> tags."""
+        return f"<tool_response>\n{content}\n</tool_response>"
+
+    def render_message(self, message: Message, ctx: RenderContext) -> RenderedMessage:
+        """Render a chat message into Qwen3 ``<|im_start|>``/``<|im_end|>`` token chunks."""
+        maybe_newline = "\n" if ctx.idx > 0 else ""
+
+        role = self._get_qwen_role_for_message(message)
+        header_str = f"{maybe_newline}<|im_start|>{role}\n"
+
+        content = message["content"]
+        frames = self._frames_produced_turn(message, ctx)
+        has_reasoning = has_thinking(content)
+
+        if isinstance(content, list):
+            # Structured content - handle with list operations
+            parts = content
+            if (
+                self.strip_thinking_from_history
+                and message["role"] == "assistant"
+                and not ctx.is_last
+            ):
+                # Remove thinking parts for historical messages
+                parts = remove_thinking(parts)
+            # Render parts in order, preserving interleaved thinking/text structure.
+            # No separator needed - whitespace is preserved in TextPart for roundtrip identity.
+            rendered_parts = []
+            after_block = False
+            for p in parts:
+                if p["type"] == "thinking":
+                    rendered_parts.append(
+                        _frame_thinking(p["thinking"])
+                        if frames
+                        else f"<think>{p['thinking']}</think>"
+                    )
+                    after_block = frames
+                elif p["type"] == "text":
+                    # `content.lstrip('\n')` from template line 44: the block has just
+                    # written the padding, so content must not add its own.
+                    rendered_parts.append(p["text"].lstrip("\n") if after_block else p["text"])
+                    after_block = False
+            output_content = "".join(rendered_parts)
+        elif frames and "</think>" in content:
+            # An inline block in string content is normalized the way the template
+            # normalizes it, so `<think>\n\n</think>\nx` and `<think>\n\n</think>\n\nx`
+            # both render as the latter rather than passing through as written.
+            reasoning, _, rest = content.partition("</think>")
+            output_content = _frame_thinking(reasoning.rpartition("<think>")[2]) + rest.lstrip("\n")
+        else:
+            # String content - pass through as-is.
+            # Note: strip_thinking_from_history only works with list-based content.
+            # For stripping to work on historical messages, use structured content
+            # with ThinkingPart separated from text (as returned by parse_response).
+            output_content = content
+
+        # The template's `content` is the message's own text, and the separator below asks
+        # about that -- not about the empty block, which is framing the template writes
+        # itself. Captured before the block is prepended.
+        has_text = bool(output_content)
+
+        # The template opens the block on the turn being produced whether or not it
+        # reasoned, so a turn that did not reason still gets an empty one -- whatever
+        # shape its content arrived in.
+        if frames and not has_reasoning:
+            output_content = _frame_thinking("") + output_content.lstrip("\n")
+
+        # Handle tool response wrapping
+        if message["role"] == "tool":
+            output_content = self._wrap_qwen_tool_response(output_content)
+
+        # Handle tool_calls field
+        if "tool_calls" in message:
+            # The template separates the calls from the text before them, and from each
+            # other, but writes nothing before the first when there is no text:
+            # `{%- if (loop.first and content) or (not loop.first) %}{{- \'\\n\' }}`.
+            calls = "\n".join(
+                [
+                    f"<tool_call>\n{json.dumps(_tool_call_payload(tool_call))}\n</tool_call>"
+                    for tool_call in message["tool_calls"]
+                ]
+            )
+            output_content += ("\n" if has_text else "") + calls
+        header = tinker.types.EncodedTextChunk(
+            tokens=self.tokenizer.encode(header_str, add_special_tokens=False)
+        )
+        output: list[tinker.ModelInputChunk] = [
+            tinker.types.EncodedTextChunk(
+                tokens=self._content_tokenizer.encode(output_content, add_special_tokens=False).ids
+            ),
+            tinker.types.EncodedTextChunk(tokens=[self._end_message_token]),
+        ]
+        return RenderedMessage(header=header, output=output)
+
+    @property
+    def _end_message_token(self) -> int:
+        tokens = self.tokenizer.encode("<|im_end|>", add_special_tokens=False)
+        assert len(tokens) == 1, f"Expected single token for <|im_end|>, got {len(tokens)}"
+        return tokens[0]
+
+    def get_stop_sequences(self) -> list[int]:
+        """Return stop sequences for Qwen3 generation."""
+        return [self._end_message_token]
+
+    def parse_response(self, response: list[int]) -> tuple[Message, ParseTermination]:
+        """Parse sampled token IDs back into an assistant Message."""
+        response = self._normalize_response_tokens(response)
+        assistant_message, termination = parse_response_for_stop_token(
+            response, self.tokenizer, self._end_message_token
+        )
+        if not termination.is_clean:
+            return assistant_message, termination
+
+        # Parse <think>...</think> and <tool_call>...</tool_call> blocks together
+        # to preserve ordering. Tool calls use Qwen's format:
+        # - https://qwen.readthedocs.io/en/latest/getting_started/concepts.html#tool-calling
+        # - https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py#L279-L282
+        assert isinstance(assistant_message["content"], str)
+        content = assistant_message["content"]
+
+        # Parse all blocks in one pass, preserving order
+        result = parse_content_blocks(content)
+
+        if result is not None:
+            parts, tool_results = result
+            assistant_message["content"] = (
+                _unframe_thinking(parts) if self.frames_thinking else parts
+            )
+
+            tool_calls = [t for t in tool_results if isinstance(t, ToolCall)]
+            unparsed = [t for t in tool_results if isinstance(t, UnparsedToolCall)]
+            if tool_calls:
+                assistant_message["tool_calls"] = tool_calls
+            if unparsed:
+                assistant_message["unparsed_tool_calls"] = unparsed
+        else:
+            # No special blocks found - keep as string for backward compatibility
+            assistant_message["content"] = content
+
+        self._append_unterminated_tool_block(assistant_message, content)
+        return assistant_message, termination
+
+    @staticmethod
+    def _append_unterminated_tool_block(message: Message, content: str) -> None:
+        """Surface a ``<tool_call>`` block that was opened but never closed."""
+        dangling = detect_unterminated_tool_block(content, "<tool_call>", "</tool_call>")
+        if dangling is not None:
+            message["unparsed_tool_calls"] = [
+                *message.get("unparsed_tool_calls", []),
+                dangling,
+            ]
+
+
+
+
+    def create_conversation_prefix_with_tools(
+        self, tools: list[ToolSpec], system_prompt: str = ""
+    ) -> list[Message]:
+        """Create system message with Qwen3 tool specifications."""
+        tools_text = ""
+        if tools:
+            # Each tool is wrapped in {"type": "function", "function": {...}} per OpenAI format
+            # Use separators=(", ", ": ") to match HF's tojson filter output
+            tool_lines = "\n".join(
+                json.dumps(
+                    {"type": "function", "function": tool},
+                    separators=(", ", ": "),
+                )
+                for tool in tools
+            )
+            tools_text = f"""# Tools
+
+You may call one or more functions to assist with the user query.
+
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>
+{tool_lines}
+</tools>
+
+For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{{"name": <function-name>, "arguments": <args-json-object>}}
+</tool_call>"""
+
+        # Add separator between system prompt and tools if system prompt exists
+        if system_prompt:
+            content = system_prompt + "\n\n" + tools_text
+        else:
+            content = tools_text
+
+        return [Message(role="system", content=content)]
+
+
+class Qwen3DisableThinkingRenderer(Qwen3Renderer):
+    """Renderer for Qwen3 hybrid models with thinking disabled."""
+
+    disables_thinking = True
+
+    def render_message(self, message: Message, ctx: RenderContext) -> RenderedMessage:
+        """Refuse a produced turn in a conversation with no user message."""
+        if (
+            message["role"] == "assistant"
+            and ctx.is_last
+            and message.get("content")
+            and ctx.last_user_index < 0
+        ):
+            raise RendererError(
+                "this conversation has no user message, so Qwen3's template writes no empty "
+                "think block on the produced turn -- but the generation prompt always opens "
+                "one. Add a user message, or render with thinking enabled."
+            )
+        return super().render_message(message, ctx)
+
+    def _get_generation_suffix(self, role: str, ctx: RenderContext) -> list[int]:
+        """The empty block is part of the prompt, so sampling starts after it."""
+        maybe_newline = "\n" if ctx.idx > 0 else ""
+        return self.tokenizer.encode(
+            f"{maybe_newline}<|im_start|>{role}\n<think>\n\n</think>\n\n",
+            add_special_tokens=False,
+        )
+
+
+class Qwen3InstructRenderer(Qwen3Renderer):
+    """Renderer for Qwen3 instruct 2507 models. Unlike the earlier Qwen3 models, these models do not"""
+
+    frames_thinking = False
+
+    @property
+    def has_extension_property(self) -> bool:
+        """Qwen3 Instruct always satisfies extension - no thinking to strip from history."""
+        # NOTE: If callers include ThinkingPart in history, Qwen3Renderer may still strip it
+        # when strip_thinking_from_history=True, so extension can break.
+        # This is a rare case that'll only occur if we prompt the instruct model
+        # with a conversation from a different model.
+        return True
+
+
+class Qwen3VLRenderer(Qwen3Renderer):
+    """Vision-language renderer for Qwen3-VL models with thinking support."""
+
+    image_processor: object | None
+
+    # Qwen3.5-family templates keep one <|im_start|>user block open around a run of
+    # consecutive tool responses (gated on loop.previtem/nextitem); Qwen3/Qwen3-VL
+    # templates close each response in its own block.
+    groups_consecutive_tool_responses = False
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        image_processor: object | None = None,
+        strip_thinking_from_history: bool = True,
+        merge_text_chunks: bool = True,
+    ):
+        """Initialize the Qwen3 vision-language renderer."""
+        self.tokenizer = tokenizer
+        self._content_tokenizer = _content_tokenizer(tokenizer)
+        self.image_processor = image_processor
+        self.strip_thinking_from_history = strip_thinking_from_history
+        self.merge_text_chunks = merge_text_chunks
+
+    def _format_thinking_text(self, thinking: str) -> str:
+        """Format a ThinkingPart payload for rendering."""
+        return f"<think>{thinking}</think>"
+
+    def _assistant_header_suffix(self, message: Message, ctx: RenderContext) -> str:
+        """Additional assistant header text injected before content."""
+        return ""
+
+    def _preprocess_message_parts(
+        self, message: Message, *, strip_thinking: bool = False
+    ) -> list[ImagePart | TextPart]:
+        """Convert message content to list form for VL rendering."""
+        content = message["content"]
+        if isinstance(content, str):
+            base_parts: list[ImagePart | TextPart] = [TextPart(type="text", text=content)]
+        else:
+            # Convert structured content to ImagePart/TextPart list
+            base_parts: list[ImagePart | TextPart] = []
+            for p in content:
+                if p["type"] == "text":
+                    base_parts.append(cast(TextPart, p))
+                elif p["type"] == "image":
+                    base_parts.append(cast(ImagePart, p))
+                elif p["type"] == "thinking" and not strip_thinking:
+                    # Render thinking as <think>...</think> text
+                    base_parts.append(
+                        TextPart(type="text", text=self._format_thinking_text(p["thinking"]))
+                    )
+                    # else: strip thinking by not appending
+
+        return self._wrap_image_parts(base_parts)
+
+    def _wrap_image_parts(self, parts: list[ImagePart | TextPart]) -> list[ImagePart | TextPart]:
+        """Wrap each image with ``<|vision_start|>`` and ``<|vision_end|>``."""
+        chunks: list[ImagePart | TextPart] = []
+        for content_chunk in parts:
+            if content_chunk["type"] == "image":
+                chunks.append(TextPart(type="text", text="<|vision_start|>"))
+
+            chunks.append(content_chunk)
+
+            if content_chunk["type"] == "image":
+                chunks.append(TextPart(type="text", text="<|vision_end|>"))
+
+        return chunks
+
+    def _wrap_qwen_tool_response_chunks(
+        self, chunks: list[ImagePart | TextPart]
+    ) -> list[ImagePart | TextPart]:
+        """Wrap content chunks in Qwen's <tool_response> tags for multimodal messages."""
+        return (
+            [TextPart(type="text", text="<tool_response>\n")]
+            + chunks
+            + [TextPart(type="text", text="\n</tool_response>")]
+        )
+
+    def _tool_response_continuation_header(self) -> str:
+        """Separator between consecutive tool responses inside one user block."""
+        return "\n"
+
+    def _strips_thinking_for(self, message: Message, ctx: RenderContext) -> bool:
+        """Whether this message's thinking is stripped from the render."""
+        return (
+            self.strip_thinking_from_history and message["role"] == "assistant" and not ctx.is_last
+        )
+
+    def _format_tool_calls_chunks(self, message: Message) -> list[ImagePart | TextPart]:
+        """Format tool_calls as output chunks. Override in subclasses for different formats."""
+        # Add leading newline to match HF template behavior
+        assert "tool_calls" in message, "tool_calls are required to format tool calls"
+        return [
+            TextPart(
+                type="text",
+                text="\n"
+                + "\n".join(
+                    [
+                        f"<tool_call>\n{json.dumps(_tool_call_payload(tool_call))}\n</tool_call>"
+                        for tool_call in message["tool_calls"]
+                    ]
+                ),
+            )
+        ]
+
+    def render_message(self, message: Message, ctx: RenderContext) -> RenderedMessage:
+        """Render a message with interleaved text and image content for vision-language models."""
+        maybe_newline = "\n" if ctx.idx > 0 else ""
+
+        role = self._get_qwen_role_for_message(message)
+        grouping = self.groups_consecutive_tool_responses
+        prev_is_tool = (
+            grouping and ctx.prev_message is not None and ctx.prev_message["role"] == "tool"
+        )
+        is_tool = message["role"] == "tool"
+        if is_tool and prev_is_tool:
+            # Continuation of a tool-response run: the template keeps the user block
+            # open and writes the next <tool_response> directly.
+            header_str = self._tool_response_continuation_header()
+        else:
+            header_str = f"{maybe_newline}<|im_start|>{role}\n"
+            if message["role"] == "assistant":
+                header_str += self._assistant_header_suffix(message, ctx)
+
+        output_chunks = self._preprocess_message_parts(
+            message, strip_thinking=self._strips_thinking_for(message, ctx)
+        )
+
+        # Handle tool response wrapping
+        if message["role"] == "tool":
+            output_chunks = self._wrap_qwen_tool_response_chunks(output_chunks)
+
+        if "tool_calls" in message:
+            output_chunks += self._format_tool_calls_chunks(message)
+        next_is_tool = (
+            grouping and ctx.next_message is not None and ctx.next_message["role"] == "tool"
+        )
+        if not (is_tool and next_is_tool):
+            # A grouped tool response followed by another tool response leaves the
+            # shared user block open; the final response of the run closes it.
+            output_chunks += [TextPart(type="text", text="<|im_end|>")]
+
+        if self.merge_text_chunks:
+            output_chunks = _merge_consecutive_text_parts(output_chunks)
+
+        output_chunks_encoded: list[tinker.ModelInputChunk] = []
+        for x in output_chunks:
+            if x["type"] == "image":
+                raise ValueError("Search-R1 renderers accept text only")
+            else:
+                output_chunks_encoded.append(
+                    tinker.EncodedTextChunk(
+                        tokens=self.tokenizer.encode(x["text"], add_special_tokens=False)
+                    )
+                )
+
+        prefix_str = self._generation_suffix_in_header(message, ctx)
+        if prefix_str and header_str.startswith(prefix_str):
+            rest = header_str[len(prefix_str) :]
+            if rest:
+                output_chunks_encoded.insert(
+                    0,
+                    tinker.EncodedTextChunk(
+                        tokens=self.tokenizer.encode(rest, add_special_tokens=False)
+                    ),
+                )
+            header_str = prefix_str
+
+        header = tinker.types.EncodedTextChunk(
+            tokens=self.tokenizer.encode(header_str, add_special_tokens=False)
+        )
+        return RenderedMessage(header=header, output=output_chunks_encoded)
+
+    def _generation_suffix_in_header(self, message: Message, ctx: RenderContext) -> str:
+        """How much of this message's header the generation prompt already wrote."""
+        return ""

@@ -3,9 +3,9 @@
 import asyncio
 
 import pytest
-from tinker_cookbook.renderers.base import Message, ToolCall
 
-from search_r1.tools import (
+from search_r1.env.renderers.base import Message, ToolCall
+from search_r1.env.tools import (
     TextAnswerReward,
     compute_f1,
     count_tool_errors,

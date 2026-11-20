@@ -26,19 +26,16 @@ from typing import Any, Literal
 import chz
 import tinker
 from dotenv import load_dotenv
-from tinker_cookbook import checkpoint_utils, tokenizer_utils
-from tinker_cookbook.completers import TinkerTokenCompleter, TokenCompleter
-from tinker_cookbook.renderers import Renderer, get_text_content
-from tinker_cookbook.renderers.base import Message
-from tinker_cookbook.rl.rollouts import do_single_rollout
-from tinker_cookbook.rl.types import StopReason, Trajectory
-from tinker_cookbook.tokenizer_utils import Tokenizer
-from tinker_cookbook.utils.git_rev import recipe_user_metadata
 
-from search_r1.eval_config import eval_settings_from_training_config
-from search_r1.local_completer import OpenAICompletionsTokenCompleter
-from search_r1.renderers import DEFAULT_RENDERER_NAME, get_renderer
-from search_r1.search_env import (
+from search_r1.backends import tinker_backend as checkpoint_utils
+from search_r1.backends.completers import TinkerTokenCompleter, TokenCompleter
+from search_r1.backends.local_completer import OpenAICompletionsTokenCompleter
+from search_r1.backends.tinker_backend import load_training_client
+from search_r1.env import tokenizer as tokenizer_utils
+from search_r1.env.renderers import DEFAULT_RENDERER_NAME, Renderer, get_renderer, get_text_content
+from search_r1.env.renderers.base import Message
+from search_r1.env.rollout import do_single_rollout
+from search_r1.env.search_env import (
     DEFAULT_RETRIEVAL_URL,
     PromptName,
     SearchR1Datum,
@@ -46,9 +43,9 @@ from search_r1.search_env import (
     get_task_instructions,
     search_initial_messages,
 )
-from search_r1.search_tool_env import build_search_env, search_tool_spec
-from search_r1.skyrl_compat import patch_create_from_state
-from search_r1.tools import (
+from search_r1.env.search_tool_env import build_search_env, search_tool_spec
+from search_r1.env.tokenizer import Tokenizer
+from search_r1.env.tools import (
     BM25Tool,
     RetrievalConfig,
     TextAnswerReward,
@@ -56,6 +53,8 @@ from search_r1.tools import (
     extract_search_queries,
     normalize_answer,
 )
+from search_r1.env.types import StopReason, Trajectory
+from search_r1.eval_config import eval_settings_from_training_config
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -377,18 +376,18 @@ async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
         return policy, config.renderer_name
 
     service_client = tinker.ServiceClient(
-        user_metadata=recipe_user_metadata("eval_search_tool_offline"),
+        user_metadata={"recipe_name": "eval_search_tool_offline"},
         base_url=config.tinker_base_url,
     )
     renderer_name = None
+    training_client = None
     if config.tinker_state_url is not None and config.tinker_checkpoint_url is not None:
         raise ValueError("Pass only one of tinker_state_url and tinker_checkpoint_url")
     if config.tinker_state_url is not None:
-        patch_create_from_state(config.base_model, config.lora_rank)
         # SkyRL serves only the weights of a model loaded in the running server, so a
         # checkpoint is evaluated by loading its full state and syncing it to the sampler.
-        training_client = await service_client.create_training_client_from_state(
-            config.tinker_state_url
+        training_client = await load_training_client(
+            service_client, config.tinker_state_url, config.base_model, config.lora_rank
         )
         sampling_client = await training_client.save_weights_and_get_sampling_client()
         renderer_name = await checkpoint_utils.get_renderer_name_from_checkpoint_async(
@@ -408,6 +407,8 @@ async def build_policy(config: CLIConfig) -> tuple[TokenCompleter, str]:
     policy = TinkerTokenCompleter(
         sampling_client, max_tokens=config.max_tokens, temperature=config.temperature
     )
+    policy.service_client = service_client
+    policy.training_client = training_client
     return policy, renderer_name or config.renderer_name
 
 

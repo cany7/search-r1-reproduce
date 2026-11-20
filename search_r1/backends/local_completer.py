@@ -5,10 +5,10 @@ SkyRL Tinker service cannot run. It is not used for training, and scores from it
 do not go into the report: the cloud run re-evaluates the base model through
 Tinker's own sampling client.
 
-The prompt is still produced by the cookbook renderer. This class only moves it
+The prompt is still produced by the project renderer. This class only moves it
 across a text API: prompt tokens are decoded to a string, the server tokenizes
 that string again (verified to give the same ids), and the returned text is
-encoded back to tokens so the cookbook's parser sees what it would see from
+encoded back to tokens so the project's parser sees what it would see from
 Tinker. Log-probabilities are not available.
 """
 
@@ -20,8 +20,9 @@ from dataclasses import dataclass, field
 
 import aiohttp
 import tinker
-from tinker_cookbook.completers import StopCondition, TokenCompleter, TokensWithLogprobs
-from tinker_cookbook.tokenizer_utils import Tokenizer
+
+from search_r1.backends.completers import StopCondition, TokenCompleter, TokensWithLogprobs
+from search_r1.env.tokenizer import Tokenizer
 
 logger = logging.getLogger(__name__)
 
