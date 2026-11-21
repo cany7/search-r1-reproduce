@@ -25,5 +25,16 @@
   "smoke_resume": {
     "completed_updates_before_restart": 102,
     "completed_updates_after_restart": 103
-  }
+  },
+  "evaluation_split_note": "The saved eval_file identifies the evaluated dataset. The original config split field is test even for explicit dev.jsonl inputs.",
+  "evaluation_runs": [
+    {
+      "path": "evaluations/limited-search/dev/step-0105",
+      "original_path": "runs/formal-2026-11-18-s3/eval/search-r1-q35-64x8-s3-step0105-dev",
+      "search_rule": "limited-search",
+      "split": "dev",
+      "checkpoint": "step-0105",
+      "questions": 631
+    }
+  ]
 }

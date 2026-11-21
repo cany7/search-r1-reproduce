@@ -88,5 +88,104 @@
     "step": 100,
     "note": "The final metrics row summarizes the run. Completed update 100 has metrics step 99."
   },
-  "stage_1_rollouts": "Per-update rollout files are unavailable in the local source."
+  "stage_1_rollouts": "Per-update rollout files are unavailable in the local source.",
+  "evaluation_split_note": "The saved eval_file identifies the evaluated dataset. The original config split field is test even for explicit dev.jsonl inputs.",
+  "evaluation_runs": [
+    {
+      "path": "evaluations/original-search/dev/base",
+      "original_path": "runs/formal-2026-11-17/eval/cloud-base-dev",
+      "search_rule": "original-search",
+      "split": "dev",
+      "checkpoint": "base",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/original-search/test/base",
+      "original_path": "runs/formal-2026-11-17/eval/cloud-base-test",
+      "search_rule": "original-search",
+      "split": "test",
+      "checkpoint": "base",
+      "questions": 1894
+    },
+    {
+      "path": "evaluations/original-search/dev/step-0025",
+      "original_path": "runs/formal-2026-11-17/eval/search-r1-q35-64x8-step0025",
+      "search_rule": "original-search",
+      "split": "dev",
+      "checkpoint": "step-0025",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/original-search/test/step-0025",
+      "original_path": "runs/formal-2026-11-17/eval/search-r1-q35-64x8-step0025-test",
+      "search_rule": "original-search",
+      "split": "test",
+      "checkpoint": "step-0025",
+      "questions": 1894
+    },
+    {
+      "path": "evaluations/original-search/dev/step-0050",
+      "original_path": "runs/formal-2026-11-17/eval/search-r1-q35-64x8-step0050",
+      "search_rule": "original-search",
+      "split": "dev",
+      "checkpoint": "step-0050",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/original-search/test/step-0050",
+      "original_path": "runs/formal-2026-11-17/eval/search-r1-q35-64x8-step0050-test",
+      "search_rule": "original-search",
+      "split": "test",
+      "checkpoint": "step-0050",
+      "questions": 1894
+    },
+    {
+      "path": "evaluations/limited-search/dev/step-0025",
+      "original_path": "runs/formal-2026-11-17-s2/eval/search-r1-q35-64x8-s2-newrule-step0025",
+      "search_rule": "limited-search",
+      "split": "dev",
+      "checkpoint": "step-0025",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/limited-search/dev/step-0050",
+      "original_path": "runs/formal-2026-11-17-s2/eval/search-r1-q35-64x8-s2-newrule-step0050",
+      "search_rule": "limited-search",
+      "split": "dev",
+      "checkpoint": "step-0050",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/limited-search/dev/step-0075",
+      "original_path": "runs/formal-2026-11-17-s2/eval/search-r1-q35-64x8-s2-step0075",
+      "search_rule": "limited-search",
+      "split": "dev",
+      "checkpoint": "step-0075",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/limited-search/test/step-0075",
+      "original_path": "runs/formal-2026-11-17-s2/eval/search-r1-q35-64x8-s2-step0075-test",
+      "search_rule": "limited-search",
+      "split": "test",
+      "checkpoint": "step-0075",
+      "questions": 1894
+    },
+    {
+      "path": "evaluations/limited-search/dev/step-0100",
+      "original_path": "runs/formal-2026-11-17-s2/eval/search-r1-q35-64x8-s2-step0100",
+      "search_rule": "limited-search",
+      "split": "dev",
+      "checkpoint": "step-0100",
+      "questions": 631
+    },
+    {
+      "path": "evaluations/limited-search/test/step-0100",
+      "original_path": "runs/formal-2026-11-17-s2/eval/search-r1-q35-64x8-s2-step0100-test",
+      "search_rule": "limited-search",
+      "split": "test",
+      "checkpoint": "step-0100",
+      "questions": 1894
+    }
+  ]
 }

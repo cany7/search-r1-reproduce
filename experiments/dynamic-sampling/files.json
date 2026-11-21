@@ -3,6 +3,24 @@
   "description": "Byte-for-byte archived source files. Derived files and attachment members are documented separately.",
   "files": [
     {
+      "path": "evaluations/limited-search/dev/step-0105/config.json",
+      "original_path": "runs/formal-2026-11-18-s3/eval/search-r1-q35-64x8-s3-step0105-dev/config.json",
+      "bytes": 4635,
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/limited-search/dev/step-0105/summary.json",
+      "original_path": "runs/formal-2026-11-18-s3/eval/search-r1-q35-64x8-s3-step0105-dev/summary.json",
+      "bytes": 4789,
+      "transformation": "none"
+    },
+    {
+      "path": "evaluations/limited-search/dev/step-0105/trajectories.jsonl",
+      "original_path": "runs/formal-2026-11-18-s3/eval/search-r1-q35-64x8-s3-step0105-dev/trajectories.jsonl",
+      "bytes": 15182018,
+      "transformation": "none"
+    },
+    {
       "path": "smoke/checkpoints.jsonl",
       "original_path": "runs/formal-2026-11-18-s3/smoke/checkpoints.jsonl",
       "bytes": 992,
