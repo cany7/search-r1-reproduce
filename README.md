@@ -8,16 +8,17 @@ Tinker SDK sends sampling and optimizer requests to a model service such as SkyR
 
 ## Experiment record
 
-[Browse the experiments](experiments/README.md) for configurations, scores, complete
-evaluation transcripts, short-training metrics, monitoring data and provenance.
+[Browse the experiments](experiments/README.md) for configurations, scores,
+evaluation trajectories, training metrics and provenance.
 
 - [Local baseline analysis](experiments/local-baselines/BASELINE_ANALYSIS.md):
   five model/prompt configurations, 631 development questions each, evaluated with oMLX.
 - [Cloud validation](experiments/cloud-validation/README.md): deployment,
   padding optimization, microbatch/concurrency comparisons, checkpoint loading and resume.
-- Formal training and its final evaluation have not yet been recorded in this archive.
+- The [main reproduction](experiments/reproduce-main/README.md) uses the step-75
+  checkpoint, which scored 892/1,894 (47.10% EM) on the limited-search test set.
 
-The historical runs predate the Unicode renderer correction. Their original
+The local baselines and cloud validation runs predate the Unicode renderer correction. Their original
 configurations and scores are preserved; they are not measurements of the current
 renderer.
 

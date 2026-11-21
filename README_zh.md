@@ -6,15 +6,15 @@
 
 ## 实验记录
 
-[实验索引](experiments/README_zh.md)包含配置、分数、完整评测轨迹、短训指标、监控数据和来源记录。
+[实验索引](experiments/README_zh.md)包含配置、分数、评测轨迹、训练指标和来源记录。
 
 - [本地基座分析](experiments/local-baselines/BASELINE_ANALYSIS_zh.md)：
   五组模型／prompt 配置，每组 631 道开发集题目，使用 oMLX。
 - [云端验证记录](experiments/cloud-validation/README.md)：部署、padding 优化、
   microbatch／并发比较、检查点加载和续训。
-- 归档中尚无正式训练及最终评测结果。
+- [主复现](experiments/reproduce-main/README.md)选用第 75 步 checkpoint，在限制搜索规则的 test 集上答对 892/1,894 题（EM 47.10%）。
 
-这些历史运行早于 Unicode renderer 修正，原配置和评分保持不变，不能视为当前 renderer 的实测。
+本地基座和云端验证运行早于 Unicode renderer 修正，原配置和评分保持不变，不能视为当前 renderer 的实测。
 
 ## 固定的版本
 
