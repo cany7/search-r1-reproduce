@@ -8,14 +8,13 @@
 
 [实验索引](experiments/README_zh.md)包含配置、分数、完整评测轨迹、短训指标、监控数据和来源记录。
 
-- [本地基座分析](experiments/2026-11-16-local-baselines/BASELINE_ANALYSIS_zh.md)：
+- [本地基座分析](experiments/local-baselines/BASELINE_ANALYSIS_zh.md)：
   五组模型／prompt 配置，每组 631 道开发集题目，使用 oMLX。
-- [A100 验证记录](experiments/2026-11-16-a100-validation/README.md)：部署、padding 优化、
+- [云端验证记录](experiments/cloud-validation/README.md)：部署、padding 优化、
   microbatch／并发比较、检查点加载和续训。
 - 归档中尚无正式训练及最终评测结果。
 
 这些历史运行早于 Unicode renderer 修正，原配置和评分保持不变，不能视为当前 renderer 的实测。
-[原始日志附件说明](experiments/attachments/README.md)记录了已在本地准备、尚未上传到 GitHub Releases 的归档包。
 
 ## 固定的版本
 
@@ -119,8 +118,8 @@ uv run python scripts/diagnose_run.py runs/eval/<run_name>
 读取已归档的本地基座结果，不生成新样本：
 
 ```bash
-uv run python scripts/compare_runs.py experiments/2026-11-16-local-baselines/evaluations/base-*
-uv run python scripts/diagnose_run.py experiments/2026-11-16-local-baselines/evaluations/base-q35-fast-n100
+uv run python scripts/compare_runs.py experiments/local-baselines/evaluations/base-*
+uv run python scripts/diagnose_run.py experiments/local-baselines/evaluations/base-q35-fast-n100
 ```
 
 单独调用（要先自己起检索服务）：
@@ -139,4 +138,4 @@ uv run python -m search_r1.offline_eval backend=omlx omlx_model=Qwen3.5-4B-bf16 
 uv run --locked pytest tests/ -q
 ```
 
-测试使用固定参考轨迹、本地文件和模拟的 SDK／Pod 进程，覆盖两种采样、检查点恢复，以及未安装 cookbook 时的离线 CLI 帮助。重构后的 GPU 训练和在线服务行为未经实测。详见[验收记录](docs/REFACTOR_STATUS.md)。
+测试使用固定参考轨迹、本地文件和模拟的 SDK／Pod 进程，覆盖两种采样、检查点恢复，以及未安装 cookbook 时的离线 CLI 帮助。重构后的 GPU 训练和在线服务行为未经实测。

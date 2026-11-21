@@ -1,4 +1,4 @@
-# A100 deployment and training validation
+# Cloud deployment and training validation
 
 This archive records the 2026-11-16 A100-SXM4-80GB checks. It contains short
 validation runs, not a formal training result. The model was Qwen/Qwen3.5-4B with
@@ -91,13 +91,9 @@ cross-Pod recovery were not exercised by these runs.
   Some training attempts have no matching END line; do not fill in missing events.
 - [training/examples.jsonl](training/examples.jsonl) contains the first saved
   t64_mb1p occurrence of correct/incorrect completion, turn limit, parse error and
-  token limit. Each points to a full rollout record in the raw attachment.
-- The [raw attachment](../attachments/README.md) includes all server/router logs,
-  six iteration traces, timing spans and the deployment scripts as collected.
-  Snapshot scripts differ from current scripts. `seqlen_stats.py` uses a superseded
-  per-turn interpretation and must not be used to report actual trained tokens.
+  token limit. Each points to its original rollout record.
 
-The attachment is currently local only. Historical tinker checkpoint URLs require
+Historical tinker checkpoint URLs require
 their original server files and database registrations; they are references, not
 public weight downloads. Full model/optimizer weights are not included in this
 experiment archive.

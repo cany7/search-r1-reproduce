@@ -1,7 +1,6 @@
 # Script guide
 
-These are maintained project tools. Historical cloud copies belong to the
-[A100 raw attachment](../experiments/attachments/README.md), not this directory.
+This directory contains the maintained project tools.
 No scripts were run against model services during experiment archiving.
 
 ## Data and evaluation
@@ -18,7 +17,7 @@ No scripts were run against model services during experiment archiving.
 project's Unicode subclass. The diagnostic script's reported retrieval position
 counts tool-response messages, not assistant turns. A gold-string match does not
 prove the documents establish the answer. See the
-[baseline analysis](../experiments/2026-11-16-local-baselines/BASELINE_ANALYSIS.md)
+[baseline analysis](../experiments/local-baselines/BASELINE_ANALYSIS.md)
 for these interpretation limits.
 
 Analysis scripts accept an archived evaluation directory under `experiments/`

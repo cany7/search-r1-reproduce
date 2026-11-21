@@ -10,8 +10,8 @@ formal Search-R1 training. No experiments were rerun to create this archive.
 
 | Stage | Purpose | Available evidence |
 |---|---|---|
-| [Local baselines](2026-11-16-local-baselines/BASELINE_ANALYSIS.md) | Compare models and prompts using oMLX | Five runs of 631 development questions each; configurations, summaries, all transcripts and bilingual analysis |
-| [A100 validation](2026-11-16-a100-validation/README.md) | Check deployment, training performance, concurrency, checkpoint loading and resume | Four training jobs, four evaluation runs, timing tables, GPU/memory samples and selected training examples |
+| [Local baselines](local-baselines/BASELINE_ANALYSIS.md) | Compare models and prompts using oMLX | Five runs of 631 development questions each; configurations, summaries, all transcripts and bilingual analysis |
+| [Cloud validation](cloud-validation/README.md) | Check deployment, training performance, concurrency, checkpoint loading and resume | Four training jobs, four evaluation runs, timing tables, GPU/memory samples and selected training examples |
 | Formal training | Train and evaluate the final model under the selected configuration | Not yet present |
 
 The five local runs contain 3,155 evaluation records. The cloud smoke/concurrency/
@@ -34,25 +34,12 @@ the Unicode correction in `1b26fd7`. Future baselines and trained-model evaluati
 must share their rendering and scoring settings. The local development results are
 not a formal cloud baseline or a held-out test score.
 
-## Full raw material
-
-The [attachment manifest](attachments/README.md) inventories the original cloud
-logs, complete training rollout summaries, logtree/HTML outputs, timing spans and
-deployment-script snapshots. The verified compressed attachment exists locally;
-**it has not been uploaded**, and the manifest has no download URL yet. Until it
-is published, a Git clone contains the curated records but not all raw cloud files.
-
-Original cloud files and W&B sync data remain under the ignored
-`runs/cloud-test-2026-11-16/` directory on the author's machine. W&B internals are
-excluded from the attachment because they contain account/host metadata and
-duplicated runtime logs. Their remote synchronization was not checked.
-
 ## Provenance limits
 
 - The original project execution commits were not reliably captured. Archive
   commits identify packaging changes, not the code that produced the old runs.
 - The cloud `code.diff` files only say that the installed cookbook was not in a Git
-  repository. They are retained in the raw attachment but are not code snapshots.
+  repository.
 - Dataset hashes in `experiment.json` were recorded during archiving, not at
   execution time. Configurations and manifests are kept verbatim rather than
   silently rewritten to match the current source tree.
@@ -70,7 +57,6 @@ failures and superseded conclusions with their explanations. Record the actual
 source commit, dataset/model revisions, renderer, seed, GPU, environment and
 checkpoint references at execution time when available.
 
-Full runtime logs and large training traces belong in downloadable attachments;
-Git holds analysis, structured evidence and attachment manifests. Do not replace
-historical results when a renderer or scoring rule changes. `local_docs/`, including
-`PROGRESS.md`, remains local and is not included here.
+Keep full runtime logs and large training traces with the original run outputs.
+Preserve historical results when a renderer or scoring rule changes. `local_docs/`,
+including `PROGRESS.md`, remains local.

@@ -26,7 +26,7 @@ def write_jsonl(path, rows):
 def parent_run(tmp_path):
     parent = tmp_path / "s2"
     parent.mkdir()
-    source = ROOT / "experiments/2026-11-16-a100-validation/training/t64_mb1p/config.json"
+    source = ROOT / "experiments/cloud-validation/training/t64_mb1p/config.json"
     config = json.loads(source.read_text())
     config["dataset_builder"]["limit_search"] = True
     config["wandb_project"] = None

@@ -11,16 +11,15 @@ Tinker SDK sends sampling and optimizer requests to a model service such as SkyR
 [Browse the experiments](experiments/README.md) for configurations, scores, complete
 evaluation transcripts, short-training metrics, monitoring data and provenance.
 
-- [Local baseline analysis](experiments/2026-11-16-local-baselines/BASELINE_ANALYSIS.md):
+- [Local baseline analysis](experiments/local-baselines/BASELINE_ANALYSIS.md):
   five model/prompt configurations, 631 development questions each, evaluated with oMLX.
-- [A100 validation](experiments/2026-11-16-a100-validation/README.md): deployment,
+- [Cloud validation](experiments/cloud-validation/README.md): deployment,
   padding optimization, microbatch/concurrency comparisons, checkpoint loading and resume.
 - Formal training and its final evaluation have not yet been recorded in this archive.
 
 The historical runs predate the Unicode renderer correction. Their original
 configurations and scores are preserved; they are not measurements of the current
-renderer. The [raw-log attachment manifest](experiments/attachments/README.md)
-describes a locally prepared archive that has not been uploaded to GitHub Releases.
+renderer.
 
 ## Versions
 
@@ -152,8 +151,8 @@ uv run python scripts/diagnose_run.py runs/eval/base-q35-fast-n50
 To inspect the archived local baselines without generating new samples:
 
 ```bash
-uv run python scripts/compare_runs.py experiments/2026-11-16-local-baselines/evaluations/base-*
-uv run python scripts/diagnose_run.py experiments/2026-11-16-local-baselines/evaluations/base-q35-fast-n100
+uv run python scripts/compare_runs.py experiments/local-baselines/evaluations/base-*
+uv run python scripts/diagnose_run.py experiments/local-baselines/evaluations/base-q35-fast-n100
 ```
 
 To run an evaluation directly, start the retrieval server first.
@@ -176,4 +175,4 @@ uv run --locked pytest tests/ -q
 The suite uses fixed reference trajectories, local files and simulated SDK/Pod
 processes. It covers both sampling modes, checkpoint recovery, and offline CLI
 help in an environment without the cookbook package. GPU training and live
-service behavior are outside this validation. See the [validation record](docs/REFACTOR_STATUS.md).
+service behavior are outside this validation.
