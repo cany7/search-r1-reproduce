@@ -130,7 +130,7 @@ uv run python -m search_r1.offline_eval backend=omlx omlx_model=Qwen3.5-4B-bf16 
 ```
 
 新输出仍写到 `runs/eval/<run_name>/`：`config.json`、`trajectories.jsonl`、`summary.json`。
-已完成的历史评测移入 `experiments/`，各实验文件清单保留原路径和校验值。
+已完成的历史评测移入 `experiments/`，各实验文件清单记录原路径和文件大小。
 
 ## 测试
 

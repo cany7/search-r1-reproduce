@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "experiment_id": "reproduce-main",
+  "purpose": "Reproduce Search-R1 through the selected step-75 checkpoint and retain the extension to step 100 for comparison.",
+  "new_model_runs_during_archiving": false,
+  "source_file_manifest": "files.json",
+  "training_runs": [
+    {
+      "path": "training/stage-1",
+      "original_path": "runs/formal-2026-11-17",
+      "completed_updates": [
+        1,
+        50
+      ]
+    },
+    {
+      "path": "training/stage-2",
+      "original_path": "runs/formal-2026-11-17-s2",
+      "completed_updates": [
+        51,
+        75
+      ],
+      "configuration_original_path": "runs/formal-2026-11-17-s2/config.json"
+    },
+    {
+      "path": "training/extended-training",
+      "original_path": "runs/formal-2026-11-17-s2",
+      "completed_updates": [
+        76,
+        100
+      ],
+      "configuration_original_path": "runs/formal-2026-11-17-s2/config.json"
+    }
+  ],
+  "derived_files": {
+    "training/stage-2/metrics.jsonl": {
+      "original_path": "runs/formal-2026-11-17-s2/metrics.jsonl",
+      "filter_inclusive": {
+        "step": [
+          50,
+          74
+        ]
+      },
+      "rows": 25,
+      "bytes": 133350
+    },
+    "training/stage-2/checkpoints.jsonl": {
+      "original_path": "runs/formal-2026-11-17-s2/checkpoints.jsonl",
+      "filter_inclusive": {
+        "batch": [
+          55,
+          75
+        ]
+      },
+      "rows": 6,
+      "bytes": 2097
+    },
+    "training/extended-training/metrics.jsonl": {
+      "original_path": "runs/formal-2026-11-17-s2/metrics.jsonl",
+      "filter_inclusive": {
+        "step": [
+          75,
+          99
+        ]
+      },
+      "rows": 25,
+      "bytes": 132594
+    },
+    "training/extended-training/checkpoints.jsonl": {
+      "original_path": "runs/formal-2026-11-17-s2/checkpoints.jsonl",
+      "filter_inclusive": {
+        "batch": [
+          80,
+          100
+        ]
+      },
+      "rows": 6,
+      "bytes": 2099
+    }
+  },
+  "selected_checkpoint": {
+    "path": "training/stage-2/checkpoints.jsonl",
+    "batch": 75,
+    "name": "final"
+  },
+  "s2_run_summary": {
+    "original_path": "runs/formal-2026-11-17-s2/metrics.jsonl",
+    "step": 100,
+    "note": "The final metrics row summarizes the run. Completed update 100 has metrics step 99."
+  },
+  "stage_1_rollouts": "Per-update rollout files are unavailable in the local source."
+}

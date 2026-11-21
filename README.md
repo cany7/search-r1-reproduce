@@ -164,7 +164,7 @@ uv run python -m search_r1.offline_eval backend=omlx omlx_model=Qwen3.5-4B-bf16 
 
 Each run writes `config.json`, `trajectories.jsonl`, and `summary.json` under
 `runs/eval/<run_name>/`. Completed historical evaluations have been moved to
-`experiments/`; the per-experiment manifests retain their original paths and hashes.
+`experiments/`; the per-experiment manifests record their original paths and sizes.
 
 ## Run the tests
 

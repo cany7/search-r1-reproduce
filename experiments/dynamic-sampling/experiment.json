@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dynamic-sampling",
+  "purpose": "Resume from reproduction step 100 with dynamic sampling and retain the separate restart smoke run.",
+  "new_model_runs_during_archiving": false,
+  "source_file_manifest": "files.json",
+  "training_runs": [
+    {
+      "path": "training",
+      "original_path": "runs/formal-2026-11-18-s3",
+      "completed_updates": [
+        101,
+        105
+      ]
+    },
+    {
+      "path": "smoke",
+      "original_path": "runs/formal-2026-11-18-s3/smoke",
+      "completed_updates": [
+        101,
+        103
+      ]
+    }
+  ],
+  "smoke_resume": {
+    "completed_updates_before_restart": 102,
+    "completed_updates_after_restart": 103
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "experiment_id": "max-turns-penalty",
+  "purpose": "Resume from reproduction step 75 with a stronger reward penalty for reaching the turn cap without an answer.",
+  "new_model_runs_during_archiving": false,
+  "source_file_manifest": "files.json",
+  "training_runs": [
+    {
+      "path": "training",
+      "original_path": "runs/formal-2026-11-18-r75-cap030",
+      "completed_updates": [
+        76,
+        100
+      ]
+    }
+  ]
+}

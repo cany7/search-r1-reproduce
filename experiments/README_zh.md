@@ -23,7 +23,7 @@
 - 训练 `metrics.jsonl`：各步指标，部分文件末尾还有总结行；总结行不能多算成一次 optimizer 更新。
 - `checkpoints.jsonl`：检查点引用，不含权重文件。
 - `experiment.json`：范围、来源、缺失信息和派生文件说明。
-- `files.json`：未修改原始文件的归档路径、原路径、大小和 SHA-256。
+- `files.json`：原样复制文件的归档路径、原路径和大小。
 
 历史 Qwen3.5 关思考运行使用原 `qwen3_5_disable_thinking`，早于 `1b26fd7` 的 Unicode 修正。
 后续正式基线和训练后模型须采用一致的渲染与评分设置。本地开发集结果不是正式云端基线，

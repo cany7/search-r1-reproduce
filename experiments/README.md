@@ -27,7 +27,7 @@ questions and must not be described as 584 unique questions.
   summary row. Do not count the final summary as an additional optimizer update.
 - `checkpoints.jsonl` contains checkpoint references, not checkpoint weights.
 - `experiment.json` explains scope, provenance, missing information and any derived
-  files. `files.json` maps unmodified source files to original paths, sizes and SHA-256.
+  files. `files.json` records the original path and size of each archived source file.
 
 The historical Qwen3.5 non-thinking runs used `qwen3_5_disable_thinking`, before
 the Unicode correction in `1b26fd7`. Future baselines and trained-model evaluations

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "description": "Byte-for-byte archived source files. Derived files and attachment members are documented separately.",
+  "files": [
+    {
+      "path": "smoke/checkpoints.jsonl",
+      "original_path": "runs/formal-2026-11-18-s3/smoke/checkpoints.jsonl",
+      "bytes": 992,
+      "transformation": "none"
+    },
+    {
+      "path": "smoke/config.json",
+      "original_path": "runs/formal-2026-11-18-s3/smoke/config.json",
+      "bytes": 1790,
+      "transformation": "none"
+    },
+    {
+      "path": "smoke/metrics.jsonl",
+      "original_path": "runs/formal-2026-11-18-s3/smoke/metrics.jsonl",
+      "bytes": 17571,
+      "transformation": "none"
+    },
+    {
+      "path": "training/checkpoints.jsonl",
+      "original_path": "runs/formal-2026-11-18-s3/checkpoints.jsonl",
+      "bytes": 493,
+      "transformation": "none"
+    },
+    {
+      "path": "training/config.json",
+      "original_path": "runs/formal-2026-11-18-s3/config.json",
+      "bytes": 1772,
+      "transformation": "none"
+    },
+    {
+      "path": "training/metrics.jsonl",
+      "original_path": "runs/formal-2026-11-18-s3/metrics.jsonl",
+      "bytes": 29122,
+      "transformation": "none"
+    },
+    {
+      "path": "training/uploads/step0105.json",
+      "original_path": "runs/formal-2026-11-18-s3/uploads/step0105.json",
+      "bytes": 182,
+      "transformation": "none"
+    }
+  ]
+}

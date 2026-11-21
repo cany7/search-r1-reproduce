@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "description": "Byte-for-byte archived source files. Derived files and attachment members are documented separately.",
+  "files": [
+    {
+      "path": "training/checkpoints.jsonl",
+      "original_path": "runs/formal-2026-11-18-r75-cap030/checkpoints.jsonl",
+      "bytes": 2446,
+      "transformation": "none"
+    },
+    {
+      "path": "training/config.json",
+      "original_path": "runs/formal-2026-11-18-r75-cap030/config.json",
+      "bytes": 1746,
+      "transformation": "none"
+    },
+    {
+      "path": "training/metrics.jsonl",
+      "original_path": "runs/formal-2026-11-18-r75-cap030/metrics.jsonl",
+      "bytes": 131047,
+      "transformation": "none"
+    },
+    {
+      "path": "training/uploads/step0100.json",
+      "original_path": "runs/formal-2026-11-18-r75-cap030/uploads/step0100.json",
+      "bytes": 190,
+      "transformation": "none"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "description": "Byte-for-byte archived source files. Derived files and attachment members are documented separately.",
+  "files": [
+    {
+      "path": "training/extended-training/uploads/step0100.json",
+      "original_path": "runs/formal-2026-11-17-s2/uploads/step0100.json",
+      "bytes": 182,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-1/checkpoints.jsonl",
+      "original_path": "runs/formal-2026-11-17/checkpoints.jsonl",
+      "bytes": 4168,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-1/config.json",
+      "original_path": "runs/formal-2026-11-17/config.json",
+      "bytes": 1645,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-1/metrics.jsonl",
+      "original_path": "runs/formal-2026-11-17/metrics.jsonl",
+      "bytes": 230870,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-1/sysmon.csv",
+      "original_path": "runs/formal-2026-11-17/sysmon.csv",
+      "bytes": 395283,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-1/uploads/step0025.json",
+      "original_path": "runs/formal-2026-11-17-s2/uploads/step0025.json",
+      "bytes": 179,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-1/uploads/step0050.json",
+      "original_path": "runs/formal-2026-11-17-s2/uploads/step0050.json",
+      "bytes": 179,
+      "transformation": "none"
+    },
+    {
+      "path": "training/stage-2/uploads/step0075.json",
+      "original_path": "runs/formal-2026-11-17-s2/uploads/step0075.json",
+      "bytes": 182,
+      "transformation": "none"
+    }
+  ]
+}
