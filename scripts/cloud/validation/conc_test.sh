@@ -1,6 +1,6 @@
 #!/bin/bash
 # Eval concurrency test: run offline_eval on the same dev subset with each concurrency in $@
-source "$(dirname -- "${BASH_SOURCE[0]}")/env_common.sh" || exit 1
+source "$(dirname -- "${BASH_SOURCE[0]}")/../env_common.sh" || exit 1
 cd "$PROJ"
 for C in "$@"; do
   S=$(date +%s)

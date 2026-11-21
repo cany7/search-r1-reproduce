@@ -1,7 +1,7 @@
 #!/bin/bash
 # Restart the SkyRL server with optional EXTRA_CFG and wait until the API is up.
 # usage: EXTRA_CFG='"trainer.micro_train_batch_size_per_gpu": 2' restart_skyrl.sh <logname>
-source "$(dirname -- "${BASH_SOURCE[0]}")/env_common.sh" || exit 1
+source "$(dirname -- "${BASH_SOURCE[0]}")/../env_common.sh" || exit 1
 NAME=${1:-skyrl_server}
 HEALTH_TIMEOUT_SECONDS=${HEALTH_TIMEOUT_SECONDS:-120}
 GC_SHORT_SEQ_THRESHOLD=${GC_SHORT_SEQ_THRESHOLD:-8000}
@@ -16,7 +16,7 @@ pkill -9 -f "skyrl.tinker|raylet|gcs_server|vllm" 2>/dev/null; sleep 5
 rm -rf "$RAY_TMPDIR"/ray/session_* /tmp/ray 2>/dev/null  # stale Ray sessions each hold a venv copy
 nvidia-smi --query-gpu=memory.used --format=csv,noheader; df -h / "$POD_ROOT" | tail -2
 printf -v start_command 'set -o pipefail; GC_SHORT_SEQ_THRESHOLD=%q EXTRA_CFG=%q bash %q 2>&1 | tee %q' \
-  "$GC_SHORT_SEQ_THRESHOLD" "${EXTRA_CFG:-}" "$CLOUD_DIR/start_skyrl.sh" "$POD_ROOT/logs/$NAME.log"
+  "$GC_SHORT_SEQ_THRESHOLD" "${EXTRA_CFG:-}" "$CLOUD_DIR/services/start_skyrl.sh" "$POD_ROOT/logs/$NAME.log"
 printf -v command 'bash -c %q' "$start_command"
 tmux new -d -s skyrl "$command" || exit 1
 deadline=$((SECONDS + HEALTH_TIMEOUT_SECONDS))

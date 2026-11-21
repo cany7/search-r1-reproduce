@@ -21,7 +21,7 @@ def executable(path, body):
 
 def upload_process(root, entered, attempting):
     """Run the real locking/marker path with a blocked fake upload."""
-    from scripts.cloud import upload_checkpoint as module
+    from scripts.cloud.checkpoints import upload_checkpoint as module
 
     root = Path(root)
     original_flock = module.fcntl.flock
@@ -187,15 +187,11 @@ def test_restart_requires_health_and_launches_synced_start_script(pod, healthy):
     root, project, bin_dir, _ = pod
     executable(bin_dir / "curl", f"exit {0 if healthy else 1}")
     executable(bin_dir / "tmux", f'echo "$*" >> "{root}/tmux-args"')
-    result = shell(pod, "restart_skyrl.sh", ["simulation"])
+    result = shell(pod, "services/restart_skyrl.sh", ["simulation"])
     assert result.returncode == (0 if healthy else 1), result.stderr
     assert ("server up:" in result.stdout) == healthy
     command = (root / "tmux-args").read_text()
-    assert (
-        "start_skyrl.sh" in command
-        and "scripts/cloud/" in command
-        and "/workspace/bin" not in command
-    )
+    assert "scripts/cloud/services/start_skyrl.sh" in command and "/workspace/bin" not in command
 
 
 @pytest.mark.parametrize(
@@ -221,6 +217,7 @@ def test_shell_schedule_and_recovery(pod, mode, start):
         **options,
     )
     assert result.returncode == 0, result.stderr + result.stdout
+    assert "WARNING: monitor" not in result.stdout
     targets = [start + 5, start + 10, start + 11]
     train = calls(root, "search_r1.train")
     assert [
@@ -269,7 +266,7 @@ def test_driver_stops_when_restart_fails(pod, phase):
         name, target = run.name, "7"
     else:
         name, target = "simulation", "1"
-    executable(project / "scripts/cloud/restart_skyrl.sh", "exit 1")
+    executable(project / "scripts/cloud/services/restart_skyrl.sh", "exit 1")
     result = shell(
         pod, "train_with_dev_eval.sh", [name], TOTAL_STEPS=target, EVAL_EVERY=target, UPLOAD="0"
     )
@@ -317,13 +314,15 @@ def test_eval_distinguishes_weights_sets_snapshots_and_checks_exact_counts(pod):
     assert shell(pod, "eval_checkpoint.sh", [run, 6, "test"]).returncode != 0
 
 
-def test_stage3_smoke_restarts_and_verifies_dynamic_run(pod):
+def test_smoke_restarts_and_verifies_dynamic_run(pod):
     root, _, _, _ = pod
     source_run(root)
     result = shell(
         pod,
-        "stage3.sh",
-        ["smoke", "short", 2, 10, "group_size=3"],
+        "validation/run_train_test.sh",
+        ["short", 2, 10, "group_size=3"],
+        SAMPLING_MODE="dynamic",
+        RESTART_BEFORE_TRAIN="1",
         PARENT_RUN="parent",
         PARENT_STEP="7",
         RESTART_AT="9",
@@ -338,7 +337,7 @@ def test_stage3_smoke_restarts_and_verifies_dynamic_run(pod):
 @pytest.mark.parametrize("env", [{"NO_SAVE": "1"}, {"FAIL_TRAIN": "1"}])
 def test_short_test_does_not_mask_trainer_or_missing_full_state(pod, env):
     root, _, _, _ = pod
-    result = shell(pod, "run_train_test.sh", ["short", 2, 1], **env)
+    result = shell(pod, "validation/run_train_test.sh", ["short", 2, 1], **env)
     assert result.returncode != 0
     if "FAIL_TRAIN" in env:
         assert result.returncode == 7
@@ -356,7 +355,7 @@ def test_tmux_restarts_the_synced_script_with_quoted_config(pod):
     )
     result = shell(
         pod,
-        "restart_skyrl.sh",
+        "services/restart_skyrl.sh",
         ["quoted log"],
         EXTRA_CFG=json.dumps({"option": "it's spaced"})[1:-1],
     )
@@ -374,12 +373,12 @@ def test_installer_uses_adjacent_patch_without_network(pod):
     executable(bin_dir / "git", "exit 0")
     executable(bin_dir / "uv", "exit 0")
     # Replace the patcher in the copied checkout with a recording stand-in.
-    (project / "scripts/cloud/apply_patch.py").write_text(
+    (project / "scripts/cloud/setup/apply_patch.py").write_text(
         "import pathlib,sys\npathlib.Path(sys.argv[1], 'patch-path').write_text(__file__)\n"
     )
-    result = shell(pod, "skyrl_install.sh", [])
+    result = shell(pod, "setup/skyrl_install.sh", [])
     assert result.returncode == 0, result.stderr
-    assert (repo / "patch-path").read_text() == str(project / "scripts/cloud/apply_patch.py")
+    assert (repo / "patch-path").read_text() == str(project / "scripts/cloud/setup/apply_patch.py")
 
 
 def test_stop_selects_only_python_training_modules(pod):
@@ -438,12 +437,17 @@ def test_empty_dynamic_child_index_and_midsegment_resume_keep_fork_cadence(pod):
     # Simulate an already committed periodic save before the first scheduled eval.
     result = shell(
         pod,
-        "run_train_test.sh",
+        "validation/run_train_test.sh",
         ["partial", 2, 9, f"log_path={run}", "behavior_if_log_dir_exists=resume"],
     )
     assert result.returncode == 0, result.stderr
     result = shell(
-        pod, "stage3.sh", ["formal"], RUN_NAME="partial", TOTAL_STEPS="13", EVAL_EVERY="5"
+        pod,
+        "train_with_dev_eval.sh",
+        ["partial"],
+        SAMPLING_MODE="dynamic",
+        TOTAL_STEPS="13",
+        EVAL_EVERY="5",
     )
     assert result.returncode == 0, result.stderr
     assert "training 9 -> 12" in result.stdout
@@ -456,7 +460,7 @@ def test_empty_dynamic_child_index_and_midsegment_resume_keep_fork_cadence(pod):
 def test_real_upload_collection_uses_last_full_state_and_exact_interval(tmp_path):
     from types import SimpleNamespace
 
-    from scripts.cloud import upload_checkpoint as upload
+    from scripts.cloud.checkpoints import upload_checkpoint as upload
 
     rows = [
         {

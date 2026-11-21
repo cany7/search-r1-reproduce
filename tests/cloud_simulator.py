@@ -134,6 +134,8 @@ def evaluate(args):
 
 def main():
     args = sys.argv[1:]
+    if args and args[0].endswith(".py"):
+        assert Path(args[0]).is_file(), args[0]
     append(ROOT / "calls.jsonl", args)
     if "-m" in args and args[args.index("-m") + 1].startswith("search_r1."):
         pos = args.index("-m") + 1

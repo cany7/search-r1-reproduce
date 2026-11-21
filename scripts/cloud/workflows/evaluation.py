@@ -9,13 +9,15 @@ from pathlib import Path
 
 from search_r1.checkpoint_index import state_at
 
-CLOUD = Path(__file__).resolve().parent
+CLOUD = Path(__file__).resolve().parents[1]
 
 
 def restart(name, log, phase):
     with log.open("a") as stream:
         result = subprocess.run(
-            ["bash", CLOUD / "restart_skyrl.sh", name], stdout=stream, stderr=subprocess.STDOUT
+            ["bash", CLOUD / "services" / "restart_skyrl.sh", name],
+            stdout=stream,
+            stderr=subprocess.STDOUT,
         )
     if result.returncode:
         raise RuntimeError(f"server restart failed before {phase}; see {log}")

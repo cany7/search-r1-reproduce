@@ -3,6 +3,6 @@
 set -eo pipefail
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then echo "usage: $0 NAME BATCH_SIZE MAX_STEPS [key=value ...]"; exit 0; fi
 [ "$#" -ge 3 ] || { echo "usage: $0 NAME BATCH_SIZE MAX_STEPS [key=value ...]" >&2; exit 2; }
-source "$(dirname -- "${BASH_SOURCE[0]}")/env_common.sh"
+source "$(dirname -- "${BASH_SOURCE[0]}")/../env_common.sh"
 cd "$PROJ"
-exec python3 -m scripts.cloud.driver smoke "$@"
+exec python3 -m scripts.cloud.workflows.driver smoke "$@"

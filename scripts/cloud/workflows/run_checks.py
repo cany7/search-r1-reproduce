@@ -10,9 +10,9 @@ from itertools import groupby
 from pathlib import Path
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.cloud.ckpt_prune import state_file
+from scripts.cloud.checkpoints.ckpt_prune import state_file
 from search_r1.checkpoint_index import full_records, latest, state_at
 
 GIB = 1024**3

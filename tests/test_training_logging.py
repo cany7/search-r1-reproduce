@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 from test_training_loop import config
 
-from scripts.cloud import upload_checkpoint
+from scripts.cloud.checkpoints import upload_checkpoint
 from search_r1.training.logging import RunLogger
 
 

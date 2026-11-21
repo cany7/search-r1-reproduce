@@ -9,9 +9,9 @@ import tempfile
 import time
 from pathlib import Path
 
-from scripts.cloud import stage3_ops as ops
-from scripts.cloud.evaluation import CLOUD, evaluate, restart
-from scripts.cloud.upload_checkpoint import marker_matches
+from scripts.cloud.checkpoints.upload_checkpoint import marker_matches
+from scripts.cloud.workflows import run_checks
+from scripts.cloud.workflows.evaluation import CLOUD, evaluate, restart
 from search_r1.checkpoint_index import latest, state_at
 
 
@@ -38,14 +38,14 @@ def run_path(name, kind="train"):
 
 
 def training_args(run, options, *, fresh=False, default_save_every=5):
-    saved = {} if fresh else ops.snapshot(run)
+    saved = {} if fresh else run_checks.snapshot(run)
     parent = options.pop("parent_run", os.environ.get("PARENT_RUN"))
     step = options.pop("parent_step", os.environ.get("PARENT_STEP"))
     parent = run_path(parent) if parent else None
     step = int(step) if step is not None else None
-    start = ops.origin(run, parent, step, fresh=fresh)
+    start = run_checks.origin(run, parent, step, fresh=fresh)
     # Inherit the recipe on fork/restart. Explicit CLI overrides take precedence.
-    source = saved or (ops.snapshot(parent) if parent else {})
+    source = saved or (run_checks.snapshot(parent) if parent else {})
     builder = source.get("dataset_builder", {})
     args = {
         key: source[key]
@@ -127,13 +127,13 @@ def segment(run, target, mode, args, start, log):
     if result.returncode:
         print(f"Trainer exited {result.returncode} at target {target}; see {log}", file=sys.stderr)
         raise SystemExit(result.returncode if result.returncode > 0 else 128 - result.returncode)
-    if ops.snapshot(run).get("parent_checkpoint"):
+    if run_checks.snapshot(run).get("parent_checkpoint"):
         # Training resolved the actual cursor, including epoch boundaries in old parents.
-        pinned = ops.origin(run)
+        pinned = run_checks.origin(run)
         if (pinned.step, pinned.uri) != (start.step, start.uri):
             raise ValueError("Trainer published a different fork origin")
         start = pinned
-    record = latest(ops.own_records(run, start))
+    record = latest(run_checks.own_records(run, start))
     if not record or record["batch"] != target:
         raise ValueError(f"Expected a child checkpoint at {target}")
     return start
@@ -141,7 +141,7 @@ def segment(run, target, mode, args, start, log):
 
 def check_disk(run, steps, start, args):
     estimate = os.environ.get("STATE_BYTES")
-    if not ops.disk_plan(
+    if not run_checks.disk_plan(
         run,
         Path(os.environ["CKPT_BASE"]),
         steps,
@@ -157,7 +157,7 @@ def check_disk(run, steps, start, args):
 def monitor_dev(project, run, target, summary, logs):
     monitor = [
         project / ".venv/bin/python",
-        CLOUD / "log_monitor_metrics.py",
+        CLOUD / "monitoring" / "log_monitor_metrics.py",
         "--run-name",
         run.name,
         "--log-path",
@@ -181,7 +181,7 @@ def monitor_dev(project, run, target, summary, logs):
 def start_upload(project, run, target, previous, summary, base, markers, logs):
     command = [
         project / ".venv/bin/python",
-        CLOUD / "upload_checkpoint.py",
+        CLOUD / "checkpoints" / "upload_checkpoint.py",
         "--run-name",
         run.name,
         "--log-path",
@@ -244,7 +244,7 @@ def dev_driver(name, options):
     upload = os.environ.get("UPLOAD", "1") == "1"
     restarted = False
     for target in schedule:
-        row = latest(ops.own_records(run, start))
+        row = latest(run_checks.own_records(run, start))
         current = row["batch"] if row else start.step
         if current < target:
             if mode == "dynamic":
@@ -272,7 +272,7 @@ def dev_driver(name, options):
             )
         state_at(run, target)
         if mode == "dynamic":
-            ops.verify(run, target, start)
+            run_checks.verify(run, target, start)
         if target not in history:
             history.add(target)
             pending = history_file.with_suffix(".pending")
@@ -288,7 +288,7 @@ def dev_driver(name, options):
                 subprocess.run(
                     [
                         sys.executable,
-                        CLOUD / "ckpt_prune.py",
+                        CLOUD / "checkpoints" / "ckpt_prune.py",
                         run / "checkpoints.jsonl",
                         base,
                         ",".join(map(str, sorted(history | set(schedule)))),
@@ -340,7 +340,7 @@ def smoke(name, batch, total, options):
     steps = [int(split), target] if split else [target]
     for number, step in enumerate(steps):
         policy = behavior if number == 0 else "resume"
-        row = latest(ops.own_records(run, start)) if policy == "resume" else None
+        row = latest(run_checks.own_records(run, start)) if policy == "resume" else None
         if row and row["batch"] >= step:
             state_at(run, step)
         else:
@@ -365,7 +365,7 @@ def smoke(name, batch, total, options):
                     raise
                 print(f"END {name} {int(time.time())} rc=0", file=out)
         if mode == "dynamic":
-            ops.verify(run, step, start)
+            run_checks.verify(run, step, start)
 
 
 def main():

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from scripts.cloud.ckpt_prune import plan, state_file
+from scripts.cloud.checkpoints.ckpt_prune import plan, state_file
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts/cloud/ckpt_prune.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts/cloud/checkpoints/ckpt_prune.py"
 
 
 def record(step, model="child", name=None, owner="child"):

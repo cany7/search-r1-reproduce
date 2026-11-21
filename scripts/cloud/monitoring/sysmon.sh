@@ -1,7 +1,7 @@
 #!/bin/bash
 # Log GPU util/memory and container memory every 5 s to /workspace/logs/sysmon.csv
 # cgroup_mem includes page cache; anon_mem is non-reclaimable process memory.
-source "$(dirname -- "${BASH_SOURCE[0]}")/env_common.sh" || exit 1
+source "$(dirname -- "${BASH_SOURCE[0]}")/../env_common.sh" || exit 1
 OUT=$POD_ROOT/logs/sysmon.csv
 echo "time,gpu_util,gpu_mem_mib,cgroup_mem_gib,anon_mem_gib,file_cache_gib" > "$OUT"
 while true; do

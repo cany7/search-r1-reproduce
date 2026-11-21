@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock
 import pytest
 import tinker
 
-from scripts.cloud import log_monitor_metrics as monitor
-from scripts.cloud import stage3_ops as ops
+from scripts.cloud.monitoring import log_monitor_metrics as monitor
+from scripts.cloud.workflows import run_checks as ops
 from search_r1 import train_dapo as dapo
 from search_r1.backends.completers import TokensWithLogprobs
 from search_r1.env.search_env import SearchR1DatasetBuilder, SearchRLDataset

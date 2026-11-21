@@ -29,9 +29,9 @@ import time
 from pathlib import Path
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.cloud.ckpt_prune import state_file
+from scripts.cloud.checkpoints.ckpt_prune import state_file
 from search_r1.checkpoint_index import index_bytes
 
 RETRIES = 3
@@ -117,7 +117,7 @@ def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dic
         },
         "training_wandb_run": identity.get("id"),
         "skyrl_commit": skyrl_commit,
-        "skyrl_patch": "skyrl-79d4c89-trim-microbatch-padding.patch",
+        "skyrl_patch": "scripts/cloud/setup/apply_patch.py",
         "base_model": eval_config["base_model"],
         "lora_rank": eval_config["lora_rank"],
     }

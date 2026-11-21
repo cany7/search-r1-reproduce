@@ -26,32 +26,41 @@ as well as a working directory under `runs/eval/`.
 
 ## Cloud layout and deployment
 
+| Task on the Pod | Command from the project root |
+|---|---|
+| Train with periodic dev evaluation | `scripts/cloud/train_with_dev_eval.sh RUN [key=value ...]` |
+| Evaluate one checkpoint or the base model | `scripts/cloud/eval_checkpoint.sh RUN STEP_OR_BASE SPLIT` |
+| Stop training | `scripts/cloud/stop_train.sh` |
+| Verify a short training run | `scripts/cloud/validation/run_train_test.sh NAME BATCH_SIZE MAX_STEPS [key=value ...]` |
+
+For standalone evaluation, use a step number or `base`, and choose `dev` or `test`.
+The training, evaluation and short-run commands call [driver.py](cloud/workflows/driver.py).
+It uses [evaluation.py](cloud/workflows/evaluation.py) for fixed-set evaluation
+and [run_checks.py](cloud/workflows/run_checks.py) for checkpoint ownership, disk estimates and rollout checks.
+
+| Directory | Tools |
+|---|---|
+| [setup/](cloud/setup/) | [Install project dependencies](cloud/setup/proj_install.sh), [download data and the BM25 index](cloud/setup/download_data.sh), and [install SkyRL](cloud/setup/skyrl_install.sh) with the [local patch](cloud/setup/apply_patch.py) |
+| [services/](cloud/services/) | [Start SkyRL](cloud/services/start_skyrl.sh) or [restart it and wait for API readiness](cloud/services/restart_skyrl.sh) |
+| [workflows/](cloud/workflows/) | Drive segmented training, standalone evaluation and short-run validation |
+| [checkpoints/](cloud/checkpoints/) | [Prune full states](cloud/checkpoints/ckpt_prune.py) and [upload selected checkpoints](cloud/checkpoints/upload_checkpoint.py) |
+| [monitoring/](cloud/monitoring/) | [Collect resource samples](cloud/monitoring/sysmon.sh), [summarize a time window](cloud/monitoring/stats_window.py), and [log training and dev metrics to W&B](cloud/monitoring/log_monitor_metrics.py) |
+| [validation/](cloud/validation/) | [Verify short runs and restarts](cloud/validation/run_train_test.sh) and [compare evaluation concurrency settings](cloud/validation/conc_test.sh) |
+
+### Pod setup
+
 Synchronize the project checkout to the Pod, including its lockfiles, fixed
 evaluation sets, and `scripts/cloud/`. Run the scripts in that checkout. The
 helpers find each other relative to their own files. From the project root,
-`bash scripts/cloud/proj_install.sh` installs the locked client and the
+`bash scripts/cloud/setup/proj_install.sh` installs the locked client and the
 independent retrieval environment. SkyRL uses a third environment.
 
-By default the scripts read credentials from `/workspace/.secrets/env.sh`,
+By default the scripts use [env_common.sh](cloud/env_common.sh) to read credentials from `/workspace/.secrets/env.sh`,
 use `/workspace/search-r1/SkyRL` for the server checkout and write logs under
 `/workspace/logs`. Set `POD_ROOT` to change the workspace root or `POD_ENV_FILE`
 to choose a credentials file. The Pod can also set `SKYRL`, `CKPT_BASE`,
 `RETRIEVAL_URL`, `SEARCH_R1_DATA_DIR`, `TINKER_BASE_URL` and `TINKER_API_KEY`.
 Start BM25 with the chosen data directory (`DATA_DIR` for `retrieval/start.sh`).
-
-| Script | Purpose |
-|---|---|
-| [cloud/env_common.sh](cloud/env_common.sh) | Shared environment and project path |
-| [cloud/proj_install.sh](cloud/proj_install.sh) | Install locked client/retrieval dependencies |
-| [cloud/download_data.sh](cloud/download_data.sh) | Download datasets, corpus and BM25 index |
-| [cloud/skyrl_install.sh](cloud/skyrl_install.sh) | Install pinned SkyRL and apply the padding and gradient-checkpointing patch |
-| [cloud/start_skyrl.sh](cloud/start_skyrl.sh) | Start the configured server |
-| [cloud/restart_skyrl.sh](cloud/restart_skyrl.sh) | Restart the server and wait for API readiness |
-| [cloud/sysmon.sh](cloud/sysmon.sh) | Record GPU and container memory samples |
-
-`skyrl_install.sh` invokes [cloud/apply_patch.py](cloud/apply_patch.py). The matching
-[patch file](cloud/skyrl-79d4c89-trim-microbatch-padding.patch) documents the source
-change.
 
 The current patch also supports length-based gradient checkpointing. Deployment
 defaults to `GC_SHORT_SEQ_THRESHOLD=8000`: for plain text microbatches of size 1,
@@ -82,16 +91,6 @@ the installer supports both a fresh pinned checkout and the previous padding-onl
 patch. Existing checkpoints remain usable.
 
 ## Training and artifact management
-
-| Script | Purpose |
-|---|---|
-| [cloud/train_with_dev_eval.sh](cloud/train_with_dev_eval.sh) | Segmented training, full-state dev evaluation, cleanup and background W&B uploads |
-| [cloud/eval_checkpoint.sh](cloud/eval_checkpoint.sh) | Evaluate a specific full state or the base model on dev or test |
-| [cloud/stage3.sh](cloud/stage3.sh) | Compatibility entry for dynamic segmented (`formal`) and short (`smoke`) runs |
-| [cloud/ckpt_prune.py](cloud/ckpt_prune.py) | Retain evaluation/latest full states and remove other or duplicate full states |
-| [cloud/upload_checkpoint.py](cloud/upload_checkpoint.py) | Upload selected states, samplers and evaluation records |
-| [cloud/log_monitor_metrics.py](cloud/log_monitor_metrics.py) | Log dev-eval and rollout-behavior curves to a side W&B run |
-| [cloud/stop_train.sh](cloud/stop_train.sh) | Explicitly stop the train session and matching training processes |
 
 Run the segmented driver in its own session so it can restart the `skyrl`
 session. It accepts a run name followed by training CLI overrides. The four
@@ -164,21 +163,21 @@ logged, so reruns log only new or rewritten files. `--dry-run` prints the points
 without touching W&B or the state file. Manual run on the pod:
 
 ```bash
-uv run --frozen python scripts/cloud/log_monitor_metrics.py --run-name RUN_NAME \
+uv run --frozen python scripts/cloud/monitoring/log_monitor_metrics.py --run-name RUN_NAME \
     --log-path /workspace/runs/train/RUN_NAME --eval-root runs/eval \
     --dev-summary 12 runs/eval/RUN_NAME-step0012-dev-DIGEST/summary.json
 ```
 
 ## Short validation and analysis tools
 
-- [cloud/run_train_test.sh](cloud/run_train_test.sh): short named training jobs.
+- [cloud/validation/run_train_test.sh](cloud/validation/run_train_test.sh): short named training jobs.
   Usage is `run_train_test.sh NAME BATCH_SIZE MAX_STEPS [key=value ...]`. A fresh
   short run defaults to `behavior_if_log_dir_exists=delete`, so use a distinct name.
   With `RESTART_AT`, the default becomes `resume`. For example,
-  `SAMPLING_MODE=dynamic RESTART_AT=2 scripts/cloud/run_train_test.sh short 4 3 limit_search=true`
+  `SAMPLING_MODE=dynamic RESTART_AT=2 scripts/cloud/validation/run_train_test.sh short 4 3 limit_search=true`
   saves at step 2, restarts the service, then verifies the complete step-3 state.
-- [cloud/conc_test.sh](cloud/conc_test.sh): evaluation concurrency comparisons.
-- [cloud/stats_window.py](cloud/stats_window.py): summarize a time window from
+- [cloud/validation/conc_test.sh](cloud/validation/conc_test.sh): evaluation concurrency comparisons.
+- [cloud/monitoring/stats_window.py](cloud/monitoring/stats_window.py): summarize a time window from
   `/workspace/logs/sysmon.csv` and vLLM logs. Its log-time conversion uses the host
   timezone and current year; archived analyses must account for the original clock.
 

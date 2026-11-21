@@ -1,7 +1,7 @@
 #!/bin/bash
 # Start the SkyRL Tinker API server for Qwen3.5-4B (FSDP, single GPU).
 # Extra backend-config JSON entries can be passed in EXTRA_CFG, e.g. EXTRA_CFG='"trainer.micro_train_batch_size_per_gpu": 2'
-source "$(dirname -- "${BASH_SOURCE[0]}")/env_common.sh" || exit 1
+source "$(dirname -- "${BASH_SOURCE[0]}")/../env_common.sh" || exit 1
 # Serialized through backend config to Ray workers; 0 restores always-on GC.
 GC_SHORT_SEQ_THRESHOLD=${GC_SHORT_SEQ_THRESHOLD:-8000}
 if ! [[ "$GC_SHORT_SEQ_THRESHOLD" =~ ^(0|[1-9][0-9]*)$ ]]; then
