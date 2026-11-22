@@ -404,7 +404,7 @@ def test_stop_selects_only_python_training_modules(pod):
         text=True,
         check=True,
     )
-    assert result.stdout.splitlines() == commands[:3]
+    assert result.stdout.splitlines() == commands[:2]
 
 
 def test_base_before_first_training_snapshot(pod):

@@ -33,8 +33,8 @@ Stage 4 also verified the installed bytes against the same pinned checkout for `
 | training/config.py | rl/train.py | Retain configuration field vocabulary; validate project-supported synchronous modes; omit generic dispatch and presets |
 | training/data.py | rl/data_processing.py; supervised/common.py | Retain centered advantages, prefix merge/split, targets, masks, logprobs and provenance; text-only input/target shift; local types/helpers |
 | training/update.py | rl/train.py | Focused SDK gradient/Adam/snapshot API for full and streaming batches, remove mask before SDK calls; explicit pending-task cleanup; omit KL/reference/async framework |
-| training/loop.py | rl/train.py; existing project train_dapo.py | One ordinary/dynamic loop with iteration-scoped data, completion-ordered minibatches and post-log checkpoint boundary; no HTML/trace framework |
-| training/sampling.py | rl/rollouts.py; existing project train_dapo.py | Local fail-fast group creation/grading/cleanup and task draining; preserve project dynamic refill selection/cursor |
+| training/loop.py | rl/train.py; earlier project dynamic-sampling CLI | One ordinary/dynamic loop with iteration-scoped data, completion-ordered minibatches and post-log checkpoint boundary; no HTML/trace framework |
+| training/sampling.py | rl/rollouts.py; earlier project dynamic-sampling CLI | Local fail-fast group creation/grading/cleanup and task draining; preserve project dynamic refill selection/cursor |
 | training/metrics.py | rl/metric_util.py; rl/metrics.py; rl/train.py | Extract trajectory metrics, sample/train KL and usage counts; omit evaluators and reference/post-KL requests |
 | training/records.py | rl/rollout_logging.py | Retain JSON-safe rollout serialization and historical schema; local types; omit store/deprecated write wrappers |
 | training/usage.py | utils/cost_estimation.py | Token/rate value types, accounting and a best-effort cached pricing lookup |

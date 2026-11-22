@@ -4,15 +4,18 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import chz
 import pytest
 import tinker
 
 from scripts.cloud.monitoring import log_monitor_metrics as monitor
+from scripts.cloud.workflows import driver
 from scripts.cloud.workflows import run_checks as ops
-from search_r1 import train_dapo as dapo
+from search_r1 import train
 from search_r1.backends.completers import TokensWithLogprobs
 from search_r1.env.search_env import SearchR1DatasetBuilder, SearchRLDataset
 from search_r1.env.types import TrajectoryGroup
+from search_r1.train_dynamic_sampling import CLIConfig as DynamicCLIConfig
 from search_r1.training import runtime, sampling
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +41,20 @@ def parent_run(tmp_path):
         parent / "checkpoints.jsonl", [{"batch": 100, "name": "final", "state_path": PARENT_URI}]
     )
     return parent
+
+
+def fork_config(monkeypatch, parent, child, target, save_every):
+    """Build a dynamic fork from step 100 the way a Pod training segment does."""
+    monkeypatch.setenv("POD_ROOT", str(child.parent))
+    monkeypatch.setenv("RETRIEVAL_URL", "http://127.0.0.1:8001")
+    monkeypatch.setenv("SAMPLING_MODE", "dynamic")
+    monkeypatch.setenv("SAVE_EVERY", str(save_every))
+    _, _, args = driver.training_args(child, {"parent_run": str(parent), "parent_step": "100"})
+    argv = [
+        f"{key}={str(value).lower() if isinstance(value, bool) else value}"
+        for key, value in (args | {"max_steps": target, "log_path": str(child)}).items()
+    ]
+    return train.build_config(chz.entrypoint(DynamicCLIConfig, argv=argv))
 
 
 def group(rewards):
@@ -159,7 +176,7 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
     smoke = tmp_path / "s3-smoke"
     formal = tmp_path / "s3"
     for child, target in [(smoke, 102), (smoke, 103), (formal, 101)]:
-        config = dapo.build_config(parent, child, target, 1, 8, 100)
+        config = fork_config(monkeypatch, parent, child, target, 1)
         asyncio.run(runtime.main(config))
         ops.verify(child, target, ops.origin(child))
 
@@ -181,7 +198,7 @@ def test_run_resume_and_fresh_formal_run(tmp_path, monkeypatch):
         assert metrics["rollout/episodes"] == 1024 and metrics["selected_rollout/episodes"] == 512
 
 
-def test_foreign_child_index_rejected(tmp_path):
+def test_foreign_child_index_rejected(tmp_path, monkeypatch):
     parent = parent_run(tmp_path)
     child = tmp_path / "s3"
     child.mkdir()
@@ -191,7 +208,7 @@ def test_foreign_child_index_rejected(tmp_path):
     with pytest.raises(ValueError):
         from search_r1.training.checkpoints import prepare_run
 
-        prepare_run(dapo.build_config(parent, child, 112, 5, 8, 100), SearchRLDataset([], 64))
+        prepare_run(fork_config(monkeypatch, parent, child, 112, 5), SearchRLDataset([], 64))
 
 
 def test_disk_plan_uses_real_free_space_and_existing_saves(tmp_path, monkeypatch):
