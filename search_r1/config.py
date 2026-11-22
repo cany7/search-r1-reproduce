@@ -57,7 +57,7 @@ class CLIConfig:
 
     # Logging parameters
     log_path: str | None = None
-    wandb_project: str | None = "search-r1-reproduce"
+    wandb_project: str | None = "search-r1-reproduce-experiment"
     wandb_name: str | None = None
     # Display name for the Tinker session; defaults to wandb_name, or the
     # generated run name when wandb_name is unset.

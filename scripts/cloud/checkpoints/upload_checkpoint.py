@@ -233,7 +233,7 @@ def main() -> int:
     parser.add_argument("--eval-summary", type=Path, required=True)
     parser.add_argument("--ckpt-base", type=Path, required=True)
     parser.add_argument("--marker-dir", type=Path, required=True)
-    parser.add_argument("--project", default="search-r1-reproduce")
+    parser.add_argument("--project", default="search-r1-reproduce-experiment")
     parser.add_argument(
         "--dry-run", action="store_true", help="list files and metadata, upload nothing"
     )

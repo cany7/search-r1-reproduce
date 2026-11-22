@@ -277,7 +277,7 @@ def main() -> int:
     parser.add_argument(
         "--base-eval", type=Path, help="base-model dev eval directory, logged at step 0"
     )
-    parser.add_argument("--project", default="search-r1-reproduce")
+    parser.add_argument("--project", default="search-r1-reproduce-experiment")
     parser.add_argument(
         "--wandb-dir", type=Path, help="local W&B files (default <log_path>/wandb_monitor)"
     )
