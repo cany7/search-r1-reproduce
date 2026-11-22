@@ -5,7 +5,6 @@
 """Shared synchronous loop: collect → prepare/update → publish → log/save.
 
 Checkpoint and logger objects are supplied by the run that owns the output directory.
-This module and all computation it invokes are independent of cookbook.
 """
 
 import asyncio

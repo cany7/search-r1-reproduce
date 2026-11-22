@@ -390,7 +390,6 @@ def test_stop_selects_only_python_training_modules(pod):
     commands = [
         "python -m search_r1.train",
         "/opt/venv/bin/python3.12 -m search_r1.train_dynamic_sampling a=b",
-        "python3 -m search_r1.train_dapo --target 7",
         "python -m search_r1.offline_eval",
         "python -m search_r1.training.loop",
         "python -m search_r1.train_extra",

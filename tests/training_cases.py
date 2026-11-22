@@ -1,4 +1,4 @@
-"""Fixed token trajectories for comparing migrated training math with pinned upstream."""
+"""Fixed token trajectories for comparing training math with the pinned upstream."""
 
 import tinker
 

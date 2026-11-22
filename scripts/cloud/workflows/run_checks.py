@@ -67,11 +67,11 @@ def origin(run, parent=None, step=None, *, fresh=False):
         return Origin(pinned["batch"], pinned["next_prompt_offset"], pinned["state_path"])
     if parent is None:
         if cfg.get("parent_state_path"):
-            raise ValueError("Supply PARENT_RUN and PARENT_STEP for this legacy fork")
+            raise ValueError("Supply PARENT_RUN and PARENT_STEP for this fork")
         return Origin()
     row = state_at(parent, step)
     if cfg.get("parent_state_path", row["state_path"]) != row["state_path"]:
-        raise ValueError("Parent state differs from this legacy fork")
+        raise ValueError("Parent state differs from this fork's recorded parent")
     parent_cfg = snapshot(parent)
     if (
         parent_cfg.get(
@@ -121,7 +121,7 @@ def own_records(output, start):
                 )
             offset = row.get("next_prompt_offset")
             if (
-                (start.uri and row.get("stage3_run") != output.name)
+                (start.uri and row.get("dynamic_run") != output.name)
                 or type(offset) is not int
                 or offset < start.offset + (row["batch"] - start.step) * batch
             ):

@@ -1,8 +1,10 @@
-79d4c8946bba23c2e0617e96ac1095c596093d83
- 2 files changed, 56 insertions(+), 1 deletion(-)
-tinker                                   0.39.0
-tinker-cookbook                          0.6.2.dev1+g1991897cb
-torch                                    2.15.0
-transformers                             5.23.0
-wandb                                    0.31.0
-NVIDIA A100-SXM4-80GB, 595.71.05
+# Cloud validation environment, 2026-11-16
+
+gpu                     NVIDIA A100-SXM4-80GB
+driver                  595.71.05
+
+skyrl commit            79d4c8946bba23c2e0617e96ac1095c596093d83
+
+server venv (SkyRL)     vllm 0.33.0
+client venv (project)   tinker 0.39.0, tinker-cookbook 0.6.2.dev1+g1991897cb,
+                        torch 2.15.0, transformers 5.23.0, wandb 0.31.0

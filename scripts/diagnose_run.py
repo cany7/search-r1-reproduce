@@ -14,6 +14,7 @@ use up a turn without searching.
 Usage: uv run python scripts/diagnose_run.py runs/eval/<run_name> [--examples 3]
 """
 
+import gzip
 import json
 import sys
 from collections import Counter, defaultdict
@@ -55,7 +56,10 @@ def main() -> None:
     args = sys.argv[1:]
     num_examples = int(args[args.index("--examples") + 1]) if "--examples" in args else 3
     run_dir = Path(args[0])
-    with open(run_dir / "trajectories.jsonl") as f:
+    path = run_dir / "trajectories.jsonl"
+    if not path.exists() and path.with_suffix(".jsonl.gz").exists():
+        path = path.with_suffix(".jsonl.gz")
+    with gzip.open(path, "rt") if path.suffix == ".gz" else open(path) as f:
         records = [json.loads(line) for line in f]
     records = [r for r in records if "error" not in r]
     n = len(records)

@@ -24,10 +24,6 @@ dependencies = [
 [dependency-groups]
 dev = ["httpx", "pytest", "ruff"]
 
-[tool.uv]
-# Use the interpreter selected by pyenv local (see .python-version) and disable uv downloads.
-python-preference = "only-system"
-
 [build-system]
 requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"

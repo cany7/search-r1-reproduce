@@ -17,5 +17,3 @@ dependencies = [
 
 [tool.uv]
 package = false
-# Use the interpreter selected by pyenv local (see .python-version) and disable uv downloads.
-python-preference = "only-system"

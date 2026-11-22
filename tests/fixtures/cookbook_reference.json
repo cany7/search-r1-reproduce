@@ -1,6 +1,5 @@
 {
   "source_commit": "1991897cba59ea9d9b0030d183d1867b28eba9d9",
-  "project_commit": "8165fec2edbd0fc569375ae3d6a21043ddc537c3",
   "tokenizer": "fixed-codepoint-tokenizer-v1",
   "renderers": {
     "qwen3": {

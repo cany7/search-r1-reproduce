@@ -1,7 +1,13 @@
-# 五轮封顶未作答惩罚实验
+# Max-turns unanswered penalty
 
-从主复现的第 75 步出发，把五轮用尽仍未作答的终局奖励从 −0.1 调为 −0.3，训练至第 100 步。对照组是主复现使用原奖励的[延长训练](../reproduce-main/training/extended-training/)。
+Training continued from the main reproduction's step-75 checkpoint to step 100.
+Episodes that reached the five-turn cap without a valid answer received a final
+training reward of −0.3 instead of −0.1. The control is the main reproduction's
+extended training from step 75 to step 100, which used the original reward.
 
-[训练记录](training/)及第 100 步的 [dev](evaluations/limited-search/dev/step-0100/) 和 [test](evaluations/limited-search/test/step-0100/) 评测均已归档。限制搜索规则下，test 答对 849/1,894 题（EM 44.83%），原奖励的延长训练答对 876/1,894 题（EM 46.25%）。
+Training used the limited-search rule. Evaluation does not apply this penalty
+and keeps the base scoring.
 
-[文件清单](files.json)记录归档路径、原路径和大小。
+[Training records](training/) · [Step-100 dev evaluation](evaluations/limited-search/dev/step-0100/) · [Step-100 test evaluation](evaluations/limited-search/test/step-0100/) · [Control training](../reproduce-main/training/extended-training/)
+
+[Experiment metadata](experiment.json)

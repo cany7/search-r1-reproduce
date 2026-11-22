@@ -1,0 +1,15 @@
+# Recorded runtime environment, 2026-11-16 to 2026-11-18
+# Shared by formal training and evaluation in reproduce-main,
+# dynamic-sampling and max-turns-penalty.
+
+gpu                     NVIDIA RTX PRO 6000 Blackwell Workstation Edition, 97,887 MiB
+driver / cuda           580.65.06 / 13.0
+image                   novaskyai/skyrl-train-ray-2.57.0-py3.12-cu13.0
+container memory limit  116.4 GiB
+
+skyrl commit            79d4c8946bba23c2e0617e96ac1095c596093d83
+skyrl patch             scripts/cloud/setup/apply_patch.py (padding trimming, length-based gradient checkpointing)
+gc threshold            trainer.gradient_checkpointing_short_seq_threshold = 8000
+
+server venv (SkyRL)     torch 2.14.0+cu130, vllm 0.33.0, transformers 5.16.1, tinker 0.27.2
+client venv (project)   tinker 0.39.0, wandb 0.31.0

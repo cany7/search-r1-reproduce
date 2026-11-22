@@ -7,14 +7,14 @@ Kept:
 - every parent-owned archive, including aliases/duplicate index entries.
 
 New full-state records must declare owner="child" or owner="parent". If any
-full-state record has unknown ownership, skip pruning the entire index. Legacy
-forks copied parent records without attribution, so their ownership cannot be
-inferred safely from batch numbers or model IDs. Sampler-only records are ignored.
+full-state record has unknown ownership, skip pruning the entire index: ownership
+cannot be inferred safely from batch numbers or model IDs. Sampler-only records are
+ignored.
 
 Deleted:
 - other full states (the periodic saves between eval steps, kept only as crash insurance);
-- duplicate saves of one step (the cookbook writes both ``000025`` and ``final`` at the end of a
-  segment; the later record, the one the driver and the cookbook use, is kept).
+- duplicate saves of one step (training writes both ``000025`` and ``final`` at the end of a
+  segment; the later record, the one the driver and training use, is kept).
 
 usage: ckpt_prune.py <checkpoints.jsonl> <ckpt_base> <eval_steps comma-separated> [--dry-run]
 """
@@ -79,7 +79,7 @@ def main() -> int:
     eval_steps = {int(s) for s in args.eval_steps.split(",") if s}
     records = [json.loads(line) for line in args.checkpoints_jsonl.open() if line.strip()]
     if any(r.get("state_path") and r.get("owner") not in ("parent", "child") for r in records):
-        print("skip automatic pruning: full-state ownership is unknown (legacy index)")
+        print("skip automatic pruning: full-state ownership is unknown")
         return 0
     keep, delete = plan(records, eval_steps)
     keep_files = {state_file(args.ckpt_base, r["state_path"]) for r in keep}

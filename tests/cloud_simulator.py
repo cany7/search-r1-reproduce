@@ -91,7 +91,7 @@ def training(module, args):
     uri = f"tinker://model_{step}/weights/final"
     fields = {"parent_state_path": start["state_path"]} if start else {}
     if dynamic and start:
-        fields["stage3_run"] = run.name
+        fields["dynamic_run"] = run.name
     append(
         index,
         fields

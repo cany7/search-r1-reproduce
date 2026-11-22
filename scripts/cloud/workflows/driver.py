@@ -219,7 +219,7 @@ def dev_driver(name, options):
     if args.setdefault("behavior_if_log_dir_exists", "resume") != "resume":
         raise ValueError("Segmented training requires behavior_if_log_dir_exists=resume")
     fixed = int(os.environ.get("UPLOAD_FROM", start.step))
-    # Older ordinary forks could start with a manually seeded, unmarked parent row.
+    # An ordinary fork may start from a manually seeded, unmarked parent row.
     if fixed != start.step and (
         start.uri or fixed < 0 or state_at(run, fixed).get("owner") is not None
     ):

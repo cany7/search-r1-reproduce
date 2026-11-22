@@ -125,7 +125,7 @@ class Config:
 
 
 def from_snapshot(snapshot):
-    """Rebuild the saved recipe with historical defaults, ignoring run metadata."""
+    """Rebuild the saved recipe, using defaults for fields absent from the snapshot."""
     builder = dict(snapshot["dataset_builder"])
     builder["retrieval_config"] = RetrievalConfig(**builder.get("retrieval_config", {}))
     values = {k: v for k, v in snapshot.items() if k in chz.chz_fields(Config)}

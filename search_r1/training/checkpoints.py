@@ -37,7 +37,7 @@ def read_config(directory):
     return json.loads((directory / "config.json").read_bytes())
 
 
-LOCK = ".stage3.lock"  # Interoperate with an already running legacy stage-three process.
+LOCK = ".run.lock"
 
 
 @contextmanager
@@ -155,10 +155,10 @@ def child_state(rows, directory, dynamic, parent_uri, parent, step):
         if row.get("owner") not in (None, "parent", "child"):
             raise ValueError("Unknown checkpoint owner")
         if row.get("parent_state_path") != parent_uri or (
-            row.get("stage3_run") is not None and row["stage3_run"] != directory.name
+            row.get("dynamic_run") is not None and row["dynamic_run"] != directory.name
         ):
             raise ValueError("Foreign checkpoint provenance in child index")
-        if dynamic and parent_uri and row.get("stage3_run") != directory.name:
+        if dynamic and parent_uri and row.get("dynamic_run") != directory.name:
             raise ValueError("Missing dynamic child run identity")
         if row.get("parent_run", parent) != parent or row.get("parent_step", step) != step:
             raise ValueError("Foreign parent_run or parent_step in child index")
@@ -237,15 +237,15 @@ def prepare_run(config, dataset):
         raise ValueError("A fork cannot use weights-only initialization")
     dynamic = config.sampling_mode == "dynamic"
     record, registered = child_state(rows, directory, dynamic, parent_uri, parent, step)
-    # Old stage-three snapshots only named the parent's state URI. When a parent
-    # is supplied, verify that binding even when resuming a child checkpoint.
+    # A dynamic fork may record only the parent's state URI. When a parent is
+    # supplied, verify that binding even when resuming a child checkpoint.
     if parent and not pinned and not (record and bound_parent):
         pinned = select_parent(Path(parent), step, parent_uri, directory, config, digest, count)
         parent_uri = pinned["state_path"]
     if pinned and (pinned["state_path"] != parent_uri or pinned["batch"] != step):
         raise ValueError("Pinned parent checkpoint disagrees with run provenance")
     if parent_uri and not (record or pinned):
-        raise ValueError("Specify the legacy parent_run and parent_step to recover its cursor")
+        raise ValueError("Specify parent_run and parent_step to recover this fork's cursor")
     start = record or pinned or {}
     if start.get("dataset_digest", digest) != digest:
         raise ValueError("Incompatible checkpoint dataset contents or prompt order")
@@ -268,7 +268,7 @@ def prepare_run(config, dataset):
     if parent_uri:
         fields["parent_state_path"] = parent_uri
         if dynamic:
-            fields["stage3_run"] = directory.name
+            fields["dynamic_run"] = directory.name
     if not saved:
         snapshot = chz.asdict(config) | {"dataset_digest": digest, "parent_run": parent}
         if pinned:

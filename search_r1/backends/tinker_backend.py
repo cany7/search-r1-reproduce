@@ -1,4 +1,4 @@
-"""Explicit SDK operations used by evaluation and training; no cookbook or global SDK patches."""
+"""Explicit SDK operations used by evaluation and training, without global SDK patches."""
 
 import logging
 import re
@@ -93,7 +93,7 @@ async def load_training_client(
 
 
 async def get_renderer_name_from_checkpoint_async(service_client, checkpoint_path) -> str | None:
-    """Read historical renderer metadata, falling back when a server lacks it.
+    """Read the renderer name stored with a checkpoint, falling back when a server lacks it.
 
     Adapted from tinker-cookbook/checkpoint_utils.py at 1991897cba59ea9d9b0030d183d1867b28eba9d9.
     Apache-2.0; see third_party/tinker_cookbook/. Local logging/imports replace cookbook's.

@@ -57,7 +57,7 @@
     "evaluator_builders": [],
     "load_checkpoint_path": null,
     "renderer_name": "search_r1/qwen3_5_disable_thinking_unicode",
-    "wandb_project": "search-r1-reproduce",
+    "wandb_project": "search-r1-reproduce-experiment",
     "wandb_name": "search-r1-q35-64x8",
     "session_name": "search-r1-q35-64x8",
     "kl_penalty_coef": 0.0,

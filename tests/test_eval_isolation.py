@@ -1,34 +1,21 @@
-"""Fresh-process checks: evaluation cannot import cookbook or access the network."""
+"""Fresh-process checks: evaluation imports and CLI help work without network access."""
 
 import os
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARD = """
-import importlib.abc
 import socket
 import sys
-class NoCookbook(importlib.abc.MetaPathFinder):
-    def find_spec(self, fullname, path=None, target=None):
-        if fullname == "tinker_cookbook" or fullname.startswith("tinker_cookbook."):
-            raise AssertionError("Forbidden cookbook import: " + fullname)
-sys.meta_path.insert(0, NoCookbook())
 def no_network(*args, **kwargs):
-    raise AssertionError("Network access is forbidden in offline migration checks")
+    raise AssertionError("Network access is forbidden in offline tests")
 socket.socket.connect = no_network
 socket.socket.connect_ex = no_network
 """
-
-
-def test_locked_environment_excludes_cookbook():
-    with (ROOT / "uv.lock").open("rb") as lockfile:
-        packages = tomllib.load(lockfile)["package"]
-    assert "tinker-cookbook" not in {package["name"] for package in packages}
 
 
 def isolated(code, *, expected_returncode=0, **env):
@@ -56,7 +43,7 @@ def isolated(code, *, expected_returncode=0, **env):
     return result.stdout
 
 
-def test_eval_and_helpers_import_without_cookbook():
+def test_eval_modules_and_scripts_import_offline():
     isolated(
         """
 import importlib
@@ -74,11 +61,10 @@ for script in ["check_render.py", "diagnose_run.py", "make_eval_sets.py"]:
     runpy.run_path(str(Path("scripts") / script), run_name="import_only")
 from search_r1.env.search_env import DATA_DIR
 assert DATA_DIR == Path.cwd() / "data", DATA_DIR
-assert not any(n.startswith("tinker_cookbook") for n in sys.modules)
 """,
         SEARCH_R1_DATA_DIR=str(ROOT / "data"),
     )
-    # A separate process with the variable absent checks the relocated default.
+    # A separate process with the variable absent checks the default.
     isolated("""
 import os
 from pathlib import Path
@@ -88,7 +74,7 @@ assert DATA_DIR == Path.cwd() / "data", DATA_DIR
 """)
 
 
-def test_eval_cli_help_does_not_load_models_or_cookbook():
+def test_eval_cli_help_does_not_load_models():
     output = isolated(
         """
 import runpy
@@ -118,14 +104,3 @@ assert download_search_r1_dataset("test") == [
 """,
         SEARCH_R1_DATA_DIR=str(tmp_path),
     )
-
-
-def test_local_regressions_pass_with_cookbook_imports_blocked():
-    output = isolated("""
-import pytest
-raise SystemExit(pytest.main([
-    "-q", "tests/test_component_migration.py", "tests/test_eval_backends.py", "tests/test_reward.py",
-    "tests/test_tokenizer_loading.py",
-]))
-""")
-    assert "passed" in output

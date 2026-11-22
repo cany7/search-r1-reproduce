@@ -61,7 +61,7 @@ def collect(args: argparse.Namespace) -> tuple[list[tuple[Path, str]], dict, dic
     ]
     canonical: dict[int, dict] = {}
     full = {}
-    for r in records:  # later records win, as in the driver and the cookbook
+    for r in records:  # later records win, as in the driver and training
         if type(r.get("batch")) is not int or r.get("owner") == "parent":
             continue
         canonical[r["batch"]] = r
@@ -170,7 +170,7 @@ def marker_matches(marker, summary, previous_step):
             isinstance(info, dict)
             and bool(info.get("artifact"))
             and (
-                "eval_directory" not in info  # Historical completed uploads.
+                "eval_directory" not in info  # Markers written before eval_directory was recorded.
                 or (
                     info["eval_directory"] == summary.parent.name
                     and info["previous_step"] == previous_step

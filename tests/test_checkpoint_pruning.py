@@ -55,7 +55,7 @@ def test_parent_and_duplicate_uri_are_protected(tmp_path):
 
 
 @pytest.mark.parametrize("owner", [None, "unknown"])
-def test_unknown_legacy_parent_skips_entire_index(tmp_path, owner):
+def test_unknown_owner_skips_entire_index(tmp_path, owner):
     rows = [record(7, model="parent", owner=owner), record(8), record(18)]
     keep, delete = plan(rows, {12})
     assert keep == rows and not delete

@@ -6,7 +6,9 @@ each microbatch is then computed at that full padded length. Trimming the column
 padding for every row of the microbatch removes the wasted compute without changing the loss:
 padded positions have loss_mask 0, and per-sample outputs are read from the right by valid length.
 """
-import pathlib, sys
+import pathlib
+import sys
+
 root = pathlib.Path(sys.argv[1])
 wu = root / "skyrl/backends/skyrl_train/workers/worker_utils.py"
 wk = root / "skyrl/backends/skyrl_train/workers/worker.py"

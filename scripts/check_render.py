@@ -12,6 +12,7 @@ from search_r1.env.tool_dispatch import simple_tool_result, tool
 from search_r1.env.tool_types import ToolResult
 
 CONFIGS = [
+    ("Qwen/Qwen3.5-4B", "search_r1/qwen3_5_disable_thinking_unicode"),
     ("Qwen/Qwen3.5-4B", "qwen3_5_disable_thinking"),
     ("Qwen/Qwen3.5-4B", "qwen3_5"),
     ("Qwen/Qwen3-4B-Instruct-2507", "qwen3_instruct"),

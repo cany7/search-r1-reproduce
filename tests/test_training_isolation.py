@@ -1,22 +1,7 @@
-"""The math, loop and public CLI help must work with cookbook and network blocked."""
+"""Training CLI help must work without network access or model downloads."""
 
 import pytest
 from test_eval_isolation import isolated
-
-
-def test_core_imports_and_fake_sdk_regressions_without_cookbook():
-    result = isolated("""
-import importlib
-for name in ["config", "data", "loop", "metrics", "records", "sampling", "update", "usage", "utils"]:
-    importlib.import_module("search_r1.training." + name)
-import search_r1.train
-import search_r1.train_dynamic_sampling
-import pytest
-raise SystemExit(pytest.main(["-q", "tests/test_training_data.py", "tests/test_training_loop.py",
-    "tests/test_training_runtime.py", "tests/test_training_checkpoints.py", "tests/test_dynamic_sampling.py",
-    "tests/test_training_logging.py"]))
-""")
-    assert "passed" in result
 
 
 @pytest.mark.parametrize("module", ["search_r1.train", "search_r1.train_dynamic_sampling"])

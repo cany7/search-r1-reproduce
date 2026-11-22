@@ -1,5 +1,5 @@
 # Group rollout adapted from tinker-cookbook/rl/rollouts.py at 1991897cba59ea9d9b0030d183d1867b28eba9d9.
-# Modified: local fail-fast tasks and cleanup. Dynamic refill moved from this project's earlier dynamic-sampling CLI.
+# Modified: local fail-fast tasks, cleanup and dynamic refill.
 # SPDX-License-Identifier: Apache-2.0
 # See third_party/tinker_cookbook/ for license and source mapping.
 """Fixed batches or same-policy dynamic refill, in shuffled dataset order."""

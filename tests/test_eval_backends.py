@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import tinker
-from migration_cases import FixedTokenizer
+from reference_cases import FixedTokenizer
 
 from search_r1 import offline_eval
 from search_r1.backends.completers import TinkerTokenCompleter, TokensWithLogprobs

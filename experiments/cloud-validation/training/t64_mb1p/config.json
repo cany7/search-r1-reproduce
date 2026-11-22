@@ -28,7 +28,7 @@
   "evaluator_builders": [],
   "load_checkpoint_path": null,
   "renderer_name": "qwen3_5_disable_thinking",
-  "wandb_project": "search-r1-reproduce",
+  "wandb_project": "search-r1-reproduce-experiment",
   "wandb_name": "test-t64_mb1p",
   "session_name": "test-t64_mb1p",
   "kl_penalty_coef": 0.0,

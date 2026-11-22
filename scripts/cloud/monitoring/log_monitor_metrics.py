@@ -184,8 +184,8 @@ def collect(args: argparse.Namespace, state: dict) -> list[tuple[str, int, dict,
             continue
         rows = [r for r in load_jsonl(f) if r.get("split", "train") == "train"]
         if rows and "selection" in rows[0]:
-            # The historical rollout/* axis is the sampler version. Preserve that
-            # meaning; stage-three files also include the groups filtered out.
+            # The rollout/* axis is the sampler version. Dynamic-sampling files
+            # also include the filtered groups, so log selected groups separately.
             selected = [r for r in rows if r["selection"] == "selected"]
             metrics = rollout_metrics(rows, max_turns)
             metrics.update(

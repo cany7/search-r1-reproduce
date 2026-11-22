@@ -1,4 +1,4 @@
-"""Forks, historical schema and crash boundaries. Every run lives in tmp_path."""
+"""Forks, saved-record schema and crash boundaries. Every run lives in tmp_path."""
 
 import asyncio
 from contextlib import nullcontext
@@ -144,21 +144,21 @@ def test_reordered_dataset_or_dynamic_parent_rejected(tmp_path, dataset):
 
 
 @pytest.mark.parametrize("offset", [None, -1, True, "32", 2, 100])
-def test_legacy_dynamic_requires_an_exact_cursor_and_preserves_files(tmp_path, dataset, offset):
+def test_dynamic_fork_by_state_path_requires_exact_cursor(tmp_path, dataset, offset):
     cfg = config(tmp_path, sampling_mode="dynamic", max_steps=9)
     snapshot = chz.asdict(cfg)
     for key in ("sampling_mode", "parent_run", "parent_step"):
         snapshot.pop(key)
     snapshot["parent_state_path"] = "tinker://parent/weights/final"
     write_json(tmp_path / "config.json", snapshot)
-    legacy = {
+    record = {
         "batch": 8,
         "name": "final",
         "state_path": "child",
-        "stage3_run": tmp_path.name,
+        "dynamic_run": tmp_path.name,
         "parent_state_path": snapshot["parent_state_path"],
     }
-    commit_record(tmp_path, legacy | ({} if offset is None else {"next_prompt_offset": offset}))
+    commit_record(tmp_path, record | ({} if offset is None else {"next_prompt_offset": offset}))
     paths = [tmp_path / name for name in ("config.json", "checkpoints.jsonl")]
     before = [p.read_bytes() for p in paths]
     with run_lock(tmp_path), pytest.raises(ValueError, match="next_prompt_offset"):
@@ -167,7 +167,7 @@ def test_legacy_dynamic_requires_an_exact_cursor_and_preserves_files(tmp_path, d
 
 
 @pytest.mark.parametrize("mode", ["ordinary", "dynamic"])
-def test_existing_legacy_configs_and_unmarked_indexes_read_only(tmp_path, dataset, mode):
+def test_configs_without_mode_fields_and_unmarked_indexes_read_only(tmp_path, dataset, mode):
     cfg = config(tmp_path, max_steps=12, sampling_mode=mode)
     saved = chz.asdict(cfg)
     for key in ("sampling_mode", "parent_run", "parent_step", "skyrl_compat"):
@@ -176,7 +176,7 @@ def test_existing_legacy_configs_and_unmarked_indexes_read_only(tmp_path, datase
     row = {"batch": 11, "state_path": "old", "name": "final"}
     if mode == "dynamic":
         saved["parent_state_path"] = "old-parent"
-        row.update(stage3_run=tmp_path.name, parent_state_path="old-parent", next_prompt_offset=57)
+        row.update(dynamic_run=tmp_path.name, parent_state_path="old-parent", next_prompt_offset=57)
     write_json(tmp_path / "config.json", saved)
     commit_record(tmp_path, row)
     paths = [tmp_path / name for name in ("config.json", "checkpoints.jsonl")]
@@ -274,7 +274,7 @@ def test_weights_only_is_a_fresh_run_and_survives_initialization_retry(
         service.create_training_client_from_state_with_optimizer.assert_not_awaited()
 
 
-def test_recover_only_unterminated_legacy_index_tail(tmp_path):
+def test_recover_only_unterminated_index_tail(tmp_path):
     path = tmp_path / "checkpoints.jsonl"
     committed = b'{"batch":1, "state_path": "old", "name":"final"}\n'
     path.write_bytes(committed + b'{"batch":2, "state_path":"unfinished')

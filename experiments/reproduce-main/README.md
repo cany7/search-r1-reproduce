@@ -1,20 +1,38 @@
-# Search-R1 主复现
+# Search-R1 main reproduction
 
-最终模型选用**阶段二第 75 步**的 checkpoint。第 75 步在新版搜索规则的 test 上答对 892/1,894 题（EM 47.10%），延长训练到第 100 步后答对 876 题（46.25%）。
+The main reproduction has two training stages: one under the original search
+rule and one under the limited-search rule. The stage-2 step-75 checkpoint was
+selected based on development-set results; the training record extended to
+step 100 is also kept.
 
-| 训练目录 | 起点 → 终点 | 用途 |
+Limited-search rule: each turn executes only the first 3 valid queries in the
+first search call.
+
+| Training stage | Start → end | Search rule |
 |---|---|---|
-| [阶段一](training/stage-1/) | 基座 → 50 | 原搜索规则下的 RL 训练 |
-| [阶段二](training/stage-2/) | 50 → 75 | 每轮最多执行 3 条合法查询，产出最终 checkpoint |
-| [延长训练](training/extended-training/) | 75 → 100 | 沿用阶段二配置，观察继续训练的效果 |
+| [Stage 1](training/stage-1/) | Base → 50 | Original |
+| [Stage 2](training/stage-2/) | 50 → 75 | Limited search |
+| [Extended training](training/extended-training/) | 75 → 100 | Limited search |
 
-评测按[原搜索规则](evaluations/original-search/)和[限制搜索规则](evaluations/limited-search/)归档，各自再按 dev/test 和 checkpoint 分目录。限制搜索规则每轮只执行第一个搜索调用中的前 3 条合法查询。
+Stage 2 and the extended training share the same
+[training configuration](training/stage-2/config.json); only `max_steps`
+differs (75 / 100).
 
-| 评测规则 | Dev | Test |
+The development set (dev) has 631 questions and the test set (test) has 1,894
+questions. Evaluation records are organized by search rule, dataset and
+checkpoint.
+
+| Evaluation rule | Dataset | Checkpoints |
 |---|---|---|
-| 原搜索规则 | [基座](evaluations/original-search/dev/base/)、[第 25 步](evaluations/original-search/dev/step-0025/)、[第 50 步](evaluations/original-search/dev/step-0050/) | [基座](evaluations/original-search/test/base/)、[第 25 步](evaluations/original-search/test/step-0025/)、[第 50 步](evaluations/original-search/test/step-0050/) |
-| 限制搜索规则 | [第 25 步](evaluations/limited-search/dev/step-0025/)、[第 50 步](evaluations/limited-search/dev/step-0050/)、[第 75 步](evaluations/limited-search/dev/step-0075/)、[第 100 步](evaluations/limited-search/dev/step-0100/) | [第 75 步](evaluations/limited-search/test/step-0075/)、[第 100 步](evaluations/limited-search/test/step-0100/) |
+| Original | dev | [Base](evaluations/original-search/dev/base/), [step 25](evaluations/original-search/dev/step-0025/), [step 50](evaluations/original-search/dev/step-0050/) |
+| Original | test | [Base](evaluations/original-search/test/base/), [step 25](evaluations/original-search/test/step-0025/), [step 50](evaluations/original-search/test/step-0050/) |
+| Limited search | dev | [Step 25](evaluations/limited-search/dev/step-0025/), [step 50](evaluations/limited-search/dev/step-0050/), [step 75](evaluations/limited-search/dev/step-0075/), [step 100](evaluations/limited-search/dev/step-0100/) |
+| Limited search | test | [Step 75](evaluations/limited-search/test/step-0075/), [step 100](evaluations/limited-search/test/step-0100/) |
 
-阶段一归档包含配置、指标、检查点索引和监控数据。原搜索规则第 50 步 test 的仓库记录包含配置和汇总。
+The step-25 and step-50 evaluations under the limited-search rule use stage-1
+checkpoints.
 
-[实验元数据](experiment.json)记录阶段筛选区间，[文件清单](files.json)记录原样复制的文件、原路径和大小。
+Per-question [trajectories](evaluations/original-search/test/step-0050/trajectories.jsonl.gz)
+for the original-search step-50 test evaluation are provided gzip-compressed.
+
+[Experiment metadata](experiment.json)

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from migration_cases import jsonable
+from reference_cases import jsonable
 from training_cases import cases
 
 from search_r1.training.data import assemble_training_data, compute_advantages

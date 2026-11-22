@@ -2,49 +2,28 @@
 
 [English version](README.md)
 
-这里归档已经完成的实验材料，运行中的输出继续写入 `runs/`。
+## 实验列表
 
-## 从这里开始
-
-| 阶段 | 目的 | 已有材料 |
+| 实验 | 目的 | 归档内容 |
 |---|---|---|
-| [本地基座](local-baselines/BASELINE_ANALYSIS_zh.md) | 使用 oMLX 比较模型与 prompt | 五组各 631 道开发集题目；配置、汇总、全部轨迹和中英文分析 |
-| [云端验证](cloud-validation/README.md) | 部署、训练性能、并发、检查点加载与续训 | 四项训练任务、四组评测、耗时表、GPU／内存采样和训练示例 |
-| [主复现](reproduce-main/) | 两阶段 RL（0 → 50 → 75），另保留延长到 100 步的对照 | 训练记录、12 组评测和选用的第 75 步检查点引用 |
-| [动态采样](dynamic-sampling/) | 从主线第 100 步续训 | 训练至第 105 步、第 105 步 dev 评测及独立重启续训记录 |
-| [封顶未答惩罚](max-turns-penalty/) | 从主线第 75 步分叉 | 训练至第 100 步、第 100 步 dev 和 test 评测 |
+| [本地基座](local-baselines/) | 使用 oMLX 比较模型与提示词配置 | 五组配置，各评测 631 道开发集题目；运行配置、评测汇总和逐题轨迹 |
+| [云端验证](cloud-validation/README.md) | 验证部署、训练性能、并发和检查点恢复 | 训练与评测记录、耗时表及资源监控 |
+| [主复现](reproduce-main/) | 两阶段强化学习训练：0 → 50 → 75，并延长至第 100 步进行对照 | 训练记录、12 组评测和选用的第 75 步检查点引用 |
+| [动态采样](dynamic-sampling/) | 使用动态采样从第 100 步续训至第 105 步 | 训练记录、第 105 步 dev 评测和重启续训验证 |
+| [轮数上限未作答惩罚](max-turns-penalty/) | 从第 75 步续训至第 100 步，将达到轮数上限仍未作答的奖励由 −0.1 调整为 −0.3 | 训练记录和第 100 步 dev/test 评测 |
 
-五组本地运行共 3,155 条评测记录。四组云端冒烟／并发／检查点评测共 584 条记录，
-包含重复题目，不能称为 584 道不同题目。
+`local-baselines/evaluations/` 下的目录名中，`q35` 表示 Qwen3.5-4B，`q3i` 表示 Qwen3-4B-Instruct-2507；`think` 表示开启思考模式，`fast` 和 `original` 表示提示词变体，`n100` 表示每个来源最多 100 题。
 
-## 文件含义
+## 文件说明
 
-- `config.json`：收集输出时保存的配置。
-- `summary.json`：评测汇总。已归档的逐题记录见 `trajectories.jsonl`。
-- 训练 `metrics.jsonl`：各步指标，部分文件末尾还有总结行；总结行不能多算成一次 optimizer 更新。
-- `checkpoints.jsonl`：检查点引用，不含权重文件。
-- `experiment.json`：范围、来源、缺失信息和派生文件说明。
-- `files.json`：原样复制文件的归档路径、原路径和大小。
+- `config.json`：运行配置。
+- `summary.json`：评测指标。
+- `trajectories.jsonl`：逐题评测轨迹；较大的文件以 gzip 压缩（`.jsonl.gz`）。
+- `metrics.jsonl`：训练指标。
+- `checkpoints.jsonl`：检查点引用；已上传检查点的权重在 W&B 上（见 `uploads/*.json`）。
+- `experiment.json`：实验元数据。
+- [formal-environment.txt](formal-environment.txt)：主复现、动态采样和轮数上限未作答惩罚实验使用的 GPU、容器镜像及服务端／客户端版本。
 
-历史 Qwen3.5 关思考运行使用原 `qwen3_5_disable_thinking`，早于 `1b26fd7` 的 Unicode 修正。
-正式训练使用修正后的 Unicode renderer。正式评测的实际数据集见原配置中的 `eval_file`，
-其中 dev 评测的 `split` 字段也保留了 `test` 原值。
-后续正式基线和训练后模型须采用一致的渲染与评分设置。本地开发集结果不是正式云端基线，
-也不是留出测试集分数。
+## W&B
 
-## 来源与限制
-
-- 原运行未可靠记录项目执行 commit，归档 commit 不能替代当时执行版本。
-- 云端 `code.diff` 只有 cookbook 不在 Git 仓库中的提示。
-- 数据集哈希是在整理时记录的，不是运行时记录的。配置和原始材料保持原样，不回写成当前代码的设置。
-- 记录没有包含每轮全部原始 token IDs 或完整 RNG 状态，支持行为与指标分析，不能完整逐 token 重放。
-- 训练示例按五种指定结果各取第一次出现，用于展示，不用于估计总体比例。
-
-## 后续整理规则
-
-新任务仍写入 `runs/`；完成后，将固定配置、评分与轨迹归入对应的实验目录。
-保留失败样本和被更正的结论，并解释更正原因。后续运行尽量在执行时记录实际源码 commit、
-数据集／模型版本、renderer、seed、GPU、软件环境与检查点引用。
-
-完整运行日志和较大的训练轨迹随原始运行记录保留。
-renderer 或评分规则变更后，不覆盖历史结果。`local_docs/`（包括 `PROGRESS.md`）继续本地留存。
+训练曲线、评测结果和检查点见 [W&B 工作区](https://forge.coreweave.com/wandb/timye7-personal/search-r1-reproduce?nw=sw0myi4atxa)。
