@@ -1,25 +1,16 @@
 # search-r1-reproduce
 
-A reproduction of Search-R1's multi-turn search RL training with Qwen3.5-4B,
-BM25 retrieval and LoRA. Training runs on a single RunPod GPU with self-hosted
-SkyRL through the Tinker SDK.
+[简体中文](docs/README_zh.md)
 
-Training adopts three choices from [Search-R1++](https://arxiv.org/abs/2602.19526):
-REINFORCE, the F1+ reward (F1, minus 0.1 for never searching and 0.1 for no valid
-answer), and the fast-thinking prompt. Advantages are rewards minus the group
-mean, with no clipping, std normalization or KL penalty. The trainer supports
-ordinary and dynamic sampling, a per-turn search limit and a max-turns unanswered
-penalty, with checkpoint recovery and periodic dev-set evaluation.
+This project reproduces the Search-R1 multi-turn question-answering task at small scale on a single RTX PRO 6000 Blackwell GPU (96 GB). The model has up to five turns to answer an open-domain question. On each turn, it can search a local BM25 index of the 2018 Wikipedia corpus or give an answer. The task and data come from [Search-R1](https://arxiv.org/html/2503.09516v4), the training method draws on [Search-R1++](https://arxiv.org/html/2602.19526v1), and the training loop and tool interface are adapted from the [Tinker Cookbook](https://github.com/thinking-machines-lab/tinker-cookbook/blob/1991897cba59ea9d9b0030d183d1867b28eba9d9/tinker_cookbook/recipes/search_tool/README.md) `search_tool` recipe.
 
-[Chinese version](README_zh.md)
+We trained Qwen3.5-4B with REINFORCE and the F1+ reward, using rank-32 LoRA and a learning rate of `4e-5`. Each update used 64 questions with 8 trajectories per question, for a total of 512 trajectories.
 
-## Experiment record
+On the 1,894-question test set, the base model answered 623 questions correctly, and the selected step-75 checkpoint answered 892 correctly. Exact match rose from **32.89% to 47.10%**, a gain of **14.21 percentage points**. The checkpoint returned a valid answer on 99.21% of questions.
 
-[Browse the experiments](experiments/README.md) for configurations, scores,
-evaluation trajectories and training metrics.
-Explore the four training runs and their checkpoint evaluations in the [public W&B workspace](https://forge.coreweave.com/wandb/timye7-personal/search-r1-reproduce?nw=sw0myi4atxa).
+[Experiment report](experiment_report.md) · [实验报告（中文）](docs/experiment_report_zh.md) · [Training logs](https://forge.coreweave.com/wandb/timye7-personal/search-r1-reproduce?nw=sw0myi4atxa) · [Experiment archive](experiments/README.md)
 
-## Code guide
+## Training and evaluation code
 
 Follow one training update through these files.
 
@@ -56,7 +47,7 @@ cp .env.example .env               # First-time setup
 Training needs `TINKER_BASE_URL`, `TINKER_API_KEY` and `WANDB_API_KEY` in the
 environment; on the Pod they are set as container environment variables. Local
 evaluation reads `OMLX_BASE_URL` and `OMLX_API_KEY` from `.env`.
-Training metrics are logged to Weights & Biases (W&B) under
+Training metrics are logged to Weights & Biases under
 `search-r1-reproduce-experiment` by default; use `wandb_project=<project_name>`
 to choose another project or `wandb_project=None` to disable training metric
 uploads while keeping local logs.
@@ -83,7 +74,7 @@ mkdir -p data
 
 The first startup can take a few minutes while the server builds the corpus cache.
 
-## Four training recipes
+## Run training
 
 Start BM25 before training. Each example uses 64 questions and eight
 trajectories per question. Append `max_steps`, `save_every` and `log_path` to
@@ -114,7 +105,7 @@ while filtering equal-reward groups and refilling a full batch before updating.
 
 Both entry points can start from the base model or fork from an ordinary-sampling
 run using `parent_run=PATH parent_step=N` and a new `log_path`. To resume the same
-run, reuse its directory and recipe with `behavior_if_log_dir_exists=resume`.
+run, reuse its directory and training configuration with `behavior_if_log_dir_exists=resume`.
 Forking and resuming both restore optimizer state. For weights-only
 initialization, use `load_checkpoint_path=URI`.
 

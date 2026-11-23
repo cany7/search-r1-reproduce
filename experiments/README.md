@@ -1,6 +1,6 @@
 # Experiment archive
 
-[中文版](README_zh.md)
+[中文版](../docs/experiments_zh.md)
 
 ## Experiments
 
